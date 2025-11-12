@@ -14,18 +14,12 @@
             font-family: 'Courier New', monospace;
             background-color: #0a0a0a;
             color: #b0b0b0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
             overflow: hidden;
         }
         #game-container {
             position: relative;
-            width: 800px;
-            height: 600px;
-            border: 2px solid #3a3a3a;
+            width: 100vw;
+            height: 100vh;
             background-color: #000;
         }
         #game-canvas {
@@ -36,148 +30,173 @@
         }
         #ui-overlay {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            color: #b0b0b0;
-            font-size: 14px;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            font-size: 16px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
             pointer-events: none;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 10px 15px;
+            border-radius: 5px;
         }
         #interaction-prompt {
             position: absolute;
-            bottom: 100px;
+            bottom: 120px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: rgba(20, 20, 20, 0.95);
-            border: 2px solid #5a7a8a;
-            padding: 15px 30px;
-            border-radius: 5px;
+            background-color: rgba(40, 30, 20, 0.95);
+            border: 3px solid #d4a574;
+            padding: 15px 35px;
+            border-radius: 8px;
             display: none;
             animation: pulse 1.5s infinite;
+            color: #f4e4d4;
+            font-size: 18px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
         }
         @keyframes pulse {
-            0%, 100% { opacity: 0.8; }
-            50% { opacity: 1; }
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.05); }
         }
 
-        /* BIP39 Modal Styles - Embedded from bip39-game-final.html */
+        /* BIP39 Modal Styles - Stardew Valley inspired */
         #bip39-modal {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.98);
+            background-color: rgba(20, 15, 10, 0.95);
             display: none;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
             z-index: 100;
             overflow-y: auto;
+            padding: 20px;
         }
         #bip39-modal.active {
             display: flex;
         }
         .bip39-container {
-            background-color: #0a0a0a;
-            max-width: 900px;
-            width: 95%;
-            max-height: 95vh;
-            overflow-y: auto;
-            padding: 20px;
-            border: 2px solid #3a3a3a;
-            border-radius: 5px;
+            background-color: #2a2520;
+            background-image:
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px);
+            max-width: 1000px;
+            width: 100%;
+            margin: 20px auto;
+            padding: 30px;
+            border: 4px solid #6b5638;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6), inset 0 0 20px rgba(0,0,0,0.3);
         }
         .bip39-container h1 {
             text-align: center;
-            color: #8a8a8a;
-            letter-spacing: 2px;
-            font-size: 24px;
+            color: #f4e4c4;
+            letter-spacing: 3px;
+            font-size: 28px;
             margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
         .terminal {
-            background-color: #151515;
-            border: 1px solid #3a3a3a;
+            background-color: #3a3028;
+            border: 3px solid #5a4838;
             padding: 30px;
-            border-radius: 5px;
+            border-radius: 8px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
         }
         .terminal-header {
-            color: #6a6a6a;
-            font-size: 12px;
+            color: #b4a494;
+            font-size: 13px;
             margin-bottom: 20px;
             padding-bottom: 10px;
-            border-bottom: 1px solid #2a2a2a;
+            border-bottom: 2px solid #4a3828;
         }
         .input-group {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
         .input-group label {
             display: block;
-            margin-bottom: 10px;
-            font-size: 14px;
-            color: #9a9a9a;
+            margin-bottom: 12px;
+            font-size: 15px;
+            color: #d4c4b4;
+            font-weight: bold;
         }
         .phrase-option {
-            background-color: #0a0a0a;
-            border: 1px solid #3a3a3a;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 3px;
+            background-color: #4a3828;
+            border: 2px solid #6a5848;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s;
         }
         .phrase-option:hover {
-            border-color: #5a7a8a;
-            background-color: #1a1a1a;
+            border-color: #d4a574;
+            background-color: #5a4838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
         .phrase-option .phrase-text {
-            color: #9a9a9a;
-            font-size: 14px;
-            margin-bottom: 5px;
+            color: #f4e4d4;
+            font-size: 15px;
+            margin-bottom: 6px;
+            font-weight: bold;
         }
         .phrase-option .phrase-meaning {
-            color: #6a6a6a;
-            font-size: 12px;
+            color: #b4a494;
+            font-size: 13px;
             font-style: italic;
         }
         input.word-input {
-            padding: 10px;
-            background-color: #0a0a0a;
-            color: #b0b0b0;
-            border: 1px solid #3a3a3a;
-            border-radius: 3px;
+            padding: 12px;
+            background-color: #2a2520;
+            color: #f4e4d4;
+            border: 2px solid #5a4838;
+            border-radius: 5px;
             font-family: 'Courier New', monospace;
-            font-size: 14px;
+            font-size: 15px;
             text-align: center;
             transition: all 0.2s;
+            width: 100%;
         }
         input.word-input:focus {
             outline: none;
-            border-color: #5a7a8a;
+            border-color: #d4a574;
+            background-color: #3a3028;
+            box-shadow: 0 0 10px rgba(212, 165, 116, 0.3);
         }
         input.word-input.valid {
-            border-color: #3a5a3a;
-            background-color: #0f1a0f;
+            border-color: #7a9a5a;
+            background-color: #2a3520;
         }
         input.word-input.invalid {
-            border-color: #5a3a3a;
-            background-color: #1a0f0f;
+            border-color: #9a5a5a;
+            background-color: #3a2020;
         }
         button {
-            background-color: #2a3a4a;
-            color: #b0b0b0;
-            padding: 12px 30px;
-            border: 1px solid #3a3a3a;
-            border-radius: 3px;
+            background: linear-gradient(to bottom, #d4a574 0%, #b48554 100%);
+            color: #2a2010;
+            padding: 14px 35px;
+            border: 2px solid #a47544;
+            border-radius: 6px;
             cursor: pointer;
             font-family: 'Courier New', monospace;
-            font-size: 14px;
+            font-size: 15px;
+            font-weight: bold;
             margin-top: 10px;
             margin-right: 10px;
             transition: all 0.2s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
         }
         button:hover:not(:disabled) {
-            background-color: #3a4a5a;
-            border-color: #5a7a8a;
+            background: linear-gradient(to bottom, #e4b584 0%, #c49564 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.4);
+        }
+        button:active:not(:disabled) {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         button:disabled {
             opacity: 0.5;
@@ -186,83 +205,95 @@
         .key-display {
             word-break: break-all;
             margin: 15px 0;
-            padding: 12px;
-            background-color: #000;
-            border-radius: 3px;
+            padding: 15px;
+            background-color: #1a1510;
+            border-radius: 5px;
             font-size: 11px;
-            border: 1px solid #2a2a2a;
-            color: #7a7a7a;
-            line-height: 1.6;
+            border: 2px solid #3a3028;
+            color: #b4a494;
+            line-height: 1.8;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
         }
         .section {
             margin-top: 25px;
-            padding: 20px;
-            background-color: #0a0a0a;
-            border: 1px solid #3a3a3a;
-            border-radius: 3px;
+            padding: 25px;
+            background-color: #3a3028;
+            border: 2px solid #5a4838;
+            border-radius: 8px;
             display: none;
         }
         .section.show {
             display: block;
         }
         .section-title {
-            color: #9a9a9a;
-            font-size: 14px;
+            color: #f4e4d4;
+            font-size: 16px;
             margin-bottom: 15px;
             font-weight: bold;
+            border-bottom: 2px solid #5a4838;
+            padding-bottom: 8px;
         }
         .status-message {
-            padding: 12px;
+            padding: 15px;
             margin: 15px 0;
-            border-radius: 3px;
-            font-size: 13px;
+            border-radius: 6px;
+            font-size: 14px;
         }
         .status-success {
-            background-color: #1a2a1a;
-            border: 1px solid #3a5a3a;
-            color: #9a9a9a;
+            background-color: #2a3a2a;
+            border: 2px solid #5a7a5a;
+            color: #d4f4d4;
         }
         .status-info {
-            background-color: #1a1a2a;
-            border: 1px solid #3a3a5a;
-            color: #9a9a9a;
+            background-color: #2a2a3a;
+            border: 2px solid #5a5a7a;
+            color: #d4d4f4;
         }
         .access-granted {
             text-align: center;
-            padding: 40px;
-            background: linear-gradient(135deg, #1a2a3a 0%, #2a3a4a 100%);
-            border: 2px solid #5a7a8a;
-            border-radius: 5px;
+            padding: 50px;
+            background: linear-gradient(135deg, #3a4a3a 0%, #4a5a4a 100%);
+            border: 3px solid #7a9a7a;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
         }
         .access-granted h2 {
-            color: #b0b0b0;
-            font-size: 24px;
+            color: #e4f4e4;
+            font-size: 28px;
             margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
         .access-granted p {
-            color: #8a8a8a;
+            color: #c4d4c4;
             line-height: 1.8;
             margin: 10px 0;
+            font-size: 16px;
         }
         .note {
             font-size: 12px;
-            color: #6a6a6a;
+            color: #9a8a7a;
             line-height: 1.6;
             margin-top: 15px;
+            padding: 10px;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 4px;
         }
         .close-modal {
-            position: absolute;
+            position: sticky;
             top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            color: #6a6a6a;
-            font-size: 24px;
+            float: right;
+            background: #9a5a5a;
+            border: 2px solid #7a4a4a;
+            color: #fff;
+            font-size: 20px;
             cursor: pointer;
-            padding: 5px 10px;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            z-index: 10;
         }
         .close-modal:hover {
-            color: #9a9a9a;
+            background: #aa6a6a;
         }
 
         #transition-overlay {
@@ -281,25 +312,36 @@
             opacity: 1;
         }
         #game-info {
-            margin-top: 20px;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             text-align: center;
-            color: #7a7a7a;
-            font-size: 13px;
-            max-width: 800px;
+            color: #d4c4b4;
+            font-size: 14px;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 5px;
+            pointer-events: none;
+        }
+
+        /* Scroll animation */
+        .scroll-target {
+            scroll-margin-top: 20px;
         }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <canvas id="game-canvas" width="800" height="600"></canvas>
+        <canvas id="game-canvas"></canvas>
 
         <div id="ui-overlay">
-            <div>Scene: <span id="scene-name">Grandpa's Room</span></div>
-            <div>Use arrow keys to move</div>
+            <div><strong>Scene:</strong> <span id="scene-name">Grandpa's Room</span></div>
+            <div style="margin-top: 5px; font-size: 14px;">Arrow keys or WASD to move</div>
         </div>
 
         <div id="interaction-prompt">
-            Press E to interact with computer
+            Press E to access computer
         </div>
 
         <!-- BIP39 Authentication Modal -->
@@ -316,7 +358,7 @@
                     </div>
 
                     <!-- Step 1: Enter or Select Passphrase -->
-                    <div class="input-group">
+                    <div class="input-group scroll-target" id="step1-select">
                         <label>Grandfather left three possible passphrases. Choose one:</label>
 
                         <div class="phrase-option" onclick="selectPhrase('secret code protect future youth always')">
@@ -335,9 +377,9 @@
                         </div>
                     </div>
 
-                    <div class="input-group">
+                    <div class="input-group scroll-target" id="step1-manual">
                         <label>Or manually enter the 6 words (one at a time):</label>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 10px;">
                             <input type="text" id="word1" class="word-input" placeholder="Word 1" maxlength="20">
                             <input type="text" id="word2" class="word-input" placeholder="Word 2" maxlength="20">
                             <input type="text" id="word3" class="word-input" placeholder="Word 3" maxlength="20">
@@ -345,7 +387,7 @@
                             <input type="text" id="word5" class="word-input" placeholder="Word 5" maxlength="20">
                             <input type="text" id="word6" class="word-input" placeholder="Word 6" maxlength="20">
                         </div>
-                        <div id="wordValidation" style="margin-top: 10px; font-size: 12px; color: #6a6a6a;"></div>
+                        <div id="wordValidation" style="margin-top: 10px; font-size: 13px; color: #9a8a7a;"></div>
                         <div class="note">
                             Game Mode: Using 6 words for easier gameplay.<br>
                             All words must be from the BIP39 standard wordlist.<br>
@@ -356,50 +398,50 @@
                     <button onclick="deriveKey()" style="width: 100%;">Derive Access Key</button>
 
                     <!-- Step 2: Show Derived Key -->
-                    <div id="keySection" class="section">
+                    <div id="keySection" class="section scroll-target">
                         <div class="section-title">ACCESS KEY DERIVED</div>
 
                         <div id="derivationProcess" style="margin-bottom: 20px;">
-                            <p style="color: #7a7a7a; font-size: 12px;">Processing passphrase through BIP39 derivation...</p>
-                            <div style="background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 3px; padding: 10px; margin: 10px 0;">
-                                <div id="step1" style="color: #5a5a5a; margin: 5px 0;">→ Validating words against BIP39 wordlist</div>
-                                <div id="step2" style="color: #5a5a5a; margin: 5px 0;">→ Converting to entropy</div>
-                                <div id="step3" style="color: #5a5a5a; margin: 5px 0;">→ Applying PBKDF2 derivation function</div>
-                                <div id="step4" style="color: #5a5a5a; margin: 5px 0;">→ Extracting private key from seed</div>
+                            <p style="color: #b4a494; font-size: 13px;">Processing passphrase through BIP39 derivation...</p>
+                            <div style="background: #2a2520; border: 2px solid #3a3028; border-radius: 5px; padding: 12px; margin: 10px 0;">
+                                <div id="step1" style="color: #7a7a7a; margin: 5px 0;">→ Validating words against BIP39 wordlist</div>
+                                <div id="step2" style="color: #7a7a7a; margin: 5px 0;">→ Converting to entropy</div>
+                                <div id="step3" style="color: #7a7a7a; margin: 5px 0;">→ Applying PBKDF2 derivation function</div>
+                                <div id="step4" style="color: #7a7a7a; margin: 5px 0;">→ Extracting private key from seed</div>
                             </div>
                         </div>
 
-                        <p>Your passphrase has been processed. Private key generated:</p>
+                        <p style="color: #d4c4b4;">Your passphrase has been processed. Private key generated:</p>
                         <div id="privateKeyDisplay" class="key-display"></div>
 
-                        <p style="margin-top: 20px;">This key is your digital identity in Cryptopolis. It must be verified to gain access.</p>
+                        <p style="margin-top: 20px; color: #d4c4b4;">This key is your digital identity in Cryptopolis. It must be verified to gain access.</p>
                         <button id="requestAccessBtn" onclick="requestAccess()">Request Access to Cryptopolis</button>
                     </div>
 
                     <!-- Step 3: Challenge-Response Authentication -->
-                    <div id="authSection" class="section">
+                    <div id="authSection" class="section scroll-target">
                         <div class="section-title">AUTHENTICATION PROTOCOL</div>
                         <div id="authStatus"></div>
 
-                        <p>The system has issued a challenge. Sign it with your private key to prove ownership:</p>
+                        <p style="color: #d4c4b4;">The system has issued a challenge. Sign it with your private key to prove ownership:</p>
                         <div id="challengeDisplay" class="key-display"></div>
 
                         <button id="signChallengeBtn" onclick="signChallenge()">Sign Challenge</button>
 
                         <div id="signatureSection" style="display: none; margin-top: 20px;">
-                            <p>Your signature:</p>
+                            <p style="color: #d4c4b4;">Your signature:</p>
                             <div id="signatureDisplay" class="key-display"></div>
                             <button onclick="verifyAndEnter()">Submit for Verification</button>
                         </div>
                     </div>
 
                     <!-- Step 4: Access Granted -->
-                    <div id="accessSection" class="section">
+                    <div id="accessSection" class="section scroll-target">
                         <div class="access-granted">
                             <h2>ACCESS GRANTED</h2>
                             <p>Authentication successful.</p>
                             <p>Welcome to Cryptopolis.</p>
-                            <p style="margin-top: 30px; font-size: 12px;">
+                            <p style="margin-top: 30px; font-size: 14px;">
                                 Grandfather's digital world awaits...<br>
                                 [Transitioning to Cryptopolis]
                             </p>
@@ -410,10 +452,10 @@
         </div>
 
         <div id="transition-overlay"></div>
-    </div>
 
-    <div id="game-info">
-        Cypherpunk Legacy - Prototype Demo | Explore Grandpa's room and find the gateway to Cryptopolis
+        <div id="game-info">
+            Cypherpunk Legacy - A pixel art adventure inspired by Stardew Valley
+        </div>
     </div>
 
     <!-- Load BIP39 library -->
@@ -421,7 +463,6 @@
         import * as bip39Module from 'https://esm.sh/bip39@3.1.0';
         window.bip39 = bip39Module;
 
-        // Simple crypto utilities
         window.crypto_utils = {
             simpleSign: async function(privateKey, message) {
                 const encoder = new TextEncoder();
@@ -437,12 +478,11 @@
             }
         };
 
-        // Mark system as ready
         window.systemReady = true;
         const statusEl = document.getElementById('systemStatus');
         if (statusEl) {
             statusEl.textContent = 'AWAITING AUTHENTICATION';
-            statusEl.style.color = '#9a9a9a';
+            statusEl.style.color = '#d4c4b4';
         }
 
         console.log('Cryptopolis Access Terminal initialized');
@@ -450,7 +490,19 @@
     </script>
 
     <script>
-        // ==================== Game State Management ====================
+        // ==================== Canvas Setup ====================
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas to fullscreen
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // ==================== Game State ====================
         const GameState = {
             GRANDPA_ROOM: 'grandpa_room',
             CRYPTOPOLIS: 'cryptopolis'
@@ -459,44 +511,76 @@
         let currentState = GameState.GRANDPA_ROOM;
         let bip39Authenticated = false;
 
-        // ==================== Canvas Setup ====================
-        const canvas = document.getElementById('game-canvas');
-        const ctx = canvas.getContext('2d');
-
-        // ==================== Player Character ====================
-        const player = {
-            x: 400,
-            y: 400,
-            width: 24,
-            height: 40,
-            speed: 3,
-            direction: 'down'
+        // ==================== Stardew Valley Color Palette ====================
+        const colors = {
+            // Warm, inviting colors inspired by Stardew Valley
+            floor: '#8b7355',
+            floorDark: '#6b5838',
+            wall: '#9c8b7a',
+            wallDark: '#7c6b5a',
+            furniture: '#6b5a45',
+            furnitureDark: '#4b3a25',
+            wood: '#8b6a45',
+            woodDark: '#6b4a25',
+            accent: '#d4a574',
+            accentDark: '#b48554',
+            // Character colors
+            skin: '#e8b796',
+            hair: '#6b4423',
+            shirt: '#5a7a9a',
+            pants: '#4a5a6a',
+            shoes: '#3a2a1a',
+            // Nature/decorative
+            plant: '#6a8a4a',
+            plantDark: '#4a6a2a',
+            book1: '#8a5a4a',
+            book2: '#5a7a6a',
+            book3: '#7a6a8a',
+            // Tech
+            screenOff: '#2a3a4a',
+            screenOn: '#4a6a8a',
+            screenGlow: '#6a8aaa'
         };
+
+        // ==================== Player Character (Stardew style) ====================
+        const player = {
+            x: window.innerWidth / 2,
+            y: window.innerHeight / 2 + 100,
+            width: 32,
+            height: 32,
+            speed: 4,
+            direction: 'down',
+            animFrame: 0,
+            animTimer: 0
+        };
+
+        // Scale factor for pixel art
+        const TILE_SIZE = Math.max(32, Math.min(64, Math.floor(window.innerHeight / 15)));
 
         // ==================== Interactive Objects ====================
         const computer = {
-            x: 650,
-            y: 220,
-            width: 60,
-            height: 50,
-            interactRadius: 70
+            x: window.innerWidth - 250,
+            y: 200,
+            width: TILE_SIZE * 2,
+            height: TILE_SIZE * 1.5,
+            interactRadius: TILE_SIZE * 2.5
         };
 
-        // Collision rectangles for room objects
-        const collisionRects = [
-            { x: 50, y: 120, width: 100, height: 200 },  // Bookshelf
-            { x: 590, y: 250, width: 170, height: 100 }, // Desk
-            { x: 600, y: 350, width: 30, height: 80 },   // Desk leg 1
-            { x: 720, y: 350, width: 30, height: 80 }    // Desk leg 2
-        ];
+        // Update collision rects based on screen size
+        function updateCollisionRects() {
+            return [
+                { x: 50, y: 150, width: TILE_SIZE * 3, height: TILE_SIZE * 6 },  // Bookshelf
+                { x: computer.x - 20, y: computer.y + 80, width: TILE_SIZE * 2.5, height: TILE_SIZE * 2 }, // Desk
+            ];
+        }
+
+        let collisionRects = updateCollisionRects();
 
         // ==================== Keyboard Input ====================
         const keys = {};
 
         window.addEventListener('keydown', (e) => {
             keys[e.key] = true;
-
-            // E key interaction
             if (e.key === 'e' || e.key === 'E') {
                 checkInteraction();
             }
@@ -506,305 +590,383 @@
             keys[e.key] = false;
         });
 
-        // ==================== Draw Improved Pixel Character ====================
+        // ==================== Draw Stardew Valley Style Character ====================
         function drawPlayer() {
-            const px = player.x - player.width/2;
-            const py = player.y - player.height/2;
+            const px = Math.floor(player.x);
+            const py = Math.floor(player.y);
+            const unit = 4; // Base unit for character
 
-            // Character color palette
-            const skinColor = '#8a9aaa';
-            const shirtColor = '#5a7a8a';
-            const pantsColor = '#3a4a5a';
-            const shoeColor = '#2a3a4a';
-
-            // Body (torso)
-            ctx.fillStyle = shirtColor;
-            ctx.fillRect(px + 6, py + 12, 12, 14);
-
-            // Pants
-            ctx.fillStyle = pantsColor;
-            ctx.fillRect(px + 6, py + 26, 5, 10);  // Left leg
-            ctx.fillRect(px + 13, py + 26, 5, 10); // Right leg
+            // Shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.beginPath();
+            ctx.ellipse(px, py + player.height/2 + 2, player.width/3, player.height/8, 0, 0, Math.PI * 2);
+            ctx.fill();
 
             // Shoes
-            ctx.fillStyle = shoeColor;
-            ctx.fillRect(px + 5, py + 36, 6, 4);   // Left shoe
-            ctx.fillRect(px + 13, py + 36, 6, 4);  // Right shoe
+            ctx.fillStyle = colors.shoes;
+            ctx.fillRect(px - unit*1.5, py + unit*5, unit*1.2, unit*1.5);
+            ctx.fillRect(px + unit*0.3, py + unit*5, unit*1.2, unit*1.5);
+
+            // Pants/Legs
+            ctx.fillStyle = colors.pants;
+            ctx.fillRect(px - unit*1.5, py + unit*2, unit*1.5, unit*3.5);
+            ctx.fillRect(px, py + unit*2, unit*1.5, unit*3.5);
+
+            // Shirt/Body
+            ctx.fillStyle = colors.shirt;
+            ctx.fillRect(px - unit*2, py - unit, unit*4, unit*3.5);
+
+            // Arms
+            ctx.fillStyle = colors.skin;
+            ctx.fillRect(px - unit*2.5, py, unit*1, unit*2.5);
+            ctx.fillRect(px + unit*1.5, py, unit*1, unit*2.5);
+
+            // Sleeves
+            ctx.fillStyle = colors.shirt;
+            ctx.fillRect(px - unit*2.5, py, unit*1, unit*1.2);
+            ctx.fillRect(px + unit*1.5, py, unit*1, unit*1.2);
 
             // Head
-            ctx.fillStyle = skinColor;
-            ctx.fillRect(px + 7, py + 2, 10, 10);
+            ctx.fillStyle = colors.skin;
+            ctx.fillRect(px - unit*1.5, py - unit*3.5, unit*3, unit*3);
+
+            // Hair
+            ctx.fillStyle = colors.hair;
+            ctx.fillRect(px - unit*1.5, py - unit*4, unit*3, unit*1.5);
 
             // Eyes
             ctx.fillStyle = '#2a2a2a';
-            ctx.fillRect(px + 9, py + 5, 2, 2);  // Left eye
-            ctx.fillRect(px + 13, py + 5, 2, 2); // Right eye
+            ctx.fillRect(px - unit, py - unit*2, unit*0.7, unit*0.7);
+            ctx.fillRect(px + unit*0.3, py - unit*2, unit*0.7, unit*0.7);
 
-            // Arms
-            ctx.fillStyle = skinColor;
-            ctx.fillRect(px + 3, py + 14, 3, 10); // Left arm
-            ctx.fillRect(px + 18, py + 14, 3, 10); // Right arm
-
-            // Shirt sleeves
-            ctx.fillStyle = shirtColor;
-            ctx.fillRect(px + 4, py + 14, 2, 6);  // Left sleeve
-            ctx.fillRect(px + 18, py + 14, 2, 6); // Right sleeve
+            // Mouth (small smile)
+            ctx.fillStyle = '#3a2a2a';
+            ctx.fillRect(px - unit*0.5, py - unit*0.8, unit, unit*0.4);
         }
 
-        // ==================== Draw Grandpa's Room ====================
+        // ==================== Draw Stardew Valley Style Room ====================
         function drawGrandpaRoom() {
-            // Floor
-            ctx.fillStyle = '#1a1a1a';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            const w = canvas.width;
+            const h = canvas.height;
 
-            // Floor tile grid
-            ctx.strokeStyle = '#151515';
-            ctx.lineWidth = 1;
-            for (let x = 0; x < canvas.width; x += 50) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
-            }
-            for (let y = 0; y < canvas.height; y += 50) {
+            // Wooden floor
+            ctx.fillStyle = colors.floor;
+            ctx.fillRect(0, 0, w, h);
+
+            // Floor planks
+            ctx.strokeStyle = colors.floorDark;
+            ctx.lineWidth = 2;
+            for (let y = 0; y < h; y += TILE_SIZE) {
                 ctx.beginPath();
                 ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
+                ctx.lineTo(w, y);
                 ctx.stroke();
             }
 
-            // Back wall
-            ctx.fillStyle = '#2a2a2a';
-            ctx.fillRect(0, 0, canvas.width, 80);
+            // Vertical wall
+            const wallHeight = TILE_SIZE * 3;
+            ctx.fillStyle = colors.wall;
+            ctx.fillRect(0, 0, w, wallHeight);
+
+            // Wall texture
+            ctx.fillStyle = colors.wallDark;
+            for (let x = 0; x < w; x += TILE_SIZE * 2) {
+                ctx.fillRect(x, 10, TILE_SIZE * 2 - 4, wallHeight - 20);
+            }
 
             // Window
-            ctx.fillStyle = '#3a4a5a';
-            ctx.fillRect(50, 15, 120, 50);
-            ctx.strokeStyle = '#4a5a6a';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(50, 15, 120, 50);
-            // Window cross
-            ctx.beginPath();
-            ctx.moveTo(110, 15);
-            ctx.lineTo(110, 65);
-            ctx.moveTo(50, 40);
-            ctx.lineTo(170, 40);
-            ctx.stroke();
+            drawWindow(120, 30);
 
             // Bookshelf
-            ctx.fillStyle = '#3a3a3a';
-            ctx.fillRect(50, 120, 100, 200);
-            // Bookshelf shadow
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            ctx.fillRect(55, 125, 90, 190);
-            // Shelves
-            ctx.strokeStyle = '#4a4a4a';
-            ctx.lineWidth = 2;
-            for (let i = 0; i < 4; i++) {
-                ctx.beginPath();
-                ctx.moveTo(50, 120 + i * 50);
-                ctx.lineTo(150, 120 + i * 50);
-                ctx.stroke();
-            }
-            // Books
-            const bookColors = ['#4a3a3a', '#3a4a3a', '#3a3a4a'];
-            for (let shelf = 0; shelf < 3; shelf++) {
-                for (let book = 0; book < 8; book++) {
-                    ctx.fillStyle = bookColors[(shelf + book) % 3];
-                    ctx.fillRect(55 + book * 11, 130 + shelf * 50, 9, 40);
-                }
-            }
+            drawBookshelf(50, 150);
 
-            // Desk with improved perspective
-            ctx.fillStyle = '#4a4a4a';
-            // Desk top
-            ctx.fillRect(590, 250, 170, 100);
-            // Desk top highlight
-            ctx.fillStyle = '#5a5a5a';
-            ctx.fillRect(595, 255, 160, 10);
-            // Desk shadow
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-            ctx.fillRect(595, 330, 160, 20);
-
-            // Desk legs with shadow
-            ctx.fillStyle = '#3a3a3a';
-            ctx.fillRect(600, 350, 30, 80);
-            ctx.fillRect(720, 350, 30, 80);
-            // Leg shadows
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.fillRect(605, 355, 20, 70);
-            ctx.fillRect(725, 355, 20, 70);
-
-            // Computer (improved with better perspective)
+            // Desk and computer
+            drawDesk();
             drawComputer();
 
-            // Carpet
-            ctx.fillStyle = '#2a3a3a';
-            ctx.fillRect(250, 380, 300, 180);
-            // Carpet pattern
-            ctx.strokeStyle = '#3a4a4a';
-            ctx.lineWidth = 5;
-            ctx.strokeRect(250, 380, 300, 180);
-            ctx.lineWidth = 2;
-            ctx.strokeRect(260, 390, 280, 160);
+            // Decorative plants
+            drawPlant(w - 100, h - 150);
+            drawPlant(200, h - 180);
+
+            // Rug
+            drawRug(w/2 - 150, h - 250, 300, 200);
         }
 
-        // ==================== Draw Computer (Improved) ====================
+        function drawWindow(x, y) {
+            const size = TILE_SIZE * 3;
+            // Window frame
+            ctx.fillStyle = colors.woodDark;
+            ctx.fillRect(x - 5, y - 5, size + 10, size + 10);
+
+            // Glass panes (with sky gradient)
+            const gradient = ctx.createLinearGradient(x, y, x, y + size);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(1, '#B0E0E6');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, y, size, size);
+
+            // Window cross
+            ctx.fillStyle = colors.wood;
+            ctx.fillRect(x + size/2 - 3, y, 6, size);
+            ctx.fillRect(x, y + size/2 - 3, size, 6);
+
+            // Shine effect
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fillRect(x + 5, y + 5, size/3, size/2);
+        }
+
+        function drawBookshelf(x, y) {
+            const w = TILE_SIZE * 3;
+            const h = TILE_SIZE * 6;
+
+            // Shelf body
+            ctx.fillStyle = colors.furniture;
+            ctx.fillRect(x, y, w, h);
+
+            // Shelves
+            ctx.fillStyle = colors.wood;
+            for (let i = 0; i <= 4; i++) {
+                ctx.fillRect(x, y + i * (h/4), w, 6);
+            }
+
+            // Books
+            const bookColors = [colors.book1, colors.book2, colors.book3];
+            for (let shelf = 0; shelf < 4; shelf++) {
+                for (let book = 0; book < 6; book++) {
+                    ctx.fillStyle = bookColors[(shelf + book) % 3];
+                    const bx = x + 8 + book * (w/6 - 2);
+                    const by = y + 10 + shelf * (h/4);
+                    const bh = h/4 - 18;
+                    ctx.fillRect(bx, by, w/6 - 4, bh);
+
+                    // Book spine detail
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                    ctx.fillRect(bx + 2, by + 2, 2, bh - 4);
+                }
+            }
+        }
+
+        function drawDesk() {
+            const x = computer.x - 20;
+            const y = computer.y + 80;
+            const w = TILE_SIZE * 2.5;
+            const h = TILE_SIZE * 2;
+
+            // Desk top
+            ctx.fillStyle = colors.furniture;
+            ctx.fillRect(x, y, w, h * 0.4);
+
+            // Desk top highlight
+            ctx.fillStyle = colors.accent;
+            ctx.fillRect(x + 5, y + 5, w - 10, 8);
+
+            // Desk legs
+            ctx.fillStyle = colors.furnitureDark;
+            ctx.fillRect(x + 10, y + h * 0.4, 12, h * 0.6);
+            ctx.fillRect(x + w - 22, y + h * 0.4, 12, h * 0.6);
+        }
+
         function drawComputer() {
             const cx = computer.x;
             const cy = computer.y;
+            const cw = computer.width;
+            const ch = computer.height;
 
-            // Monitor base/stand
-            ctx.fillStyle = '#3a3a3a';
-            ctx.fillRect(cx + 20, cy + 40, 20, 8);
-            ctx.fillRect(cx + 24, cy + 35, 12, 5);
+            // Monitor stand
+            ctx.fillStyle = colors.furnitureDark;
+            ctx.fillRect(cx + cw/2 - 8, cy + ch - 15, 16, 15);
+            ctx.fillRect(cx + cw/2 - 12, cy + ch - 18, 24, 6);
 
-            // Monitor
-            ctx.fillStyle = '#4a5a6a';
-            ctx.fillRect(cx, cy, computer.width, 40);
-
-            // Monitor shadow/depth
-            ctx.fillStyle = '#2a3a4a';
-            ctx.fillRect(cx + 2, cy + 2, computer.width - 4, 36);
+            // Monitor body
+            ctx.fillStyle = colors.furniture;
+            ctx.fillRect(cx, cy, cw, ch - 18);
 
             // Screen
-            ctx.fillStyle = '#1a2a3a';
-            ctx.fillRect(cx + 5, cy + 5, computer.width - 10, 30);
+            const isNear = isNearComputer();
+            ctx.fillStyle = isNear ? colors.screenOn : colors.screenOff;
+            ctx.fillRect(cx + 6, cy + 6, cw - 12, ch - 24);
 
-            // Screen glow when player nearby
-            if (isNearComputer()) {
-                ctx.fillStyle = 'rgba(90, 122, 138, 0.4)';
-                ctx.fillRect(cx + 5, cy + 5, computer.width - 10, 30);
+            // Screen glow
+            if (isNear) {
+                ctx.fillStyle = colors.screenGlow;
+                const time = Date.now() / 1000;
+                const pulse = Math.sin(time * 2) * 0.3 + 0.7;
+                ctx.globalAlpha = pulse * 0.4;
+                ctx.fillRect(cx + 6, cy + 6, cw - 12, ch - 24);
+                ctx.globalAlpha = 1;
 
-                // Animated scanline effect
-                const scanY = (Date.now() % 2000) / 2000 * 30;
-                ctx.fillStyle = 'rgba(120, 160, 180, 0.3)';
-                ctx.fillRect(cx + 5, cy + 5 + scanY, computer.width - 10, 2);
+                // Scanline
+                const scanY = (Date.now() % 2000) / 2000 * (ch - 24);
+                ctx.fillStyle = 'rgba(200, 220, 255, 0.3)';
+                ctx.fillRect(cx + 6, cy + 6 + scanY, cw - 12, 3);
             }
 
-            // Screen text/indicator
-            ctx.fillStyle = '#5a7a8a';
-            ctx.fillRect(cx + 10, cy + 10, 3, 3);
-            ctx.fillRect(cx + 15, cy + 10, 15, 2);
-            ctx.fillRect(cx + 10, cy + 15, 8, 2);
-
-            // Keyboard on desk
-            ctx.fillStyle = '#2a2a2a';
-            ctx.fillRect(cx - 5, cy + 50, computer.width + 10, 12);
-            // Keyboard keys
-            ctx.fillStyle = '#1a1a1a';
-            for (let i = 0; i < 10; i++) {
-                for (let j = 0; j < 2; j++) {
-                    ctx.fillRect(cx - 3 + i * 6, cy + 52 + j * 4, 4, 3);
+            // Screen detail (text lines)
+            if (isNear) {
+                ctx.fillStyle = colors.accent;
+                for (let i = 0; i < 3; i++) {
+                    ctx.fillRect(cx + 12, cy + 15 + i * 8, cw - 24, 3);
                 }
             }
         }
 
-        // ==================== Draw Cryptopolis Scene ====================
+        function drawPlant(x, y) {
+            // Pot
+            ctx.fillStyle = colors.furnitureDark;
+            ctx.fillRect(x, y + 30, 30, 25);
+            ctx.fillRect(x - 3, y + 55, 36, 8);
+
+            // Plant leaves
+            ctx.fillStyle = colors.plant;
+            ctx.beginPath();
+            ctx.ellipse(x + 15, y + 20, 12, 18, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(x + 15, y + 20, 12, 18, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(x + 15, y + 15, 10, 15, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Leaf details
+            ctx.fillStyle = colors.plantDark;
+            ctx.beginPath();
+            ctx.ellipse(x + 15, y + 18, 5, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawRug(x, y, w, h) {
+            // Rug base
+            ctx.fillStyle = '#9a6a5a';
+            ctx.fillRect(x, y, w, h);
+
+            // Border
+            ctx.strokeStyle = '#7a4a3a';
+            ctx.lineWidth = 8;
+            ctx.strokeRect(x + 10, y + 10, w - 20, h - 20);
+
+            // Pattern
+            ctx.fillStyle = '#8a5a4a';
+            const patternSize = 20;
+            for (let py = y + 20; py < y + h - 20; py += patternSize) {
+                for (let px = x + 20; px < x + w - 20; px += patternSize) {
+                    if ((px + py) % (patternSize * 2) === 0) {
+                        ctx.fillRect(px, py, patternSize - 4, patternSize - 4);
+                    }
+                }
+            }
+        }
+
+        // ==================== Draw Cryptopolis ====================
         function drawCryptopolis() {
-            // Sky gradient
-            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, '#0a1a2a');
-            gradient.addColorStop(1, '#1a2a3a');
+            const w = canvas.width;
+            const h = canvas.height;
+
+            // Cyberpunk sky
+            const gradient = ctx.createLinearGradient(0, 0, 0, h);
+            gradient.addColorStop(0, '#1a2a4a');
+            gradient.addColorStop(1, '#2a3a5a');
             ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, w, h);
 
             // Stars
-            ctx.fillStyle = '#6a7a8a';
-            for (let i = 0; i < 50; i++) {
-                const x = (i * 123) % canvas.width;
-                const y = (i * 456) % (canvas.height * 0.6);
+            ctx.fillStyle = '#aabbcc';
+            for (let i = 0; i < 100; i++) {
+                const x = (i * 1237) % w;
+                const y = (i * 4567) % (h * 0.6);
                 const size = (i % 3) + 1;
                 ctx.fillRect(x, y, size, size);
             }
 
             // Buildings
-            const buildings = [
-                { x: 50, y: 350, width: 80, height: 250 },
-                { x: 150, y: 300, width: 100, height: 300 },
-                { x: 280, y: 380, width: 70, height: 220 },
-                { x: 370, y: 320, width: 90, height: 280 },
-                { x: 480, y: 360, width: 85, height: 240 },
-                { x: 590, y: 300, width: 95, height: 300 },
-                { x: 700, y: 340, width: 80, height: 260 }
-            ];
+            const buildingCount = Math.floor(w / 120) + 2;
+            for (let i = 0; i < buildingCount; i++) {
+                const bx = i * (w / buildingCount);
+                const bw = w / buildingCount - 20;
+                const bh = 200 + (i % 3) * 100;
+                const by = h - bh - 100;
 
-            buildings.forEach((building, index) => {
-                // Building body
-                ctx.fillStyle = index % 2 === 0 ? '#2a3a4a' : '#1a2a3a';
-                ctx.fillRect(building.x, building.y, building.width, building.height);
-
-                // Building highlight
-                ctx.fillStyle = index % 2 === 0 ? '#3a4a5a' : '#2a3a4a';
-                ctx.fillRect(building.x, building.y, building.width, 5);
+                // Building
+                ctx.fillStyle = i % 2 === 0 ? '#3a4a5a' : '#2a3a4a';
+                ctx.fillRect(bx, by, bw, bh);
 
                 // Windows
-                ctx.fillStyle = '#4a5a6a';
-                for (let row = 0; row < Math.floor(building.height / 30); row++) {
-                    for (let col = 0; col < Math.floor(building.width / 20); col++) {
+                ctx.fillStyle = '#6a7a8a';
+                for (let row = 0; row < Math.floor(bh / 40); row++) {
+                    for (let col = 0; col < Math.floor(bw / 30); col++) {
                         if (Math.random() > 0.3) {
-                            ctx.fillRect(
-                                building.x + 5 + col * 20,
-                                building.y + 10 + row * 30,
-                                10, 15
-                            );
+                            ctx.fillRect(bx + 10 + col * 30, by + 20 + row * 40, 15, 25);
                         }
                     }
                 }
-            });
+            }
 
             // Ground
-            ctx.fillStyle = '#0a0a0a';
-            ctx.fillRect(0, 500, canvas.width, 100);
+            ctx.fillStyle = '#1a1a2a';
+            ctx.fillRect(0, h - 100, w, 100);
 
-            // Ground grid
-            ctx.strokeStyle = '#2a3a4a';
-            ctx.lineWidth = 1;
-            for (let x = 0; x < canvas.width; x += 40) {
+            // Grid
+            ctx.strokeStyle = '#3a3a4a';
+            ctx.lineWidth = 2;
+            for (let x = 0; x < w; x += 50) {
                 ctx.beginPath();
-                ctx.moveTo(x, 500);
-                ctx.lineTo(x, 600);
+                ctx.moveTo(x, h - 100);
+                ctx.lineTo(x, h);
                 ctx.stroke();
             }
 
             // Welcome text
-            ctx.fillStyle = '#5a7a8a';
-            ctx.font = '32px "Courier New"';
+            ctx.fillStyle = colors.accent;
+            ctx.font = `bold ${Math.floor(TILE_SIZE * 1.2)}px "Courier New"`;
             ctx.textAlign = 'center';
-            ctx.fillText('WELCOME TO CRYPTOPOLIS', canvas.width / 2, 150);
+            ctx.fillText('WELCOME TO CRYPTOPOLIS', w / 2, h / 3);
 
-            ctx.fillStyle = '#4a5a6a';
-            ctx.font = '16px "Courier New"';
-            ctx.fillText('The gateway to the digital world has opened', canvas.width / 2, 180);
+            ctx.fillStyle = colors.accentDark;
+            ctx.font = `${Math.floor(TILE_SIZE * 0.6)}px "Courier New"`;
+            ctx.fillText('The gateway to the digital world has opened', w / 2, h / 3 + TILE_SIZE);
         }
 
-        // ==================== Update Player Position ====================
+        // ==================== Update Player ====================
         function updatePlayer() {
             const prevX = player.x;
             const prevY = player.y;
+            let moving = false;
 
             if (keys['ArrowUp'] || keys['w'] || keys['W']) {
                 player.y -= player.speed;
                 player.direction = 'up';
+                moving = true;
             }
             if (keys['ArrowDown'] || keys['s'] || keys['S']) {
                 player.y += player.speed;
                 player.direction = 'down';
+                moving = true;
             }
             if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
                 player.x -= player.speed;
                 player.direction = 'left';
+                moving = true;
             }
             if (keys['ArrowRight'] || keys['d'] || keys['D']) {
                 player.x += player.speed;
                 player.direction = 'right';
+                moving = true;
             }
 
-            // Boundary detection
-            player.x = Math.max(player.width/2, Math.min(canvas.width - player.width/2, player.x));
-            player.y = Math.max(100, Math.min(canvas.height - player.height/2, player.y));
+            // Animation
+            if (moving) {
+                player.animTimer++;
+                if (player.animTimer > 10) {
+                    player.animFrame = (player.animFrame + 1) % 2;
+                    player.animTimer = 0;
+                }
+            }
 
-            // Collision detection with room objects
+            // Boundaries
+            player.x = Math.max(player.width, Math.min(canvas.width - player.width, player.x));
+            player.y = Math.max(150, Math.min(canvas.height - player.height, player.y));
+
+            // Collision
             if (currentState === GameState.GRANDPA_ROOM) {
                 const playerRect = {
                     x: player.x - player.width/2,
@@ -823,7 +985,6 @@
             }
         }
 
-        // ==================== Collision Detection ====================
         function checkCollision(rect1, rect2) {
             return rect1.x < rect2.x + rect2.width &&
                    rect1.x + rect1.width > rect2.x &&
@@ -831,7 +992,6 @@
                    rect1.y + rect1.height > rect2.y;
         }
 
-        // ==================== Check if Near Computer ====================
         function isNearComputer() {
             const dx = player.x - (computer.x + computer.width/2);
             const dy = player.y - (computer.y + computer.height/2);
@@ -839,14 +999,12 @@
             return distance < computer.interactRadius;
         }
 
-        // ==================== Check Interaction ====================
         function checkInteraction() {
             if (currentState === GameState.GRANDPA_ROOM && isNearComputer()) {
                 openBIP39Modal();
             }
         }
 
-        // ==================== Update Interaction Prompt ====================
         function updateInteractionPrompt() {
             const prompt = document.getElementById('interaction-prompt');
             if (currentState === GameState.GRANDPA_ROOM && isNearComputer()) {
@@ -856,9 +1014,10 @@
             }
         }
 
-        // ==================== BIP39 Modal Functions ====================
+        // ==================== BIP39 Modal ====================
         function openBIP39Modal() {
             document.getElementById('bip39-modal').classList.add('active');
+            scrollToElement('step1-select');
         }
 
         function closeBIP39Modal() {
@@ -867,7 +1026,18 @@
             }
         }
 
-        // ==================== BIP39 Authentication Logic ====================
+        // Auto-scroll helper
+        function scrollToElement(elementId) {
+            const modal = document.getElementById('bip39-modal');
+            const element = document.getElementById(elementId);
+            if (element && modal) {
+                setTimeout(() => {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+        }
+
+        // ==================== BIP39 Authentication ====================
         let currentPrivateKey = null;
         let currentChallenge = null;
         let currentSignature = null;
@@ -919,7 +1089,7 @@
                 validationDiv.style.color = '#7a9a7a';
             } else if (validCount > 0) {
                 validationDiv.textContent = `${validCount}/6 words validated`;
-                validationDiv.style.color = '#7a7a7a';
+                validationDiv.style.color = '#9a8a7a';
             } else {
                 validationDiv.textContent = '';
             }
@@ -932,6 +1102,7 @@
                 input.value = word;
                 validateWord(input);
             });
+            scrollToElement('step1-manual');
         }
 
         async function deriveKey() {
@@ -961,6 +1132,7 @@
 
                 resetSections();
                 document.getElementById('keySection').classList.add('show');
+                scrollToElement('keySection');
 
                 await animateDerivation();
 
@@ -1013,6 +1185,8 @@
             document.getElementById('authSection').classList.add('show');
             document.getElementById('authStatus').innerHTML =
                 '<div class="status-message status-info">Challenge issued. Sign to prove ownership.</div>';
+
+            scrollToElement('authSection');
         }
 
         async function signChallenge() {
@@ -1036,6 +1210,8 @@
 
                 btn.textContent = 'Sign Challenge';
                 btn.disabled = false;
+
+                scrollToElement('signatureSection');
 
             } catch (error) {
                 alert('Error signing: ' + error.message);
@@ -1066,7 +1242,8 @@
                         document.getElementById('authSection').style.display = 'none';
                         document.getElementById('keySection').style.display = 'none';
 
-                        // Trigger transition after 2 seconds
+                        scrollToElement('accessSection');
+
                         setTimeout(() => {
                             bip39Authenticated = true;
                             transitionToCryptopolis();
@@ -1091,7 +1268,7 @@
 
             const steps = ['step1', 'step2', 'step3', 'step4'];
             steps.forEach(step => {
-                document.getElementById(step).style.color = '#5a5a5a';
+                document.getElementById(step).style.color = '#7a7a7a';
             });
         }
 
@@ -1101,29 +1278,22 @@
             const sceneName = document.getElementById('scene-name');
             const modal = document.getElementById('bip39-modal');
 
-            // Fade out
             overlay.classList.add('active');
 
             setTimeout(() => {
-                // Close modal
                 modal.classList.remove('active');
-
-                // Switch scene
                 currentState = GameState.CRYPTOPOLIS;
                 sceneName.textContent = 'Cryptopolis';
+                player.x = canvas.width / 2;
+                player.y = canvas.height - 150;
 
-                // Reset player position
-                player.x = 400;
-                player.y = 520;
-
-                // Fade in
                 setTimeout(() => {
                     overlay.classList.remove('active');
                 }, 500);
             }, 1500);
         }
 
-        // ==================== Main Game Loop ====================
+        // ==================== Game Loop ====================
         function gameLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -1150,8 +1320,12 @@
             }, 500);
         });
 
-        console.log('🎮 Cypherpunk Legacy - Game Started');
-        console.log('📝 Use arrow keys to move, press E to interact');
+        window.addEventListener('resize', () => {
+            collisionRects = updateCollisionRects();
+        });
+
+        console.log('🎮 Cypherpunk Legacy - Game Started (Stardew Valley Style)');
+        console.log('📝 Use arrow keys or WASD to move, press E to interact');
 
         gameLoop();
     </script>
