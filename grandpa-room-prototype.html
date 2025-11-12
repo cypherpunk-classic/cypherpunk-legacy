@@ -953,13 +953,13 @@
                     // Open letter modal
                     openLetter();
                 } else if (isNearComputer() && hasReadLetter) {
-                    // Open encryption-demo.html in new tab
-                    window.open('encryption-demo.html', '_blank');
+                    // Open bip39-game-final.html for authentication
+                    window.open('bip39-game-final.html', '_blank');
                 }
             } else if (currentState === GameState.CRYPTOPOLIS_MENU) {
-                // Check which button was clicked (simplified - just Continue for now)
+                // Press E in Cryptopolis menu opens encryption-demo
                 if (gameStarted) {
-                    transitionToGameWorld();
+                    window.open('encryption-demo.html', '_blank');
                 }
             }
         }
@@ -985,6 +985,9 @@
                 } else {
                     prompt.style.display = 'none';
                 }
+            } else if (currentState === GameState.CRYPTOPOLIS_MENU && gameStarted) {
+                prompt.textContent = 'Press E or click Continue to enter Encryption Demo';
+                prompt.style.display = 'block';
             } else {
                 prompt.style.display = 'none';
             }
@@ -1042,7 +1045,8 @@
 
                 if (x >= buttonX && x <= buttonX + buttonW &&
                     y >= buttonY && y <= buttonY + buttonH) {
-                    transitionToGameWorld();
+                    // Continue button opens encryption-demo.html
+                    window.open('encryption-demo.html', '_blank');
                 }
             }
         });
@@ -1058,6 +1062,7 @@
                 updateInteractionPrompt();
             } else if (currentState === GameState.CRYPTOPOLIS_MENU) {
                 drawCryptopolisMenu();
+                updateInteractionPrompt();
             } else if (currentState === GameState.GAME_WORLD) {
                 drawGameWorld();
                 updatePlayer();
@@ -1084,7 +1089,9 @@
 
         console.log('🎮 Cypherpunk Legacy - Game Started');
         console.log('📝 Use WASD or arrow keys to move');
-        console.log('🔑 Press E in front of computer to access encryption demo');
+        console.log('📨 Press E at drawer to read letter');
+        console.log('💻 Press E at computer to access BIP39 authentication');
+        console.log('🏙️ In Cryptopolis menu: Press E or click Continue to enter Encryption Demo');
         console.log('🎯 Press C to skip to Cryptopolis menu (testing)');
 
         gameLoop();
