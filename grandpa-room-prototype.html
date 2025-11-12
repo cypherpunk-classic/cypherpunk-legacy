@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cypherpunk Legacy - 爺爺的房間</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bip39/3.0.4/index.js"></script>
+    <title>Cypherpunk Legacy - Grandpa's Room</title>
     <style>
         * {
             margin: 0;
@@ -60,58 +59,87 @@
             0%, 100% { opacity: 0.8; }
             50% { opacity: 1; }
         }
-        #mnemonic-modal {
+
+        /* BIP39 Modal Styles - Embedded from bip39-game-final.html */
+        #bip39-modal {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.95);
+            background-color: rgba(0, 0, 0, 0.98);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 100;
+            overflow-y: auto;
         }
-        .modal-content {
-            background-color: #151515;
-            border: 2px solid #3a3a3a;
-            padding: 40px;
-            border-radius: 5px;
-            max-width: 600px;
-            width: 90%;
-        }
-        .modal-title {
-            color: #8a8a8a;
-            font-size: 20px;
-            margin-bottom: 20px;
-            text-align: center;
-            letter-spacing: 2px;
-        }
-        .modal-description {
-            color: #7a7a7a;
-            font-size: 13px;
-            margin-bottom: 25px;
-            line-height: 1.6;
-            text-align: center;
-        }
-        .word-inputs {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        .word-input-container {
+        #bip39-modal.active {
             display: flex;
-            flex-direction: column;
-            align-items: center;
         }
-        .word-number {
+        .bip39-container {
+            background-color: #0a0a0a;
+            max-width: 900px;
+            width: 95%;
+            max-height: 95vh;
+            overflow-y: auto;
+            padding: 20px;
+            border: 2px solid #3a3a3a;
+            border-radius: 5px;
+        }
+        .bip39-container h1 {
+            text-align: center;
+            color: #8a8a8a;
+            letter-spacing: 2px;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .terminal {
+            background-color: #151515;
+            border: 1px solid #3a3a3a;
+            padding: 30px;
+            border-radius: 5px;
+        }
+        .terminal-header {
             color: #6a6a6a;
-            font-size: 11px;
+            font-size: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #9a9a9a;
+        }
+        .phrase-option {
+            background-color: #0a0a0a;
+            border: 1px solid #3a3a3a;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .phrase-option:hover {
+            border-color: #5a7a8a;
+            background-color: #1a1a1a;
+        }
+        .phrase-option .phrase-text {
+            color: #9a9a9a;
+            font-size: 14px;
             margin-bottom: 5px;
         }
+        .phrase-option .phrase-meaning {
+            color: #6a6a6a;
+            font-size: 12px;
+            font-style: italic;
+        }
         input.word-input {
-            width: 100%;
             padding: 10px;
             background-color: #0a0a0a;
             color: #b0b0b0;
@@ -125,7 +153,6 @@
         input.word-input:focus {
             outline: none;
             border-color: #5a7a8a;
-            background-color: #0f0f0f;
         }
         input.word-input.valid {
             border-color: #3a5a3a;
@@ -134,11 +161,6 @@
         input.word-input.invalid {
             border-color: #5a3a3a;
             background-color: #1a0f0f;
-        }
-        .modal-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
         }
         button {
             background-color: #2a3a4a;
@@ -149,6 +171,8 @@
             cursor: pointer;
             font-family: 'Courier New', monospace;
             font-size: 14px;
+            margin-top: 10px;
+            margin-right: 10px;
             transition: all 0.2s;
         }
         button:hover:not(:disabled) {
@@ -159,6 +183,88 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+        .key-display {
+            word-break: break-all;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #000;
+            border-radius: 3px;
+            font-size: 11px;
+            border: 1px solid #2a2a2a;
+            color: #7a7a7a;
+            line-height: 1.6;
+        }
+        .section {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #0a0a0a;
+            border: 1px solid #3a3a3a;
+            border-radius: 3px;
+            display: none;
+        }
+        .section.show {
+            display: block;
+        }
+        .section-title {
+            color: #9a9a9a;
+            font-size: 14px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .status-message {
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+        .status-success {
+            background-color: #1a2a1a;
+            border: 1px solid #3a5a3a;
+            color: #9a9a9a;
+        }
+        .status-info {
+            background-color: #1a1a2a;
+            border: 1px solid #3a3a5a;
+            color: #9a9a9a;
+        }
+        .access-granted {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #1a2a3a 0%, #2a3a4a 100%);
+            border: 2px solid #5a7a8a;
+            border-radius: 5px;
+        }
+        .access-granted h2 {
+            color: #b0b0b0;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .access-granted p {
+            color: #8a8a8a;
+            line-height: 1.8;
+            margin: 10px 0;
+        }
+        .note {
+            font-size: 12px;
+            color: #6a6a6a;
+            line-height: 1.6;
+            margin-top: 15px;
+        }
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #6a6a6a;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+        .close-modal:hover {
+            color: #9a9a9a;
+        }
+
         #transition-overlay {
             position: absolute;
             top: 0;
@@ -174,31 +280,12 @@
         #transition-overlay.active {
             opacity: 1;
         }
-        .hint {
-            color: #5a6a7a;
-            font-size: 11px;
-            text-align: center;
-            margin-top: 15px;
-        }
         #game-info {
             margin-top: 20px;
             text-align: center;
             color: #7a7a7a;
             font-size: 13px;
             max-width: 800px;
-        }
-        #status-message {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(20, 20, 20, 0.95);
-            border: 1px solid #3a3a3a;
-            padding: 10px 20px;
-            border-radius: 3px;
-            display: none;
-            color: #9a9a9a;
-            font-size: 12px;
         }
     </style>
 </head>
@@ -207,58 +294,117 @@
         <canvas id="game-canvas" width="800" height="600"></canvas>
 
         <div id="ui-overlay">
-            <div>場景: <span id="scene-name">爺爺的房間</span></div>
-            <div>使用方向鍵移動</div>
+            <div>Scene: <span id="scene-name">Grandpa's Room</span></div>
+            <div>Use arrow keys to move</div>
         </div>
 
         <div id="interaction-prompt">
-            按 E 鍵與電腦互動
+            Press E to interact with computer
         </div>
 
-        <div id="status-message"></div>
+        <!-- BIP39 Authentication Modal -->
+        <div id="bip39-modal">
+            <div class="bip39-container">
+                <button class="close-modal" onclick="closeBIP39Modal()">×</button>
 
-        <div id="mnemonic-modal">
-            <div class="modal-content">
-                <div class="modal-title">爺爺的電腦 - 訪問終端</div>
-                <div class="modal-description">
-                    這台電腦需要 6 個助記詞來解鎖。<br>
-                    爺爺曾告訴你，這些詞彙隱藏著進入數位世界的鑰匙...
-                </div>
+                <h1>CRYPTOPOLIS ACCESS TERMINAL</h1>
 
-                <div class="word-inputs">
-                    <div class="word-input-container">
-                        <div class="word-number">詞彙 #1</div>
-                        <input type="text" class="word-input" data-index="0">
+                <div class="terminal">
+                    <div class="terminal-header">
+                        SYSTEM: GRANDFATHER'S LEGACY v1.0<br>
+                        STATUS: <span id="systemStatus">LOADING...</span>
                     </div>
-                    <div class="word-input-container">
-                        <div class="word-number">詞彙 #2</div>
-                        <input type="text" class="word-input" data-index="1">
-                    </div>
-                    <div class="word-input-container">
-                        <div class="word-number">詞彙 #3</div>
-                        <input type="text" class="word-input" data-index="2">
-                    </div>
-                    <div class="word-input-container">
-                        <div class="word-number">詞彙 #4</div>
-                        <input type="text" class="word-input" data-index="3">
-                    </div>
-                    <div class="word-input-container">
-                        <div class="word-number">詞彙 #5</div>
-                        <input type="text" class="word-input" data-index="4">
-                    </div>
-                    <div class="word-input-container">
-                        <div class="word-number">詞彙 #6</div>
-                        <input type="text" class="word-input" data-index="5">
-                    </div>
-                </div>
 
-                <div class="modal-buttons">
-                    <button id="submit-mnemonic">解鎖</button>
-                    <button id="cancel-mnemonic">取消</button>
-                </div>
+                    <!-- Step 1: Enter or Select Passphrase -->
+                    <div class="input-group">
+                        <label>Grandfather left three possible passphrases. Choose one:</label>
 
-                <div class="hint">
-                    提示: 試試 "digital freedom privacy secure network future"
+                        <div class="phrase-option" onclick="selectPhrase('secret code protect future youth always')">
+                            <div class="phrase-text">secret code protect future youth always</div>
+                            <div class="phrase-meaning">"Guard the code for future generations"</div>
+                        </div>
+
+                        <div class="phrase-option" onclick="selectPhrase('trust verify never betray private truth')">
+                            <div class="phrase-text">trust verify never betray private truth</div>
+                            <div class="phrase-meaning">"Verify but preserve privacy"</div>
+                        </div>
+
+                        <div class="phrase-option" onclick="selectPhrase('silent network whisper rebel power voice')">
+                            <div class="phrase-text">silent network whisper rebel power voice</div>
+                            <div class="phrase-meaning">"The power of anonymous communication"</div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Or manually enter the 6 words (one at a time):</label>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
+                            <input type="text" id="word1" class="word-input" placeholder="Word 1" maxlength="20">
+                            <input type="text" id="word2" class="word-input" placeholder="Word 2" maxlength="20">
+                            <input type="text" id="word3" class="word-input" placeholder="Word 3" maxlength="20">
+                            <input type="text" id="word4" class="word-input" placeholder="Word 4" maxlength="20">
+                            <input type="text" id="word5" class="word-input" placeholder="Word 5" maxlength="20">
+                            <input type="text" id="word6" class="word-input" placeholder="Word 6" maxlength="20">
+                        </div>
+                        <div id="wordValidation" style="margin-top: 10px; font-size: 12px; color: #6a6a6a;"></div>
+                        <div class="note">
+                            Game Mode: Using 6 words for easier gameplay.<br>
+                            All words must be from the BIP39 standard wordlist.<br>
+                            Type carefully - each word will be validated in real-time.
+                        </div>
+                    </div>
+
+                    <button onclick="deriveKey()" style="width: 100%;">Derive Access Key</button>
+
+                    <!-- Step 2: Show Derived Key -->
+                    <div id="keySection" class="section">
+                        <div class="section-title">ACCESS KEY DERIVED</div>
+
+                        <div id="derivationProcess" style="margin-bottom: 20px;">
+                            <p style="color: #7a7a7a; font-size: 12px;">Processing passphrase through BIP39 derivation...</p>
+                            <div style="background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 3px; padding: 10px; margin: 10px 0;">
+                                <div id="step1" style="color: #5a5a5a; margin: 5px 0;">→ Validating words against BIP39 wordlist</div>
+                                <div id="step2" style="color: #5a5a5a; margin: 5px 0;">→ Converting to entropy</div>
+                                <div id="step3" style="color: #5a5a5a; margin: 5px 0;">→ Applying PBKDF2 derivation function</div>
+                                <div id="step4" style="color: #5a5a5a; margin: 5px 0;">→ Extracting private key from seed</div>
+                            </div>
+                        </div>
+
+                        <p>Your passphrase has been processed. Private key generated:</p>
+                        <div id="privateKeyDisplay" class="key-display"></div>
+
+                        <p style="margin-top: 20px;">This key is your digital identity in Cryptopolis. It must be verified to gain access.</p>
+                        <button id="requestAccessBtn" onclick="requestAccess()">Request Access to Cryptopolis</button>
+                    </div>
+
+                    <!-- Step 3: Challenge-Response Authentication -->
+                    <div id="authSection" class="section">
+                        <div class="section-title">AUTHENTICATION PROTOCOL</div>
+                        <div id="authStatus"></div>
+
+                        <p>The system has issued a challenge. Sign it with your private key to prove ownership:</p>
+                        <div id="challengeDisplay" class="key-display"></div>
+
+                        <button id="signChallengeBtn" onclick="signChallenge()">Sign Challenge</button>
+
+                        <div id="signatureSection" style="display: none; margin-top: 20px;">
+                            <p>Your signature:</p>
+                            <div id="signatureDisplay" class="key-display"></div>
+                            <button onclick="verifyAndEnter()">Submit for Verification</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Access Granted -->
+                    <div id="accessSection" class="section">
+                        <div class="access-granted">
+                            <h2>ACCESS GRANTED</h2>
+                            <p>Authentication successful.</p>
+                            <p>Welcome to Cryptopolis.</p>
+                            <p style="margin-top: 30px; font-size: 12px;">
+                                Grandfather's digital world awaits...<br>
+                                [Transitioning to Cryptopolis]
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -267,50 +413,90 @@
     </div>
 
     <div id="game-info">
-        密碼朋克傳承 - 原型演示 | 探索爺爺的房間，找到通往 Cryptopolis 的入口
+        Cypherpunk Legacy - Prototype Demo | Explore Grandpa's room and find the gateway to Cryptopolis
     </div>
 
+    <!-- Load BIP39 library -->
+    <script type="module">
+        import * as bip39Module from 'https://esm.sh/bip39@3.1.0';
+        window.bip39 = bip39Module;
+
+        // Simple crypto utilities
+        window.crypto_utils = {
+            simpleSign: async function(privateKey, message) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(privateKey + message);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            },
+
+            simpleVerify: async function(privateKey, message, signature) {
+                const expectedSignature = await this.simpleSign(privateKey, message);
+                return expectedSignature === signature;
+            }
+        };
+
+        // Mark system as ready
+        window.systemReady = true;
+        const statusEl = document.getElementById('systemStatus');
+        if (statusEl) {
+            statusEl.textContent = 'AWAITING AUTHENTICATION';
+            statusEl.style.color = '#9a9a9a';
+        }
+
+        console.log('Cryptopolis Access Terminal initialized');
+        console.log('BIP39 library loaded successfully');
+    </script>
+
     <script>
-        // ==================== 遊戲狀態管理 ====================
+        // ==================== Game State Management ====================
         const GameState = {
             GRANDPA_ROOM: 'grandpa_room',
             CRYPTOPOLIS: 'cryptopolis'
         };
 
         let currentState = GameState.GRANDPA_ROOM;
+        let bip39Authenticated = false;
 
-        // ==================== 畫布設置 ====================
+        // ==================== Canvas Setup ====================
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
 
-        // ==================== 角色系統 ====================
+        // ==================== Player Character ====================
         const player = {
             x: 400,
-            y: 300,
-            width: 32,
-            height: 32,
+            y: 400,
+            width: 24,
+            height: 40,
             speed: 3,
-            color: '#5a7a8a',
             direction: 'down'
         };
 
-        // ==================== 互動物件 ====================
+        // ==================== Interactive Objects ====================
         const computer = {
             x: 650,
-            y: 200,
-            width: 64,
-            height: 64,
-            color: '#3a5a6a',
-            interactRadius: 80
+            y: 220,
+            width: 60,
+            height: 50,
+            interactRadius: 70
         };
 
-        // ==================== 鍵盤輸入處理 ====================
+        // Collision rectangles for room objects
+        const collisionRects = [
+            { x: 50, y: 120, width: 100, height: 200 },  // Bookshelf
+            { x: 590, y: 250, width: 170, height: 100 }, // Desk
+            { x: 600, y: 350, width: 30, height: 80 },   // Desk leg 1
+            { x: 720, y: 350, width: 30, height: 80 }    // Desk leg 2
+        ];
+
+        // ==================== Keyboard Input ====================
         const keys = {};
 
         window.addEventListener('keydown', (e) => {
             keys[e.key] = true;
 
-            // E 鍵互動
+            // E key interaction
             if (e.key === 'e' || e.key === 'E') {
                 checkInteraction();
             }
@@ -320,30 +506,58 @@
             keys[e.key] = false;
         });
 
-        // ==================== 繪製像素角色 ====================
+        // ==================== Draw Improved Pixel Character ====================
         function drawPlayer() {
-            // 身體
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x - player.width/2, player.y - player.height/2, player.width, player.height);
+            const px = player.x - player.width/2;
+            const py = player.y - player.height/2;
 
-            // 眼睛
-            ctx.fillStyle = '#b0b0b0';
-            const eyeY = player.y - player.height/4;
-            ctx.fillRect(player.x - 10, eyeY, 6, 6);
-            ctx.fillRect(player.x + 4, eyeY, 6, 6);
+            // Character color palette
+            const skinColor = '#8a9aaa';
+            const shirtColor = '#5a7a8a';
+            const pantsColor = '#3a4a5a';
+            const shoeColor = '#2a3a4a';
 
-            // 嘴巴
+            // Body (torso)
+            ctx.fillStyle = shirtColor;
+            ctx.fillRect(px + 6, py + 12, 12, 14);
+
+            // Pants
+            ctx.fillStyle = pantsColor;
+            ctx.fillRect(px + 6, py + 26, 5, 10);  // Left leg
+            ctx.fillRect(px + 13, py + 26, 5, 10); // Right leg
+
+            // Shoes
+            ctx.fillStyle = shoeColor;
+            ctx.fillRect(px + 5, py + 36, 6, 4);   // Left shoe
+            ctx.fillRect(px + 13, py + 36, 6, 4);  // Right shoe
+
+            // Head
+            ctx.fillStyle = skinColor;
+            ctx.fillRect(px + 7, py + 2, 10, 10);
+
+            // Eyes
             ctx.fillStyle = '#2a2a2a';
-            ctx.fillRect(player.x - 8, player.y + 4, 16, 4);
+            ctx.fillRect(px + 9, py + 5, 2, 2);  // Left eye
+            ctx.fillRect(px + 13, py + 5, 2, 2); // Right eye
+
+            // Arms
+            ctx.fillStyle = skinColor;
+            ctx.fillRect(px + 3, py + 14, 3, 10); // Left arm
+            ctx.fillRect(px + 18, py + 14, 3, 10); // Right arm
+
+            // Shirt sleeves
+            ctx.fillStyle = shirtColor;
+            ctx.fillRect(px + 4, py + 14, 2, 6);  // Left sleeve
+            ctx.fillRect(px + 18, py + 14, 2, 6); // Right sleeve
         }
 
-        // ==================== 繪製爺爺的房間 ====================
+        // ==================== Draw Grandpa's Room ====================
         function drawGrandpaRoom() {
-            // 地板
+            // Floor
             ctx.fillStyle = '#1a1a1a';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 地板磚格紋理
+            // Floor tile grid
             ctx.strokeStyle = '#151515';
             ctx.lineWidth = 1;
             for (let x = 0; x < canvas.width; x += 50) {
@@ -359,25 +573,31 @@
                 ctx.stroke();
             }
 
-            // 牆壁
+            // Back wall
             ctx.fillStyle = '#2a2a2a';
             ctx.fillRect(0, 0, canvas.width, 80);
 
-            // 窗戶
+            // Window
             ctx.fillStyle = '#3a4a5a';
             ctx.fillRect(50, 15, 120, 50);
             ctx.strokeStyle = '#4a5a6a';
             ctx.lineWidth = 3;
             ctx.strokeRect(50, 15, 120, 50);
+            // Window cross
             ctx.beginPath();
             ctx.moveTo(110, 15);
             ctx.lineTo(110, 65);
+            ctx.moveTo(50, 40);
+            ctx.lineTo(170, 40);
             ctx.stroke();
 
-            // 書架
+            // Bookshelf
             ctx.fillStyle = '#3a3a3a';
             ctx.fillRect(50, 120, 100, 200);
-            // 書架層板
+            // Bookshelf shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(55, 125, 90, 190);
+            // Shelves
             ctx.strokeStyle = '#4a4a4a';
             ctx.lineWidth = 2;
             for (let i = 0; i < 4; i++) {
@@ -386,59 +606,110 @@
                 ctx.lineTo(150, 120 + i * 50);
                 ctx.stroke();
             }
-
-            // 桌子
-            ctx.fillStyle = '#4a4a4a';
-            ctx.fillRect(600, 250, 150, 100);
-            ctx.fillRect(610, 350, 20, 80);
-            ctx.fillRect(720, 350, 20, 80);
-
-            // 電腦（互動物件）
-            drawComputer();
-
-            // 地毯
-            ctx.fillStyle = '#2a3a3a';
-            ctx.fillRect(250, 350, 300, 200);
-            ctx.strokeStyle = '#3a4a4a';
-            ctx.lineWidth = 5;
-            ctx.strokeRect(250, 350, 300, 200);
-        }
-
-        // ==================== 繪製電腦 ====================
-        function drawComputer() {
-            // 顯示器
-            ctx.fillStyle = computer.color;
-            ctx.fillRect(computer.x, computer.y, computer.width, computer.height * 0.7);
-
-            // 螢幕
-            ctx.fillStyle = '#1a2a3a';
-            ctx.fillRect(computer.x + 5, computer.y + 5, computer.width - 10, computer.height * 0.7 - 10);
-
-            // 螢幕光暈
-            if (isNearComputer()) {
-                ctx.fillStyle = 'rgba(90, 122, 138, 0.3)';
-                ctx.fillRect(computer.x + 5, computer.y + 5, computer.width - 10, computer.height * 0.7 - 10);
+            // Books
+            const bookColors = ['#4a3a3a', '#3a4a3a', '#3a3a4a'];
+            for (let shelf = 0; shelf < 3; shelf++) {
+                for (let book = 0; book < 8; book++) {
+                    ctx.fillStyle = bookColors[(shelf + book) % 3];
+                    ctx.fillRect(55 + book * 11, 130 + shelf * 50, 9, 40);
+                }
             }
 
-            // 底座
-            ctx.fillStyle = '#3a3a3a';
-            ctx.fillRect(computer.x + 20, computer.y + computer.height * 0.7, computer.width - 40, computer.height * 0.3);
+            // Desk with improved perspective
+            ctx.fillStyle = '#4a4a4a';
+            // Desk top
+            ctx.fillRect(590, 250, 170, 100);
+            // Desk top highlight
+            ctx.fillStyle = '#5a5a5a';
+            ctx.fillRect(595, 255, 160, 10);
+            // Desk shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.fillRect(595, 330, 160, 20);
 
-            // 鍵盤
-            ctx.fillStyle = '#2a2a2a';
-            ctx.fillRect(computer.x - 10, computer.y + computer.height + 10, computer.width + 20, 15);
+            // Desk legs with shadow
+            ctx.fillStyle = '#3a3a3a';
+            ctx.fillRect(600, 350, 30, 80);
+            ctx.fillRect(720, 350, 30, 80);
+            // Leg shadows
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(605, 355, 20, 70);
+            ctx.fillRect(725, 355, 20, 70);
+
+            // Computer (improved with better perspective)
+            drawComputer();
+
+            // Carpet
+            ctx.fillStyle = '#2a3a3a';
+            ctx.fillRect(250, 380, 300, 180);
+            // Carpet pattern
+            ctx.strokeStyle = '#3a4a4a';
+            ctx.lineWidth = 5;
+            ctx.strokeRect(250, 380, 300, 180);
+            ctx.lineWidth = 2;
+            ctx.strokeRect(260, 390, 280, 160);
         }
 
-        // ==================== 繪製 Cryptopolis 場景 ====================
+        // ==================== Draw Computer (Improved) ====================
+        function drawComputer() {
+            const cx = computer.x;
+            const cy = computer.y;
+
+            // Monitor base/stand
+            ctx.fillStyle = '#3a3a3a';
+            ctx.fillRect(cx + 20, cy + 40, 20, 8);
+            ctx.fillRect(cx + 24, cy + 35, 12, 5);
+
+            // Monitor
+            ctx.fillStyle = '#4a5a6a';
+            ctx.fillRect(cx, cy, computer.width, 40);
+
+            // Monitor shadow/depth
+            ctx.fillStyle = '#2a3a4a';
+            ctx.fillRect(cx + 2, cy + 2, computer.width - 4, 36);
+
+            // Screen
+            ctx.fillStyle = '#1a2a3a';
+            ctx.fillRect(cx + 5, cy + 5, computer.width - 10, 30);
+
+            // Screen glow when player nearby
+            if (isNearComputer()) {
+                ctx.fillStyle = 'rgba(90, 122, 138, 0.4)';
+                ctx.fillRect(cx + 5, cy + 5, computer.width - 10, 30);
+
+                // Animated scanline effect
+                const scanY = (Date.now() % 2000) / 2000 * 30;
+                ctx.fillStyle = 'rgba(120, 160, 180, 0.3)';
+                ctx.fillRect(cx + 5, cy + 5 + scanY, computer.width - 10, 2);
+            }
+
+            // Screen text/indicator
+            ctx.fillStyle = '#5a7a8a';
+            ctx.fillRect(cx + 10, cy + 10, 3, 3);
+            ctx.fillRect(cx + 15, cy + 10, 15, 2);
+            ctx.fillRect(cx + 10, cy + 15, 8, 2);
+
+            // Keyboard on desk
+            ctx.fillStyle = '#2a2a2a';
+            ctx.fillRect(cx - 5, cy + 50, computer.width + 10, 12);
+            // Keyboard keys
+            ctx.fillStyle = '#1a1a1a';
+            for (let i = 0; i < 10; i++) {
+                for (let j = 0; j < 2; j++) {
+                    ctx.fillRect(cx - 3 + i * 6, cy + 52 + j * 4, 4, 3);
+                }
+            }
+        }
+
+        // ==================== Draw Cryptopolis Scene ====================
         function drawCryptopolis() {
-            // 天空背景（賽博朋克風格）
+            // Sky gradient
             const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
             gradient.addColorStop(0, '#0a1a2a');
             gradient.addColorStop(1, '#1a2a3a');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 星星效果
+            // Stars
             ctx.fillStyle = '#6a7a8a';
             for (let i = 0; i < 50; i++) {
                 const x = (i * 123) % canvas.width;
@@ -447,22 +718,27 @@
                 ctx.fillRect(x, y, size, size);
             }
 
-            // 遠處的建築輪廓
+            // Buildings
             const buildings = [
-                { x: 50, y: 350, width: 80, height: 250, color: '#2a3a4a' },
-                { x: 150, y: 300, width: 100, height: 300, color: '#1a2a3a' },
-                { x: 280, y: 380, width: 70, height: 220, color: '#2a3a4a' },
-                { x: 370, y: 320, width: 90, height: 280, color: '#1a2a3a' },
-                { x: 480, y: 360, width: 85, height: 240, color: '#2a3a4a' },
-                { x: 590, y: 300, width: 95, height: 300, color: '#1a2a3a' },
-                { x: 700, y: 340, width: 80, height: 260, color: '#2a3a4a' }
+                { x: 50, y: 350, width: 80, height: 250 },
+                { x: 150, y: 300, width: 100, height: 300 },
+                { x: 280, y: 380, width: 70, height: 220 },
+                { x: 370, y: 320, width: 90, height: 280 },
+                { x: 480, y: 360, width: 85, height: 240 },
+                { x: 590, y: 300, width: 95, height: 300 },
+                { x: 700, y: 340, width: 80, height: 260 }
             ];
 
-            buildings.forEach(building => {
-                ctx.fillStyle = building.color;
+            buildings.forEach((building, index) => {
+                // Building body
+                ctx.fillStyle = index % 2 === 0 ? '#2a3a4a' : '#1a2a3a';
                 ctx.fillRect(building.x, building.y, building.width, building.height);
 
-                // 窗戶
+                // Building highlight
+                ctx.fillStyle = index % 2 === 0 ? '#3a4a5a' : '#2a3a4a';
+                ctx.fillRect(building.x, building.y, building.width, 5);
+
+                // Windows
                 ctx.fillStyle = '#4a5a6a';
                 for (let row = 0; row < Math.floor(building.height / 30); row++) {
                     for (let col = 0; col < Math.floor(building.width / 20); col++) {
@@ -477,11 +753,11 @@
                 }
             });
 
-            // 地面
+            // Ground
             ctx.fillStyle = '#0a0a0a';
             ctx.fillRect(0, 500, canvas.width, 100);
 
-            // 地面網格
+            // Ground grid
             ctx.strokeStyle = '#2a3a4a';
             ctx.lineWidth = 1;
             for (let x = 0; x < canvas.width; x += 40) {
@@ -491,7 +767,7 @@
                 ctx.stroke();
             }
 
-            // 歡迎文字
+            // Welcome text
             ctx.fillStyle = '#5a7a8a';
             ctx.font = '32px "Courier New"';
             ctx.textAlign = 'center';
@@ -499,10 +775,10 @@
 
             ctx.fillStyle = '#4a5a6a';
             ctx.font = '16px "Courier New"';
-            ctx.fillText('數位世界的大門已開啟', canvas.width / 2, 180);
+            ctx.fillText('The gateway to the digital world has opened', canvas.width / 2, 180);
         }
 
-        // ==================== 更新角色位置 ====================
+        // ==================== Update Player Position ====================
         function updatePlayer() {
             const prevX = player.x;
             const prevY = player.y;
@@ -524,21 +800,38 @@
                 player.direction = 'right';
             }
 
-            // 邊界檢測
+            // Boundary detection
             player.x = Math.max(player.width/2, Math.min(canvas.width - player.width/2, player.x));
             player.y = Math.max(100, Math.min(canvas.height - player.height/2, player.y));
 
-            // 簡單的碰撞檢測（與桌子）
+            // Collision detection with room objects
             if (currentState === GameState.GRANDPA_ROOM) {
-                if (player.x + player.width/2 > 600 && player.x - player.width/2 < 750 &&
-                    player.y + player.height/2 > 250 && player.y - player.height/2 < 430) {
-                    player.x = prevX;
-                    player.y = prevY;
+                const playerRect = {
+                    x: player.x - player.width/2,
+                    y: player.y - player.height/2,
+                    width: player.width,
+                    height: player.height
+                };
+
+                for (const obstacle of collisionRects) {
+                    if (checkCollision(playerRect, obstacle)) {
+                        player.x = prevX;
+                        player.y = prevY;
+                        break;
+                    }
                 }
             }
         }
 
-        // ==================== 檢查是否靠近電腦 ====================
+        // ==================== Collision Detection ====================
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+
+        // ==================== Check if Near Computer ====================
         function isNearComputer() {
             const dx = player.x - (computer.x + computer.width/2);
             const dy = player.y - (computer.y + computer.height/2);
@@ -546,14 +839,14 @@
             return distance < computer.interactRadius;
         }
 
-        // ==================== 檢查互動 ====================
+        // ==================== Check Interaction ====================
         function checkInteraction() {
             if (currentState === GameState.GRANDPA_ROOM && isNearComputer()) {
-                openMnemonicModal();
+                openBIP39Modal();
             }
         }
 
-        // ==================== 顯示/隱藏互動提示 ====================
+        // ==================== Update Interaction Prompt ====================
         function updateInteractionPrompt() {
             const prompt = document.getElementById('interaction-prompt');
             if (currentState === GameState.GRANDPA_ROOM && isNearComputer()) {
@@ -563,104 +856,280 @@
             }
         }
 
-        // ==================== 助記詞模態框 ====================
-        function openMnemonicModal() {
-            const modal = document.getElementById('mnemonic-modal');
-            modal.style.display = 'flex';
-
-            // 清空輸入框
-            document.querySelectorAll('.word-input').forEach(input => {
-                input.value = '';
-                input.className = 'word-input';
-            });
-
-            // 聚焦第一個輸入框
-            document.querySelector('.word-input').focus();
+        // ==================== BIP39 Modal Functions ====================
+        function openBIP39Modal() {
+            document.getElementById('bip39-modal').classList.add('active');
         }
 
-        function closeMnemonicModal() {
-            const modal = document.getElementById('mnemonic-modal');
-            modal.style.display = 'none';
-        }
-
-        // ==================== 助記詞驗證 ====================
-        const validMnemonics = [
-            'digital freedom privacy secure network future',
-            'crypto rebel underground anonymous protest freedom',
-            'cipher encrypt message secret digital revolution'
-        ];
-
-        function validateMnemonic() {
-            const inputs = document.querySelectorAll('.word-input');
-            const words = Array.from(inputs).map(input => input.value.trim().toLowerCase());
-            const mnemonic = words.join(' ');
-
-            // 檢查是否為有效的助記詞
-            const isValid = validMnemonics.includes(mnemonic);
-
-            if (isValid) {
-                showStatusMessage('認證成功！正在進入 Cryptopolis...', '#3a5a3a');
-                closeMnemonicModal();
-                transitionToCryptopolis();
-            } else {
-                showStatusMessage('助記詞不正確，請重試', '#5a3a3a');
-
-                // 標記為無效
-                inputs.forEach(input => {
-                    if (input.value.trim()) {
-                        input.classList.add('invalid');
-                        setTimeout(() => input.classList.remove('invalid'), 2000);
-                    }
-                });
+        function closeBIP39Modal() {
+            if (!bip39Authenticated) {
+                document.getElementById('bip39-modal').classList.remove('active');
             }
         }
 
-        // ==================== 場景轉場 ====================
+        // ==================== BIP39 Authentication Logic ====================
+        let currentPrivateKey = null;
+        let currentChallenge = null;
+        let currentSignature = null;
+
+        function setupWordValidation() {
+            const inputs = ['word1', 'word2', 'word3', 'word4', 'word5', 'word6'];
+            inputs.forEach((id, index) => {
+                const input = document.getElementById(id);
+                input.addEventListener('input', function() {
+                    validateWord(this);
+                });
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && index < 5) {
+                        document.getElementById(inputs[index + 1]).focus();
+                    }
+                });
+            });
+        }
+
+        function validateWord(input) {
+            if (!window.bip39) return;
+
+            const word = input.value.trim().toLowerCase();
+            if (word === '') {
+                input.className = 'word-input';
+                return;
+            }
+
+            const wordlist = window.bip39.wordlists.english;
+            if (wordlist.includes(word)) {
+                input.className = 'word-input valid';
+            } else {
+                input.className = 'word-input invalid';
+            }
+
+            updateValidationStatus();
+        }
+
+        function updateValidationStatus() {
+            const inputs = ['word1', 'word2', 'word3', 'word4', 'word5', 'word6'];
+            const words = inputs.map(id => document.getElementById(id).value.trim().toLowerCase());
+            const validCount = words.filter((word, index) => {
+                return word !== '' && document.getElementById(inputs[index]).classList.contains('valid');
+            }).length;
+
+            const validationDiv = document.getElementById('wordValidation');
+            if (validCount === 6) {
+                validationDiv.textContent = '✓ All 6 words validated. Ready to derive key.';
+                validationDiv.style.color = '#7a9a7a';
+            } else if (validCount > 0) {
+                validationDiv.textContent = `${validCount}/6 words validated`;
+                validationDiv.style.color = '#7a7a7a';
+            } else {
+                validationDiv.textContent = '';
+            }
+        }
+
+        function selectPhrase(phrase) {
+            const words = phrase.split(' ');
+            words.forEach((word, index) => {
+                const input = document.getElementById(`word${index + 1}`);
+                input.value = word;
+                validateWord(input);
+            });
+        }
+
+        async function deriveKey() {
+            if (!window.systemReady || !window.bip39) {
+                alert('System still loading. Please wait and try again.');
+                return;
+            }
+
+            const inputs = ['word1', 'word2', 'word3', 'word4', 'word5', 'word6'];
+            const words = inputs.map(id => document.getElementById(id).value.trim().toLowerCase());
+
+            if (words.some(word => word === '')) {
+                alert('Please enter all 6 words.');
+                return;
+            }
+
+            const mnemonic = words.join(' ');
+
+            try {
+                const wordlist = window.bip39.wordlists.english;
+                const invalidWords = words.filter(word => !wordlist.includes(word));
+
+                if (invalidWords.length > 0) {
+                    alert('Invalid words: ' + invalidWords.join(', '));
+                    return;
+                }
+
+                resetSections();
+                document.getElementById('keySection').classList.add('show');
+
+                await animateDerivation();
+
+                const seed = window.bip39.mnemonicToSeedSync(mnemonic);
+                const seedHex = Array.from(seed)
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+
+                currentPrivateKey = seedHex.slice(0, 64);
+
+                await typeText('privateKeyDisplay', currentPrivateKey, 5);
+
+                console.log('Private key derived');
+
+            } catch (error) {
+                console.error('Error in deriveKey:', error);
+                alert('Error deriving key: ' + error.message);
+            }
+        }
+
+        async function animateDerivation() {
+            const steps = ['step1', 'step2', 'step3', 'step4'];
+            for (let i = 0; i < steps.length; i++) {
+                await new Promise(resolve => setTimeout(resolve, 300));
+                document.getElementById(steps[i]).style.color = '#7a9a7a';
+            }
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        async function typeText(elementId, text, speed) {
+            const element = document.getElementById(elementId);
+            element.textContent = '';
+
+            const chunkSize = 8;
+            for (let i = 0; i < text.length; i += chunkSize) {
+                element.textContent += text.substring(i, i + chunkSize);
+                await new Promise(resolve => setTimeout(resolve, speed));
+            }
+        }
+
+        function requestAccess() {
+            if (!currentPrivateKey) {
+                alert('No private key available.');
+                return;
+            }
+
+            currentChallenge = 'CRYPTOPOLIS_ACCESS_' + Date.now() + '_' + Math.random().toString(36).substring(7);
+
+            document.getElementById('challengeDisplay').textContent = currentChallenge;
+            document.getElementById('authSection').classList.add('show');
+            document.getElementById('authStatus').innerHTML =
+                '<div class="status-message status-info">Challenge issued. Sign to prove ownership.</div>';
+        }
+
+        async function signChallenge() {
+            if (!currentPrivateKey || !currentChallenge) {
+                alert('Missing data.');
+                return;
+            }
+
+            const btn = document.getElementById('signChallengeBtn');
+            btn.disabled = true;
+            btn.textContent = 'Signing...';
+
+            try {
+                currentSignature = await window.crypto_utils.simpleSign(currentPrivateKey, currentChallenge);
+
+                await typeText('signatureDisplay', currentSignature, 3);
+                document.getElementById('signatureSection').style.display = 'block';
+
+                document.getElementById('authStatus').innerHTML =
+                    '<div class="status-message status-success">Challenge signed successfully.</div>';
+
+                btn.textContent = 'Sign Challenge';
+                btn.disabled = false;
+
+            } catch (error) {
+                alert('Error signing: ' + error.message);
+                btn.textContent = 'Sign Challenge';
+                btn.disabled = false;
+            }
+        }
+
+        async function verifyAndEnter() {
+            if (!currentPrivateKey || !currentChallenge || !currentSignature) {
+                alert('Missing authentication data.');
+                return;
+            }
+
+            try {
+                const isValid = await window.crypto_utils.simpleVerify(
+                    currentPrivateKey,
+                    currentChallenge,
+                    currentSignature
+                );
+
+                if (isValid) {
+                    document.getElementById('authStatus').innerHTML =
+                        '<div class="status-message status-success">Signature verified. Access granted.</div>';
+
+                    setTimeout(() => {
+                        document.getElementById('accessSection').classList.add('show');
+                        document.getElementById('authSection').style.display = 'none';
+                        document.getElementById('keySection').style.display = 'none';
+
+                        // Trigger transition after 2 seconds
+                        setTimeout(() => {
+                            bip39Authenticated = true;
+                            transitionToCryptopolis();
+                        }, 2000);
+                    }, 1000);
+
+                    console.log('Authentication successful');
+                } else {
+                    alert('Verification failed.');
+                }
+
+            } catch (error) {
+                alert('Error verifying: ' + error.message);
+            }
+        }
+
+        function resetSections() {
+            document.getElementById('keySection').classList.remove('show');
+            document.getElementById('authSection').classList.remove('show');
+            document.getElementById('accessSection').classList.remove('show');
+            document.getElementById('signatureSection').style.display = 'none';
+
+            const steps = ['step1', 'step2', 'step3', 'step4'];
+            steps.forEach(step => {
+                document.getElementById(step).style.color = '#5a5a5a';
+            });
+        }
+
+        // ==================== Scene Transition ====================
         function transitionToCryptopolis() {
             const overlay = document.getElementById('transition-overlay');
             const sceneName = document.getElementById('scene-name');
+            const modal = document.getElementById('bip39-modal');
 
-            // 淡出
+            // Fade out
             overlay.classList.add('active');
 
             setTimeout(() => {
-                // 切換場景
+                // Close modal
+                modal.classList.remove('active');
+
+                // Switch scene
                 currentState = GameState.CRYPTOPOLIS;
                 sceneName.textContent = 'Cryptopolis';
 
-                // 重置玩家位置
+                // Reset player position
                 player.x = 400;
                 player.y = 520;
 
-                // 淡入
+                // Fade in
                 setTimeout(() => {
                     overlay.classList.remove('active');
                 }, 500);
             }, 1500);
         }
 
-        // ==================== 狀態訊息 ====================
-        function showStatusMessage(message, borderColor = '#3a3a3a') {
-            const statusMsg = document.getElementById('status-message');
-            statusMsg.textContent = message;
-            statusMsg.style.borderColor = borderColor;
-            statusMsg.style.display = 'block';
-
-            setTimeout(() => {
-                statusMsg.style.display = 'none';
-            }, 3000);
-        }
-
-        // ==================== 主遊戲循環 ====================
+        // ==================== Main Game Loop ====================
         function gameLoop() {
-            // 清空畫布
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 更新
             updatePlayer();
             updateInteractionPrompt();
 
-            // 繪製
             if (currentState === GameState.GRANDPA_ROOM) {
                 drawGrandpaRoom();
             } else if (currentState === GameState.CRYPTOPOLIS) {
@@ -669,50 +1138,20 @@
 
             drawPlayer();
 
-            // 繼續循環
             requestAnimationFrame(gameLoop);
         }
 
-        // ==================== 事件監聽器 ====================
-        document.getElementById('submit-mnemonic').addEventListener('click', validateMnemonic);
-        document.getElementById('cancel-mnemonic').addEventListener('click', closeMnemonicModal);
-
-        // 輸入框自動驗證和跳轉
-        document.querySelectorAll('.word-input').forEach((input, index) => {
-            input.addEventListener('input', function() {
-                const value = this.value.trim().toLowerCase();
-
-                // 檢查是否為有效的 BIP39 單詞
-                if (value.length >= 3) {
-                    const wordlist = window.mnemonic.wordlists.EN;
-                    const isValidWord = wordlist.some(word => word === value);
-
-                    if (isValidWord) {
-                        this.classList.remove('invalid');
-                        this.classList.add('valid');
-
-                        // 自動跳到下一個輸入框
-                        if (index < 5 && value.length > 0) {
-                            document.querySelector(`[data-index="${index + 1}"]`).focus();
-                        }
-                    } else {
-                        this.classList.remove('valid');
-                    }
+        // ==================== Initialize ====================
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                if (window.systemReady) {
+                    setupWordValidation();
                 }
-            });
-
-            // Enter 鍵提交
-            input.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    validateMnemonic();
-                }
-            });
+            }, 500);
         });
 
-        // ==================== 啟動遊戲 ====================
-        console.log('🎮 Cypherpunk Legacy - 遊戲啟動');
-        console.log('📝 提示: 使用方向鍵移動，按 E 鍵互動');
-        console.log('🔑 有效的助記詞:', validMnemonics);
+        console.log('🎮 Cypherpunk Legacy - Game Started');
+        console.log('📝 Use arrow keys to move, press E to interact');
 
         gameLoop();
     </script>
