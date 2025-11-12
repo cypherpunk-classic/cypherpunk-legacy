@@ -607,7 +607,7 @@
 
         // ==================== Pixel Art Settings ====================
         const PIXEL = 6; // Pixel block size
-        const CHAR_SIZE = 24; // Character size in pixels (adjusted for better proportion)
+        const CHAR_SIZE = 28; // Character size in pixels (adjusted for better proportion)
 
         // ==================== Player Character ====================
         const player = {
@@ -632,8 +632,8 @@
         };
 
         function updateComputerPosition() {
-            computer.width = 32 * PIXEL;
-            computer.height = 30 * PIXEL;
+            computer.width = 24 * PIXEL;
+            computer.height = 22 * PIXEL;
             computer.x = (canvas.width - computer.width) / 2;
             computer.y = canvas.height / 2 - 220;
         }
@@ -643,8 +643,8 @@
         const drawer = {
             x: 0,
             y: 0,
-            width: 100,
-            height: 120,
+            width: 120,
+            height: 140,
             interactRadius: 80
         };
 
@@ -663,13 +663,13 @@
 
             collisionRects = [
                 // Bookshelf (top-left, next to drawer)
-                { x: 200, y: 120, width: 120, height: 180 },
+                { x: 200, y: 120, width: 160, height: 200 },
                 // Drawer (top-left corner)
                 { x: drawer.x, y: drawer.y, width: drawer.width, height: 40 },
                 // Bed right
                 { x: w - 250, y: h/2 - 80, width: 200, height: 150 },
-                // Computer desk and computer (full collision box)
-                { x: computer.x - 10, y: computer.y, width: computer.width + 20, height: computer.height },
+                // Computer (only top half to allow player to stand at desk)
+                { x: computer.x, y: computer.y, width: computer.width, height: computer.height * 0.5 },
                 // Top wall area
                 { x: 0, y: 0, width: w, height: 100 }
             ];
@@ -1022,8 +1022,8 @@
         }
 
         function drawBookshelf(x, y) {
-            const w = 120;
-            const h = 180;
+            const w = 160;
+            const h = 200;
             // Shelf body
             ctx.fillStyle = '#5a4a3a';
             ctx.fillRect(x, y, w, h);
@@ -1037,7 +1037,7 @@
             for (let shelf = 0; shelf < 4; shelf++) {
                 for (let book = 0; book < 8; book++) {
                     ctx.fillStyle = bookColors[(shelf + book) % 4];
-                    ctx.fillRect(x + 8 + book * 13, y + 8 + shelf * (h/4), 11, h/4 - 12);
+                    ctx.fillRect(x + 8 + book * 18, y + 8 + shelf * (h/4), 15, h/4 - 12);
                 }
             }
         }
