@@ -558,8 +558,14 @@
                         document.getElementById('accessSection').classList.add('show');
                         document.getElementById('authSection').style.display = 'none';
                         document.getElementById('keySection').style.display = 'none';
+
+                        // Notify parent window (if embedded in iframe)
+                        if (window.parent && window.parent !== window) {
+                            window.parent.postMessage({ type: 'bip39-success' }, window.location.origin);
+                            console.log('Sent bip39-success message to parent window');
+                        }
                     }, 1000);
-                    
+
                     console.log('Authentication successful - Access granted to Cryptopolis');
                 } else {
                     alert('Signature verification failed. Access denied.');

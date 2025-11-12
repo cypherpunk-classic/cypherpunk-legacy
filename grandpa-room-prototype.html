@@ -307,7 +307,7 @@
 
         // ==================== Pixel Art Settings ====================
         const PIXEL = 6; // Pixel block size
-        const CHAR_SIZE = 28; // Character size in pixels (increased from 20)
+        const CHAR_SIZE = 24; // Character size in pixels (adjusted for better proportion)
 
         // ==================== Player Character ====================
         const player = {
@@ -332,10 +332,10 @@
         };
 
         function updateComputerPosition() {
-            computer.width = 28 * PIXEL;
-            computer.height = 26 * PIXEL;
+            computer.width = 32 * PIXEL;
+            computer.height = 30 * PIXEL;
             computer.x = (canvas.width - computer.width) / 2;
-            computer.y = canvas.height / 2 - 200;
+            computer.y = canvas.height / 2 - 220;
         }
         updateComputerPosition();
 
@@ -396,9 +396,10 @@
             const py = Math.floor(player.y - player.height/2);
             const p = PIXEL;
 
-            // Shadow
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-            ctx.fillRect(px + p*7, py + p*25, p*14, p*3);
+            // Shadow at feet (bottom of character)
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.ellipse(player.x, player.y + p*10, p*4, p*2, 0, 0, Math.PI * 2);
+            ctx.fill();
 
             const walk = player.isMoving && player.animFrame === 1 ? p : 0;
 
@@ -425,75 +426,112 @@
             const p = PIXEL;
             // Hair
             ctx.fillStyle = '#4a3a2a';
-            ctx.fillRect(px + p*6, py + p*3, p*8, p*4);
+            ctx.fillRect(px + p*8, py + p*4, p*8, p*4);
             // Head
             ctx.fillStyle = '#d4a574';
-            ctx.fillRect(px + p*7, py + p*5, p*6, p*5);
+            ctx.fillRect(px + p*9, py + p*6, p*6, p*5);
             // Eyes
             ctx.fillStyle = '#2a2a2a';
-            ctx.fillRect(px + p*8, py + p*7, p*1, p*1);
-            ctx.fillRect(px + p*11, py + p*7, p*1, p*1);
+            ctx.fillRect(px + p*10, py + p*8, p*1, p*1);
+            ctx.fillRect(px + p*13, py + p*8, p*1, p*1);
             // Body
             ctx.fillStyle = '#5a6a7a';
-            ctx.fillRect(px + p*6, py + p*10, p*8, p*6);
+            ctx.fillRect(px + p*9, py + p*11, p*6, p*5);
             // Arms
             ctx.fillStyle = '#d4a574';
-            ctx.fillRect(px + p*4, py + p*11, p*2, p*5);
-            ctx.fillRect(px + p*14, py + p*11, p*2, p*5);
+            ctx.fillRect(px + p*7, py + p*12, p*2, p*4);
+            ctx.fillRect(px + p*15, py + p*12, p*2, p*4);
             // Legs
             ctx.fillStyle = '#3a4a5a';
-            ctx.fillRect(px + p*7, py + p*16 - walk, p*2, p*4 + walk);
-            ctx.fillRect(px + p*11, py + p*16 + walk, p*2, p*4 - walk);
+            ctx.fillRect(px + p*10, py + p*16 - walk, p*2, p*4 + walk);
+            ctx.fillRect(px + p*12, py + p*16 + walk, p*2, p*4 - walk);
+            // Shoes
+            ctx.fillStyle = '#2a2a1a';
+            ctx.fillRect(px + p*10, py + p*19, p*2, p*1);
+            ctx.fillRect(px + p*12, py + p*19 + walk, p*2, p*1);
         }
 
         function drawCharacterUp(px, py, walk) {
             const p = PIXEL;
+            // Hair (back of head)
             ctx.fillStyle = '#4a3a2a';
-            ctx.fillRect(px + p*6, py + p*3, p*8, p*5);
+            ctx.fillRect(px + p*8, py + p*4, p*8, p*5);
+            // Head (back)
             ctx.fillStyle = '#d4a574';
-            ctx.fillRect(px + p*7, py + p*5, p*6, p*5);
+            ctx.fillRect(px + p*9, py + p*6, p*6, p*5);
+            // Body
             ctx.fillStyle = '#5a6a7a';
-            ctx.fillRect(px + p*6, py + p*10, p*8, p*6);
+            ctx.fillRect(px + p*9, py + p*11, p*6, p*5);
+            // Arms
             ctx.fillStyle = '#d4a574';
-            ctx.fillRect(px + p*4, py + p*11, p*2, p*5);
-            ctx.fillRect(px + p*14, py + p*11, p*2, p*5);
+            ctx.fillRect(px + p*7, py + p*12, p*2, p*4);
+            ctx.fillRect(px + p*15, py + p*12, p*2, p*4);
+            // Legs
             ctx.fillStyle = '#3a4a5a';
-            ctx.fillRect(px + p*7, py + p*16 - walk, p*2, p*4 + walk);
-            ctx.fillRect(px + p*11, py + p*16 + walk, p*2, p*4 - walk);
+            ctx.fillRect(px + p*10, py + p*16 - walk, p*2, p*4 + walk);
+            ctx.fillRect(px + p*12, py + p*16 + walk, p*2, p*4 - walk);
+            // Shoes
+            ctx.fillStyle = '#2a2a1a';
+            ctx.fillRect(px + p*10, py + p*19 - walk, p*2, p*1);
+            ctx.fillRect(px + p*12, py + p*19, p*2, p*1);
         }
 
         function drawCharacterLeft(px, py, walk) {
             const p = PIXEL;
+            // Hair
             ctx.fillStyle = '#4a3a2a';
-            ctx.fillRect(px + p*5, py + p*3, p*8, p*4);
+            ctx.fillRect(px + p*7, py + p*4, p*8, p*4);
+            // Head (side view)
             ctx.fillStyle = '#d4a574';
-            ctx.fillRect(px + p*6, py + p*5, p*6, p*5);
+            ctx.fillRect(px + p*8, py + p*6, p*6, p*5);
+            // Eye
             ctx.fillStyle = '#2a2a2a';
-            ctx.fillRect(px + p*7, py + p*7, p*1, p*1);
+            ctx.fillRect(px + p*9, py + p*8, p*1, p*1);
+            // Body
             ctx.fillStyle = '#5a6a7a';
-            ctx.fillRect(px + p*6, py + p*10, p*7, p*6);
+            ctx.fillRect(px + p*8, py + p*11, p*6, p*5);
+            // Front arm
             ctx.fillStyle = '#d4a574';
-            ctx.fillRect(px + p*4, py + p*11, p*2, p*4);
+            ctx.fillRect(px + p*6, py + p*12, p*2, p*4);
+            // Back arm (barely visible)
+            ctx.fillRect(px + p*14, py + p*12, p*1, p*3);
+            // Legs
             ctx.fillStyle = '#3a4a5a';
-            ctx.fillRect(px + p*7, py + p*16 - walk, p*2, p*4 + walk);
-            ctx.fillRect(px + p*10, py + p*16 + walk, p*2, p*4 - walk);
+            ctx.fillRect(px + p*9, py + p*16 - walk, p*2, p*4 + walk);
+            ctx.fillRect(px + p*11, py + p*16 + walk, p*2, p*4 - walk);
+            // Shoes
+            ctx.fillStyle = '#2a2a1a';
+            ctx.fillRect(px + p*9, py + p*19, p*2, p*1);
+            ctx.fillRect(px + p*11, py + p*19 + walk, p*2, p*1);
         }
 
         function drawCharacterRight(px, py, walk) {
             const p = PIXEL;
+            // Hair
             ctx.fillStyle = '#4a3a2a';
-            ctx.fillRect(px + p*7, py + p*3, p*8, p*4);
+            ctx.fillRect(px + p*9, py + p*4, p*8, p*4);
+            // Head (side view)
             ctx.fillStyle = '#d4a574';
-            ctx.fillRect(px + p*8, py + p*5, p*6, p*5);
+            ctx.fillRect(px + p*10, py + p*6, p*6, p*5);
+            // Eye
             ctx.fillStyle = '#2a2a2a';
-            ctx.fillRect(px + p*12, py + p*7, p*1, p*1);
+            ctx.fillRect(px + p*14, py + p*8, p*1, p*1);
+            // Body
             ctx.fillStyle = '#5a6a7a';
-            ctx.fillRect(px + p*7, py + p*10, p*7, p*6);
+            ctx.fillRect(px + p*10, py + p*11, p*6, p*5);
+            // Back arm (barely visible)
             ctx.fillStyle = '#d4a574';
-            ctx.fillRect(px + p*14, py + p*11, p*2, p*4);
+            ctx.fillRect(px + p*9, py + p*12, p*1, p*3);
+            // Front arm
+            ctx.fillRect(px + p*16, py + p*12, p*2, p*4);
+            // Legs
             ctx.fillStyle = '#3a4a5a';
-            ctx.fillRect(px + p*8, py + p*16 - walk, p*2, p*4 + walk);
-            ctx.fillRect(px + p*11, py + p*16 + walk, p*2, p*4 - walk);
+            ctx.fillRect(px + p*11, py + p*16 - walk, p*2, p*4 + walk);
+            ctx.fillRect(px + p*13, py + p*16 + walk, p*2, p*4 - walk);
+            // Shoes
+            ctx.fillStyle = '#2a2a1a';
+            ctx.fillRect(px + p*11, py + p*19 - walk, p*2, p*1);
+            ctx.fillRect(px + p*13, py + p*19, p*2, p*1);
         }
 
         // Diagonal directions (wa, wd, sa, sd)
@@ -501,98 +539,114 @@
             const p = PIXEL;
             // Hair
             ctx.fillStyle = '#4a3a2a';
-            ctx.fillRect(px + p*5, py + p*3, p*8, p*5);
-            // Head (3/4 view)
+            ctx.fillRect(px + p*7, py + p*4, p*8, p*5);
+            // Head (3/4 back-left view)
             ctx.fillStyle = '#d4a574';
-            ctx.fillRect(px + p*6, py + p*5, p*6, p*5);
+            ctx.fillRect(px + p*8, py + p*6, p*6, p*5);
             // Eye
             ctx.fillStyle = '#2a2a2a';
-            ctx.fillRect(px + p*7, py + p*7, p*1, p*1);
+            ctx.fillRect(px + p*9, py + p*8, p*1, p*1);
             // Body
             ctx.fillStyle = '#5a6a7a';
-            ctx.fillRect(px + p*6, py + p*10, p*7, p*6);
+            ctx.fillRect(px + p*8, py + p*11, p*6, p*5);
             // Arms
             ctx.fillStyle = '#d4a574';
-            ctx.fillRect(px + p*4, py + p*11, p*2, p*4);
-            ctx.fillRect(px + p*13, py + p*11, p*2, p*4);
+            ctx.fillRect(px + p*6, py + p*12, p*2, p*4);
+            ctx.fillRect(px + p*14, py + p*12, p*1, p*3);
             // Legs
             ctx.fillStyle = '#3a4a5a';
-            ctx.fillRect(px + p*7, py + p*16 - walk, p*2, p*4 + walk);
-            ctx.fillRect(px + p*10, py + p*16 + walk, p*2, p*4 - walk);
+            ctx.fillRect(px + p*9, py + p*16 - walk, p*2, p*4 + walk);
+            ctx.fillRect(px + p*11, py + p*16 + walk, p*2, p*4 - walk);
+            // Shoes
+            ctx.fillStyle = '#2a2a1a';
+            ctx.fillRect(px + p*9, py + p*19 - walk, p*2, p*1);
+            ctx.fillRect(px + p*11, py + p*19, p*2, p*1);
         }
 
         function drawCharacterUpRight(px, py, walk) {
             const p = PIXEL;
             // Hair
             ctx.fillStyle = '#4a3a2a';
-            ctx.fillRect(px + p*7, py + p*3, p*8, p*5);
-            // Head (3/4 view)
+            ctx.fillRect(px + p*9, py + p*4, p*8, p*5);
+            // Head (3/4 back-right view)
             ctx.fillStyle = '#d4a574';
-            ctx.fillRect(px + p*8, py + p*5, p*6, p*5);
+            ctx.fillRect(px + p*10, py + p*6, p*6, p*5);
             // Eye
             ctx.fillStyle = '#2a2a2a';
-            ctx.fillRect(px + p*12, py + p*7, p*1, p*1);
+            ctx.fillRect(px + p*14, py + p*8, p*1, p*1);
             // Body
             ctx.fillStyle = '#5a6a7a';
-            ctx.fillRect(px + p*7, py + p*10, p*7, p*6);
+            ctx.fillRect(px + p*10, py + p*11, p*6, p*5);
             // Arms
             ctx.fillStyle = '#d4a574';
-            ctx.fillRect(px + p*5, py + p*11, p*2, p*4);
-            ctx.fillRect(px + p*14, py + p*11, p*2, p*4);
+            ctx.fillRect(px + p*10, py + p*12, p*1, p*3);
+            ctx.fillRect(px + p*16, py + p*12, p*2, p*4);
             // Legs
             ctx.fillStyle = '#3a4a5a';
-            ctx.fillRect(px + p*8, py + p*16 - walk, p*2, p*4 + walk);
-            ctx.fillRect(px + p*11, py + p*16 + walk, p*2, p*4 - walk);
+            ctx.fillRect(px + p*11, py + p*16 - walk, p*2, p*4 + walk);
+            ctx.fillRect(px + p*13, py + p*16 + walk, p*2, p*4 - walk);
+            // Shoes
+            ctx.fillStyle = '#2a2a1a';
+            ctx.fillRect(px + p*11, py + p*19 - walk, p*2, p*1);
+            ctx.fillRect(px + p*13, py + p*19, p*2, p*1);
         }
 
         function drawCharacterDownLeft(px, py, walk) {
             const p = PIXEL;
             // Hair
             ctx.fillStyle = '#4a3a2a';
-            ctx.fillRect(px + p*5, py + p*3, p*8, p*4);
-            // Head (3/4 view)
+            ctx.fillRect(px + p*7, py + p*4, p*8, p*4);
+            // Head (3/4 front-left view)
             ctx.fillStyle = '#d4a574';
-            ctx.fillRect(px + p*6, py + p*5, p*6, p*5);
+            ctx.fillRect(px + p*8, py + p*6, p*6, p*5);
             // Eyes
             ctx.fillStyle = '#2a2a2a';
-            ctx.fillRect(px + p*7, py + p*7, p*1, p*1);
-            ctx.fillRect(px + p*10, py + p*7, p*1, p*1);
+            ctx.fillRect(px + p*9, py + p*8, p*1, p*1);
+            ctx.fillRect(px + p*12, py + p*8, p*1, p*1);
             // Body
             ctx.fillStyle = '#5a6a7a';
-            ctx.fillRect(px + p*6, py + p*10, p*7, p*6);
+            ctx.fillRect(px + p*8, py + p*11, p*6, p*5);
             // Arms
             ctx.fillStyle = '#d4a574';
-            ctx.fillRect(px + p*4, py + p*11, p*2, p*5);
-            ctx.fillRect(px + p*13, py + p*12, p*2, p*4);
+            ctx.fillRect(px + p*6, py + p*12, p*2, p*4);
+            ctx.fillRect(px + p*14, py + p*12, p*1, p*3);
             // Legs
             ctx.fillStyle = '#3a4a5a';
-            ctx.fillRect(px + p*7, py + p*16 - walk, p*2, p*4 + walk);
-            ctx.fillRect(px + p*10, py + p*16 + walk, p*2, p*4 - walk);
+            ctx.fillRect(px + p*9, py + p*16 - walk, p*2, p*4 + walk);
+            ctx.fillRect(px + p*11, py + p*16 + walk, p*2, p*4 - walk);
+            // Shoes
+            ctx.fillStyle = '#2a2a1a';
+            ctx.fillRect(px + p*9, py + p*19, p*2, p*1);
+            ctx.fillRect(px + p*11, py + p*19 + walk, p*2, p*1);
         }
 
         function drawCharacterDownRight(px, py, walk) {
             const p = PIXEL;
             // Hair
             ctx.fillStyle = '#4a3a2a';
-            ctx.fillRect(px + p*7, py + p*3, p*8, p*4);
-            // Head (3/4 view)
+            ctx.fillRect(px + p*9, py + p*4, p*8, p*4);
+            // Head (3/4 front-right view)
             ctx.fillStyle = '#d4a574';
-            ctx.fillRect(px + p*8, py + p*5, p*6, p*5);
+            ctx.fillRect(px + p*10, py + p*6, p*6, p*5);
             // Eyes
             ctx.fillStyle = '#2a2a2a';
-            ctx.fillRect(px + p*10, py + p*7, p*1, p*1);
-            ctx.fillRect(px + p*13, py + p*7, p*1, p*1);
+            ctx.fillRect(px + p*12, py + p*8, p*1, p*1);
+            ctx.fillRect(px + p*15, py + p*8, p*1, p*1);
             // Body
             ctx.fillStyle = '#5a6a7a';
-            ctx.fillRect(px + p*7, py + p*10, p*7, p*6);
+            ctx.fillRect(px + p*10, py + p*11, p*6, p*5);
             // Arms
             ctx.fillStyle = '#d4a574';
-            ctx.fillRect(px + p*5, py + p*12, p*2, p*4);
-            ctx.fillRect(px + p*14, py + p*11, p*2, p*5);
+            ctx.fillRect(px + p*10, py + p*12, p*1, p*3);
+            ctx.fillRect(px + p*16, py + p*12, p*2, p*4);
             // Legs
             ctx.fillStyle = '#3a4a5a';
-            ctx.fillRect(px + p*8, py + p*16 - walk, p*2, p*4 + walk);
-            ctx.fillRect(px + p*11, py + p*16 + walk, p*2, p*4 - walk);
+            ctx.fillRect(px + p*11, py + p*16 - walk, p*2, p*4 + walk);
+            ctx.fillRect(px + p*13, py + p*16 + walk, p*2, p*4 - walk);
+            // Shoes
+            ctx.fillStyle = '#2a2a1a';
+            ctx.fillRect(px + p*11, py + p*19 - walk, p*2, p*1);
+            ctx.fillRect(px + p*13, py + p*19, p*2, p*1);
         }
 
         // ==================== Draw Wooden Cabin ====================
@@ -1163,6 +1217,23 @@
             embeddedPage.classList.remove('active');
             iframe.src = '';
         }
+
+        // Listen for messages from embedded pages (BIP39 completion)
+        window.addEventListener('message', (event) => {
+            // Security: Only accept messages from same origin
+            if (event.origin !== window.location.origin) {
+                return;
+            }
+
+            // Handle BIP39 authentication success
+            if (event.data && event.data.type === 'bip39-success') {
+                console.log('BIP39 authentication successful, transitioning to Cryptopolis...');
+                closeEmbeddedPage();
+                setTimeout(() => {
+                    transitionToCryptopolis();
+                }, 500);
+            }
+        });
 
         function updateInteractionPrompt() {
             const prompt = document.getElementById('interaction-prompt');
