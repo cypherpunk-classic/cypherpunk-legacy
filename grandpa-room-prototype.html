@@ -133,40 +133,214 @@
             background-color: #6a5a4a;
         }
 
-        /* Embedded iframe for BIP39 and Encryption Demo */
-        #embedded-page {
+        /* BIP39 Modal - Dark Cyberpunk Style */
+        #bip39-modal {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: #000;
+            background-color: rgba(0, 0, 0, 0.98);
             display: none;
-            z-index: 200;
+            align-items: flex-start;
+            justify-content: center;
+            z-index: 100;
+            overflow-y: auto;
+            padding: 20px;
         }
-        #embedded-page.active {
+        #bip39-modal.active {
+            display: flex;
+        }
+        .bip39-container {
+            background-color: #0a0a0a;
+            max-width: 900px;
+            width: 100%;
+            margin: 20px auto;
+            padding: 20px;
+            border: 2px solid #3a3a3a;
+            border-radius: 5px;
+        }
+        .bip39-container h1 {
+            text-align: center;
+            color: #8a8a8a;
+            letter-spacing: 2px;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .terminal {
+            background-color: #151515;
+            border: 1px solid #3a3a3a;
+            padding: 30px;
+            border-radius: 5px;
+            min-height: 400px;
+        }
+        .terminal-header {
+            color: #6a6a6a;
+            font-size: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #9a9a9a;
+        }
+        .phrase-option {
+            background-color: #0a0a0a;
+            border: 1px solid #3a3a3a;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .phrase-option:hover {
+            border-color: #5a7a8a;
+            background-color: #1a1a1a;
+        }
+        .phrase-option .phrase-text {
+            color: #9a9a9a;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .phrase-option .phrase-meaning {
+            color: #6a6a6a;
+            font-size: 12px;
+            font-style: italic;
+        }
+        input.word-input {
+            padding: 10px;
+            background-color: #0a0a0a;
+            color: #b0b0b0;
+            border: 1px solid #3a3a3a;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            text-align: center;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        input.word-input:focus {
+            outline: none;
+            border-color: #5a7a8a;
+        }
+        input.word-input.valid {
+            border-color: #3a5a3a;
+            background-color: #0f1a0f;
+        }
+        input.word-input.invalid {
+            border-color: #5a3a3a;
+            background-color: #1a0f0f;
+        }
+        button {
+            background-color: #2a3a4a;
+            color: #b0b0b0;
+            padding: 12px 30px;
+            border: 1px solid #3a3a3a;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin-top: 10px;
+            margin-right: 10px;
+            transition: all 0.2s;
+        }
+        button:hover:not(:disabled) {
+            background-color: #3a4a5a;
+            border-color: #5a7a8a;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .key-display {
+            word-break: break-all;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #000;
+            border-radius: 3px;
+            font-size: 11px;
+            border: 1px solid #2a2a2a;
+            color: #7a7a7a;
+            line-height: 1.6;
+        }
+        .section {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #0a0a0a;
+            border: 1px solid #3a3a3a;
+            border-radius: 3px;
+            display: none;
+        }
+        .section.show {
             display: block;
         }
-        #embedded-page iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
+        .section-title {
+            color: #9a9a9a;
+            font-size: 14px;
+            margin-bottom: 15px;
+            font-weight: bold;
         }
-        #close-embedded {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background-color: rgba(90, 122, 138, 0.9);
-            color: #fff;
+        .status-message {
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+        .status-success {
+            background-color: #1a2a1a;
+            border: 1px solid #3a5a3a;
+            color: #9a9a9a;
+        }
+        .status-info {
+            background-color: #1a1a2a;
+            border: 1px solid #3a3a5a;
+            color: #9a9a9a;
+        }
+        .access-granted {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #1a2a3a 0%, #2a3a4a 100%);
             border: 2px solid #5a7a8a;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            z-index: 201;
-            font-family: 'Courier New', monospace;
+            border-radius: 5px;
         }
-        #close-embedded:hover {
-            background-color: rgba(110, 142, 158, 0.9);
+        .access-granted h2 {
+            color: #b0b0b0;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .access-granted p {
+            color: #8a8a8a;
+            line-height: 1.8;
+            margin: 10px 0;
+        }
+        .note {
+            font-size: 12px;
+            color: #6a6a6a;
+            line-height: 1.6;
+            margin-top: 15px;
+        }
+        .close-modal {
+            position: sticky;
+            top: 10px;
+            float: right;
+            background: none;
+            border: none;
+            color: #6a6a6a;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+        .close-modal:hover {
+            color: #9a9a9a;
+        }
+        .scroll-target {
+            scroll-margin-top: 20px;
         }
 
         #transition-overlay {
@@ -269,18 +443,144 @@
             </div>
         </div>
 
-        <div id="transition-overlay"></div>
+        <!-- BIP39 Authentication Modal -->
+        <div id="bip39-modal">
+            <div class="bip39-container">
+                <button class="close-modal" onclick="closeBIP39Modal()">×</button>
 
-        <!-- Embedded Page Container -->
-        <div id="embedded-page">
-            <button id="close-embedded" onclick="closeEmbeddedPage()">✕ Close</button>
-            <iframe id="embedded-iframe" src=""></iframe>
+                <h1>CRYPTOPOLIS ACCESS TERMINAL</h1>
+
+                <div class="terminal">
+                    <div class="terminal-header">
+                        SYSTEM: GRANDFATHER'S LEGACY v1.0<br>
+                        STATUS: <span id="systemStatus">LOADING...</span>
+                    </div>
+
+                    <div class="input-group scroll-target" id="step1-select">
+                        <label>Grandfather left three possible passphrases. Choose one:</label>
+
+                        <div class="phrase-option" onclick="selectPhrase('secret code protect future youth always')">
+                            <div class="phrase-text">secret code protect future youth always</div>
+                            <div class="phrase-meaning">"Guard the code for future generations"</div>
+                        </div>
+
+                        <div class="phrase-option" onclick="selectPhrase('trust verify never betray private truth')">
+                            <div class="phrase-text">trust verify never betray private truth</div>
+                            <div class="phrase-meaning">"Verify but preserve privacy"</div>
+                        </div>
+
+                        <div class="phrase-option" onclick="selectPhrase('silent network whisper rebel power voice')">
+                            <div class="phrase-text">silent network whisper rebel power voice</div>
+                            <div class="phrase-meaning">"The power of anonymous communication"</div>
+                        </div>
+                    </div>
+
+                    <div class="input-group scroll-target" id="step1-manual">
+                        <label>Or manually enter the 6 words (one at a time):</label>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
+                            <input type="text" id="word1" class="word-input" placeholder="Word 1" maxlength="20">
+                            <input type="text" id="word2" class="word-input" placeholder="Word 2" maxlength="20">
+                            <input type="text" id="word3" class="word-input" placeholder="Word 3" maxlength="20">
+                            <input type="text" id="word4" class="word-input" placeholder="Word 4" maxlength="20">
+                            <input type="text" id="word5" class="word-input" placeholder="Word 5" maxlength="20">
+                            <input type="text" id="word6" class="word-input" placeholder="Word 6" maxlength="20">
+                        </div>
+                        <div id="wordValidation" style="margin-top: 10px; font-size: 12px; color: #6a6a6a;"></div>
+                        <div class="note">
+                            Game Mode: Using 6 words for easier gameplay.<br>
+                            All words must be from the BIP39 standard wordlist.<br>
+                            Type carefully - each word will be validated in real-time.
+                        </div>
+                    </div>
+
+                    <button onclick="deriveKey()" style="width: 100%;">Derive Access Key</button>
+
+                    <div id="keySection" class="section scroll-target">
+                        <div class="section-title">ACCESS KEY DERIVED</div>
+
+                        <div id="derivationProcess" style="margin-bottom: 20px;">
+                            <p style="color: #7a7a7a; font-size: 12px;">Processing passphrase through BIP39 derivation...</p>
+                            <div style="background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 3px; padding: 10px; margin: 10px 0;">
+                                <div id="step1" style="color: #5a5a5a; margin: 5px 0;">→ Validating words against BIP39 wordlist</div>
+                                <div id="step2" style="color: #5a5a5a; margin: 5px 0;">→ Converting to entropy</div>
+                                <div id="step3" style="color: #5a5a5a; margin: 5px 0;">→ Applying PBKDF2 derivation function</div>
+                                <div id="step4" style="color: #5a5a5a; margin: 5px 0;">→ Extracting private key from seed</div>
+                            </div>
+                        </div>
+
+                        <p>Your passphrase has been processed. Private key generated:</p>
+                        <div id="privateKeyDisplay" class="key-display"></div>
+
+                        <p style="margin-top: 20px;">This key is your digital identity in Cryptopolis. It must be verified to gain access.</p>
+                        <button id="requestAccessBtn" onclick="requestAccess()">Request Access to Cryptopolis</button>
+                    </div>
+
+                    <div id="authSection" class="section scroll-target">
+                        <div class="section-title">AUTHENTICATION PROTOCOL</div>
+                        <div id="authStatus"></div>
+
+                        <p>The system has issued a challenge. Sign it with your private key to prove ownership:</p>
+                        <div id="challengeDisplay" class="key-display"></div>
+
+                        <button id="signChallengeBtn" onclick="signChallenge()">Sign Challenge</button>
+
+                        <div id="signatureSection" style="display: none; margin-top: 20px;">
+                            <p>Your signature:</p>
+                            <div id="signatureDisplay" class="key-display"></div>
+                            <button onclick="verifyAndEnter()">Submit for Verification</button>
+                        </div>
+                    </div>
+
+                    <div id="accessSection" class="section scroll-target">
+                        <div class="access-granted">
+                            <h2>ACCESS GRANTED</h2>
+                            <p>Authentication successful.</p>
+                            <p>Welcome to Cryptopolis.</p>
+                            <p style="margin-top: 30px; font-size: 12px;">
+                                Grandfather's digital world awaits...<br>
+                                [Transitioning to Cryptopolis]
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <div id="transition-overlay"></div>
 
         <div id="game-info">
             Cypherpunk Legacy - Pixel Art Adventure
         </div>
     </div>
+
+    <script type="module">
+        import * as bip39Module from 'https://esm.sh/bip39@3.1.0';
+        window.bip39 = bip39Module;
+
+        window.crypto_utils = {
+            simpleSign: async function(privateKey, message) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(privateKey + message);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            },
+
+            simpleVerify: async function(privateKey, message, signature) {
+                const expectedSignature = await this.simpleSign(privateKey, message);
+                return expectedSignature === signature;
+            }
+        };
+
+        window.systemReady = true;
+        const statusEl = document.getElementById('systemStatus');
+        if (statusEl) {
+            statusEl.textContent = 'AWAITING AUTHENTICATION';
+            statusEl.style.color = '#9a9a9a';
+        }
+
+        console.log('Cryptopolis Access Terminal initialized');
+    </script>
 
     <script>
         // ==================== Canvas Setup ====================
@@ -395,11 +695,6 @@
             const px = Math.floor(player.x - player.width/2);
             const py = Math.floor(player.y - player.height/2);
             const p = PIXEL;
-
-            // Shadow at feet (bottom of character)
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            ctx.ellipse(player.x, player.y + p*10, p*4, p*2, 0, 0, Math.PI * 2);
-            ctx.fill();
 
             const walk = player.isMoving && player.animFrame === 1 ? p : 0;
 
@@ -1184,13 +1479,8 @@
                     // Open letter modal
                     openLetter();
                 } else if (isNearComputer() && hasReadLetter) {
-                    // Embed bip39-game-final.html for authentication
-                    openEmbeddedPage('bip39-game-final.html');
-                }
-            } else if (currentState === GameState.CRYPTOPOLIS_MENU) {
-                // Press E in Cryptopolis menu opens encryption-demo
-                if (gameStarted) {
-                    openEmbeddedPage('encryption-demo.html');
+                    // Open BIP39 modal
+                    openBIP39Modal();
                 }
             }
         }
@@ -1204,36 +1494,220 @@
             hasReadLetter = true;
         }
 
-        function openEmbeddedPage(url) {
-            const embeddedPage = document.getElementById('embedded-page');
-            const iframe = document.getElementById('embedded-iframe');
-            iframe.src = url;
-            embeddedPage.classList.add('active');
+        // ==================== BIP39 Modal Functions ====================
+        let currentPhrase = '';
+        let currentPrivateKey = '';
+        let currentChallenge = '';
+        let currentSignature = '';
+
+        function openBIP39Modal() {
+            document.getElementById('bip39-modal').classList.add('active');
         }
 
-        function closeEmbeddedPage() {
-            const embeddedPage = document.getElementById('embedded-page');
-            const iframe = document.getElementById('embedded-iframe');
-            embeddedPage.classList.remove('active');
-            iframe.src = '';
+        function closeBIP39Modal() {
+            document.getElementById('bip39-modal').classList.remove('active');
         }
 
-        // Listen for messages from embedded pages (BIP39 completion)
-        window.addEventListener('message', (event) => {
-            // Security: Only accept messages from same origin
-            if (event.origin !== window.location.origin) {
+        function selectPhrase(phrase) {
+            currentPhrase = phrase;
+
+            // Fill in the word inputs
+            const words = phrase.split(' ');
+            for (let i = 0; i < 6; i++) {
+                const input = document.getElementById(`word${i+1}`);
+                if (input && words[i]) {
+                    input.value = words[i];
+                    input.classList.add('valid');
+                }
+            }
+
+            // Auto-scroll to derive button
+            setTimeout(() => {
+                const deriveBtn = document.querySelector('button[onclick="deriveKey()"]');
+                if (deriveBtn) {
+                    deriveBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 300);
+        }
+
+        async function deriveKey() {
+            if (!window.bip39 || !window.systemReady) {
+                alert('System not ready. Please wait...');
                 return;
             }
 
-            // Handle BIP39 authentication success
-            if (event.data && event.data.type === 'bip39-success') {
-                console.log('BIP39 authentication successful, transitioning to Cryptopolis...');
-                closeEmbeddedPage();
-                setTimeout(() => {
-                    transitionToCryptopolis();
-                }, 500);
+            // Get words from inputs
+            const words = [];
+            for (let i = 1; i <= 6; i++) {
+                const input = document.getElementById(`word${i}`);
+                if (input && input.value.trim()) {
+                    words.push(input.value.trim().toLowerCase());
+                }
             }
-        });
+
+            if (words.length !== 6) {
+                alert('Please enter all 6 words.');
+                return;
+            }
+
+            const mnemonic = words.join(' ');
+
+            // Validate with BIP39
+            try {
+                if (!window.bip39.validateMnemonic(mnemonic)) {
+                    alert('Invalid mnemonic phrase. Please check your words.');
+                    return;
+                }
+            } catch (e) {
+                alert('Error validating mnemonic: ' + e.message);
+                return;
+            }
+
+            // Show key section
+            document.getElementById('keySection').classList.add('show');
+
+            // Auto-scroll to key section
+            setTimeout(() => {
+                document.getElementById('keySection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+
+            // Animate derivation process
+            await animateDerivation();
+
+            // Derive the key
+            try {
+                const seed = await window.bip39.mnemonicToSeed(mnemonic);
+                const seedHex = Array.from(new Uint8Array(seed.slice(0, 32)))
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+
+                currentPrivateKey = seedHex;
+                currentPhrase = mnemonic;
+
+                document.getElementById('privateKeyDisplay').textContent = currentPrivateKey;
+            } catch (e) {
+                alert('Error deriving key: ' + e.message);
+            }
+        }
+
+        async function animateDerivation() {
+            const steps = ['step1', 'step2', 'step3', 'step4'];
+            for (let step of steps) {
+                await new Promise(resolve => setTimeout(resolve, 400));
+                const el = document.getElementById(step);
+                if (el) {
+                    el.style.color = '#7a9a7a';
+                }
+            }
+        }
+
+        async function requestAccess() {
+            if (!currentPrivateKey) {
+                alert('Please derive your key first.');
+                return;
+            }
+
+            // Generate a random challenge
+            const randomBytes = new Uint8Array(16);
+            crypto.getRandomValues(randomBytes);
+            currentChallenge = Array.from(randomBytes)
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('');
+
+            document.getElementById('challengeDisplay').textContent = currentChallenge;
+            document.getElementById('authSection').classList.add('show');
+
+            // Auto-scroll to auth section
+            setTimeout(() => {
+                document.getElementById('authSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+
+            document.getElementById('authStatus').innerHTML =
+                '<div class="status-message status-info">Challenge issued. Please sign to authenticate.</div>';
+        }
+
+        async function signChallenge() {
+            if (!currentPrivateKey || !currentChallenge) {
+                alert('Missing authentication data.');
+                return;
+            }
+
+            try {
+                currentSignature = await window.crypto_utils.simpleSign(currentPrivateKey, currentChallenge);
+                document.getElementById('signatureDisplay').textContent = currentSignature;
+                document.getElementById('signatureSection').style.display = 'block';
+
+                // Auto-scroll to signature
+                setTimeout(() => {
+                    document.getElementById('signatureSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            } catch (e) {
+                alert('Error signing challenge: ' + e.message);
+            }
+        }
+
+        async function verifyAndEnter() {
+            if (!currentPrivateKey || !currentChallenge || !currentSignature) {
+                alert('Missing authentication data.');
+                return;
+            }
+
+            try {
+                const isValid = await window.crypto_utils.simpleVerify(
+                    currentPrivateKey,
+                    currentChallenge,
+                    currentSignature
+                );
+
+                if (isValid) {
+                    document.getElementById('authStatus').innerHTML =
+                        '<div class="status-message status-success">Signature verified. Access granted.</div>';
+
+                    // Show access granted screen
+                    setTimeout(() => {
+                        document.getElementById('accessSection').classList.add('show');
+                        document.getElementById('authSection').style.display = 'none';
+                        document.getElementById('keySection').style.display = 'none';
+
+                        // Auto-scroll to access granted
+                        setTimeout(() => {
+                            document.getElementById('accessSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 100);
+                    }, 1000);
+
+                    // Transition to Cryptopolis after delay
+                    setTimeout(() => {
+                        closeBIP39Modal();
+                        transitionToCryptopolis();
+                    }, 3000);
+
+                    console.log('Authentication successful - Access granted to Cryptopolis');
+                } else {
+                    alert('Signature verification failed. Access denied.');
+                }
+            } catch (e) {
+                alert('Error verifying signature: ' + e.message);
+            }
+        }
+
+        // Real-time word validation
+        for (let i = 1; i <= 6; i++) {
+            const input = document.getElementById(`word${i}`);
+            if (input) {
+                input.addEventListener('input', async function() {
+                    const word = this.value.trim().toLowerCase();
+                    if (word.length > 0) {
+                        if (window.bip39 && window.bip39.wordlists && window.bip39.wordlists.EN) {
+                            const isValid = window.bip39.wordlists.EN.includes(word);
+                            this.classList.remove('valid', 'invalid');
+                            this.classList.add(isValid ? 'valid' : 'invalid');
+                        }
+                    } else {
+                        this.classList.remove('valid', 'invalid');
+                    }
+                });
+            }
+        }
 
         function updateInteractionPrompt() {
             const prompt = document.getElementById('interaction-prompt');
@@ -1247,9 +1721,6 @@
                 } else {
                     prompt.style.display = 'none';
                 }
-            } else if (currentState === GameState.CRYPTOPOLIS_MENU && gameStarted) {
-                prompt.textContent = 'Press E or click Continue to enter Encryption Demo';
-                prompt.style.display = 'block';
             } else {
                 prompt.style.display = 'none';
             }
@@ -1307,8 +1778,8 @@
 
                 if (x >= buttonX && x <= buttonX + buttonW &&
                     y >= buttonY && y <= buttonY + buttonH) {
-                    // Continue button embeds encryption-demo.html
-                    openEmbeddedPage('encryption-demo.html');
+                    // Continue button transitions to game world
+                    transitionToGameWorld();
                 }
             }
         });
