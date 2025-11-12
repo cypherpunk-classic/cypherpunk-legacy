@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cypherpunk Legacy - 爺爺的房間</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bip39/3.0.4/index.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #0a0a0a;
+            color: #b0b0b0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            border: 2px solid #3a3a3a;
+            background-color: #000;
+        }
+        #game-canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        #ui-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #b0b0b0;
+            font-size: 14px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+        #interaction-prompt {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(20, 20, 20, 0.95);
+            border: 2px solid #5a7a8a;
+            padding: 15px 30px;
+            border-radius: 5px;
+            display: none;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+        #mnemonic-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background-color: #151515;
+            border: 2px solid #3a3a3a;
+            padding: 40px;
+            border-radius: 5px;
+            max-width: 600px;
+            width: 90%;
+        }
+        .modal-title {
+            color: #8a8a8a;
+            font-size: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+        .modal-description {
+            color: #7a7a7a;
+            font-size: 13px;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            text-align: center;
+        }
+        .word-inputs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .word-input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .word-number {
+            color: #6a6a6a;
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+        input.word-input {
+            width: 100%;
+            padding: 10px;
+            background-color: #0a0a0a;
+            color: #b0b0b0;
+            border: 1px solid #3a3a3a;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        input.word-input:focus {
+            outline: none;
+            border-color: #5a7a8a;
+            background-color: #0f0f0f;
+        }
+        input.word-input.valid {
+            border-color: #3a5a3a;
+            background-color: #0f1a0f;
+        }
+        input.word-input.invalid {
+            border-color: #5a3a3a;
+            background-color: #1a0f0f;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        button {
+            background-color: #2a3a4a;
+            color: #b0b0b0;
+            padding: 12px 30px;
+            border: 1px solid #3a3a3a;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        button:hover:not(:disabled) {
+            background-color: #3a4a5a;
+            border-color: #5a7a8a;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        #transition-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1.5s ease-in-out;
+            z-index: 50;
+        }
+        #transition-overlay.active {
+            opacity: 1;
+        }
+        .hint {
+            color: #5a6a7a;
+            font-size: 11px;
+            text-align: center;
+            margin-top: 15px;
+        }
+        #game-info {
+            margin-top: 20px;
+            text-align: center;
+            color: #7a7a7a;
+            font-size: 13px;
+            max-width: 800px;
+        }
+        #status-message {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(20, 20, 20, 0.95);
+            border: 1px solid #3a3a3a;
+            padding: 10px 20px;
+            border-radius: 3px;
+            display: none;
+            color: #9a9a9a;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas" width="800" height="600"></canvas>
+
+        <div id="ui-overlay">
+            <div>場景: <span id="scene-name">爺爺的房間</span></div>
+            <div>使用方向鍵移動</div>
+        </div>
+
+        <div id="interaction-prompt">
+            按 E 鍵與電腦互動
+        </div>
+
+        <div id="status-message"></div>
+
+        <div id="mnemonic-modal">
+            <div class="modal-content">
+                <div class="modal-title">爺爺的電腦 - 訪問終端</div>
+                <div class="modal-description">
+                    這台電腦需要 6 個助記詞來解鎖。<br>
+                    爺爺曾告訴你，這些詞彙隱藏著進入數位世界的鑰匙...
+                </div>
+
+                <div class="word-inputs">
+                    <div class="word-input-container">
+                        <div class="word-number">詞彙 #1</div>
+                        <input type="text" class="word-input" data-index="0">
+                    </div>
+                    <div class="word-input-container">
+                        <div class="word-number">詞彙 #2</div>
+                        <input type="text" class="word-input" data-index="1">
+                    </div>
+                    <div class="word-input-container">
+                        <div class="word-number">詞彙 #3</div>
+                        <input type="text" class="word-input" data-index="2">
+                    </div>
+                    <div class="word-input-container">
+                        <div class="word-number">詞彙 #4</div>
+                        <input type="text" class="word-input" data-index="3">
+                    </div>
+                    <div class="word-input-container">
+                        <div class="word-number">詞彙 #5</div>
+                        <input type="text" class="word-input" data-index="4">
+                    </div>
+                    <div class="word-input-container">
+                        <div class="word-number">詞彙 #6</div>
+                        <input type="text" class="word-input" data-index="5">
+                    </div>
+                </div>
+
+                <div class="modal-buttons">
+                    <button id="submit-mnemonic">解鎖</button>
+                    <button id="cancel-mnemonic">取消</button>
+                </div>
+
+                <div class="hint">
+                    提示: 試試 "digital freedom privacy secure network future"
+                </div>
+            </div>
+        </div>
+
+        <div id="transition-overlay"></div>
+    </div>
+
+    <div id="game-info">
+        密碼朋克傳承 - 原型演示 | 探索爺爺的房間，找到通往 Cryptopolis 的入口
+    </div>
+
+    <script>
+        // ==================== 遊戲狀態管理 ====================
+        const GameState = {
+            GRANDPA_ROOM: 'grandpa_room',
+            CRYPTOPOLIS: 'cryptopolis'
+        };
+
+        let currentState = GameState.GRANDPA_ROOM;
+
+        // ==================== 畫布設置 ====================
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // ==================== 角色系統 ====================
+        const player = {
+            x: 400,
+            y: 300,
+            width: 32,
+            height: 32,
+            speed: 3,
+            color: '#5a7a8a',
+            direction: 'down'
+        };
+
+        // ==================== 互動物件 ====================
+        const computer = {
+            x: 650,
+            y: 200,
+            width: 64,
+            height: 64,
+            color: '#3a5a6a',
+            interactRadius: 80
+        };
+
+        // ==================== 鍵盤輸入處理 ====================
+        const keys = {};
+
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+
+            // E 鍵互動
+            if (e.key === 'e' || e.key === 'E') {
+                checkInteraction();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // ==================== 繪製像素角色 ====================
+        function drawPlayer() {
+            // 身體
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x - player.width/2, player.y - player.height/2, player.width, player.height);
+
+            // 眼睛
+            ctx.fillStyle = '#b0b0b0';
+            const eyeY = player.y - player.height/4;
+            ctx.fillRect(player.x - 10, eyeY, 6, 6);
+            ctx.fillRect(player.x + 4, eyeY, 6, 6);
+
+            // 嘴巴
+            ctx.fillStyle = '#2a2a2a';
+            ctx.fillRect(player.x - 8, player.y + 4, 16, 4);
+        }
+
+        // ==================== 繪製爺爺的房間 ====================
+        function drawGrandpaRoom() {
+            // 地板
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 地板磚格紋理
+            ctx.strokeStyle = '#151515';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // 牆壁
+            ctx.fillStyle = '#2a2a2a';
+            ctx.fillRect(0, 0, canvas.width, 80);
+
+            // 窗戶
+            ctx.fillStyle = '#3a4a5a';
+            ctx.fillRect(50, 15, 120, 50);
+            ctx.strokeStyle = '#4a5a6a';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(50, 15, 120, 50);
+            ctx.beginPath();
+            ctx.moveTo(110, 15);
+            ctx.lineTo(110, 65);
+            ctx.stroke();
+
+            // 書架
+            ctx.fillStyle = '#3a3a3a';
+            ctx.fillRect(50, 120, 100, 200);
+            // 書架層板
+            ctx.strokeStyle = '#4a4a4a';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.moveTo(50, 120 + i * 50);
+                ctx.lineTo(150, 120 + i * 50);
+                ctx.stroke();
+            }
+
+            // 桌子
+            ctx.fillStyle = '#4a4a4a';
+            ctx.fillRect(600, 250, 150, 100);
+            ctx.fillRect(610, 350, 20, 80);
+            ctx.fillRect(720, 350, 20, 80);
+
+            // 電腦（互動物件）
+            drawComputer();
+
+            // 地毯
+            ctx.fillStyle = '#2a3a3a';
+            ctx.fillRect(250, 350, 300, 200);
+            ctx.strokeStyle = '#3a4a4a';
+            ctx.lineWidth = 5;
+            ctx.strokeRect(250, 350, 300, 200);
+        }
+
+        // ==================== 繪製電腦 ====================
+        function drawComputer() {
+            // 顯示器
+            ctx.fillStyle = computer.color;
+            ctx.fillRect(computer.x, computer.y, computer.width, computer.height * 0.7);
+
+            // 螢幕
+            ctx.fillStyle = '#1a2a3a';
+            ctx.fillRect(computer.x + 5, computer.y + 5, computer.width - 10, computer.height * 0.7 - 10);
+
+            // 螢幕光暈
+            if (isNearComputer()) {
+                ctx.fillStyle = 'rgba(90, 122, 138, 0.3)';
+                ctx.fillRect(computer.x + 5, computer.y + 5, computer.width - 10, computer.height * 0.7 - 10);
+            }
+
+            // 底座
+            ctx.fillStyle = '#3a3a3a';
+            ctx.fillRect(computer.x + 20, computer.y + computer.height * 0.7, computer.width - 40, computer.height * 0.3);
+
+            // 鍵盤
+            ctx.fillStyle = '#2a2a2a';
+            ctx.fillRect(computer.x - 10, computer.y + computer.height + 10, computer.width + 20, 15);
+        }
+
+        // ==================== 繪製 Cryptopolis 場景 ====================
+        function drawCryptopolis() {
+            // 天空背景（賽博朋克風格）
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#0a1a2a');
+            gradient.addColorStop(1, '#1a2a3a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 星星效果
+            ctx.fillStyle = '#6a7a8a';
+            for (let i = 0; i < 50; i++) {
+                const x = (i * 123) % canvas.width;
+                const y = (i * 456) % (canvas.height * 0.6);
+                const size = (i % 3) + 1;
+                ctx.fillRect(x, y, size, size);
+            }
+
+            // 遠處的建築輪廓
+            const buildings = [
+                { x: 50, y: 350, width: 80, height: 250, color: '#2a3a4a' },
+                { x: 150, y: 300, width: 100, height: 300, color: '#1a2a3a' },
+                { x: 280, y: 380, width: 70, height: 220, color: '#2a3a4a' },
+                { x: 370, y: 320, width: 90, height: 280, color: '#1a2a3a' },
+                { x: 480, y: 360, width: 85, height: 240, color: '#2a3a4a' },
+                { x: 590, y: 300, width: 95, height: 300, color: '#1a2a3a' },
+                { x: 700, y: 340, width: 80, height: 260, color: '#2a3a4a' }
+            ];
+
+            buildings.forEach(building => {
+                ctx.fillStyle = building.color;
+                ctx.fillRect(building.x, building.y, building.width, building.height);
+
+                // 窗戶
+                ctx.fillStyle = '#4a5a6a';
+                for (let row = 0; row < Math.floor(building.height / 30); row++) {
+                    for (let col = 0; col < Math.floor(building.width / 20); col++) {
+                        if (Math.random() > 0.3) {
+                            ctx.fillRect(
+                                building.x + 5 + col * 20,
+                                building.y + 10 + row * 30,
+                                10, 15
+                            );
+                        }
+                    }
+                }
+            });
+
+            // 地面
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 500, canvas.width, 100);
+
+            // 地面網格
+            ctx.strokeStyle = '#2a3a4a';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 500);
+                ctx.lineTo(x, 600);
+                ctx.stroke();
+            }
+
+            // 歡迎文字
+            ctx.fillStyle = '#5a7a8a';
+            ctx.font = '32px "Courier New"';
+            ctx.textAlign = 'center';
+            ctx.fillText('WELCOME TO CRYPTOPOLIS', canvas.width / 2, 150);
+
+            ctx.fillStyle = '#4a5a6a';
+            ctx.font = '16px "Courier New"';
+            ctx.fillText('數位世界的大門已開啟', canvas.width / 2, 180);
+        }
+
+        // ==================== 更新角色位置 ====================
+        function updatePlayer() {
+            const prevX = player.x;
+            const prevY = player.y;
+
+            if (keys['ArrowUp'] || keys['w'] || keys['W']) {
+                player.y -= player.speed;
+                player.direction = 'up';
+            }
+            if (keys['ArrowDown'] || keys['s'] || keys['S']) {
+                player.y += player.speed;
+                player.direction = 'down';
+            }
+            if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+                player.x -= player.speed;
+                player.direction = 'left';
+            }
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+                player.x += player.speed;
+                player.direction = 'right';
+            }
+
+            // 邊界檢測
+            player.x = Math.max(player.width/2, Math.min(canvas.width - player.width/2, player.x));
+            player.y = Math.max(100, Math.min(canvas.height - player.height/2, player.y));
+
+            // 簡單的碰撞檢測（與桌子）
+            if (currentState === GameState.GRANDPA_ROOM) {
+                if (player.x + player.width/2 > 600 && player.x - player.width/2 < 750 &&
+                    player.y + player.height/2 > 250 && player.y - player.height/2 < 430) {
+                    player.x = prevX;
+                    player.y = prevY;
+                }
+            }
+        }
+
+        // ==================== 檢查是否靠近電腦 ====================
+        function isNearComputer() {
+            const dx = player.x - (computer.x + computer.width/2);
+            const dy = player.y - (computer.y + computer.height/2);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance < computer.interactRadius;
+        }
+
+        // ==================== 檢查互動 ====================
+        function checkInteraction() {
+            if (currentState === GameState.GRANDPA_ROOM && isNearComputer()) {
+                openMnemonicModal();
+            }
+        }
+
+        // ==================== 顯示/隱藏互動提示 ====================
+        function updateInteractionPrompt() {
+            const prompt = document.getElementById('interaction-prompt');
+            if (currentState === GameState.GRANDPA_ROOM && isNearComputer()) {
+                prompt.style.display = 'block';
+            } else {
+                prompt.style.display = 'none';
+            }
+        }
+
+        // ==================== 助記詞模態框 ====================
+        function openMnemonicModal() {
+            const modal = document.getElementById('mnemonic-modal');
+            modal.style.display = 'flex';
+
+            // 清空輸入框
+            document.querySelectorAll('.word-input').forEach(input => {
+                input.value = '';
+                input.className = 'word-input';
+            });
+
+            // 聚焦第一個輸入框
+            document.querySelector('.word-input').focus();
+        }
+
+        function closeMnemonicModal() {
+            const modal = document.getElementById('mnemonic-modal');
+            modal.style.display = 'none';
+        }
+
+        // ==================== 助記詞驗證 ====================
+        const validMnemonics = [
+            'digital freedom privacy secure network future',
+            'crypto rebel underground anonymous protest freedom',
+            'cipher encrypt message secret digital revolution'
+        ];
+
+        function validateMnemonic() {
+            const inputs = document.querySelectorAll('.word-input');
+            const words = Array.from(inputs).map(input => input.value.trim().toLowerCase());
+            const mnemonic = words.join(' ');
+
+            // 檢查是否為有效的助記詞
+            const isValid = validMnemonics.includes(mnemonic);
+
+            if (isValid) {
+                showStatusMessage('認證成功！正在進入 Cryptopolis...', '#3a5a3a');
+                closeMnemonicModal();
+                transitionToCryptopolis();
+            } else {
+                showStatusMessage('助記詞不正確，請重試', '#5a3a3a');
+
+                // 標記為無效
+                inputs.forEach(input => {
+                    if (input.value.trim()) {
+                        input.classList.add('invalid');
+                        setTimeout(() => input.classList.remove('invalid'), 2000);
+                    }
+                });
+            }
+        }
+
+        // ==================== 場景轉場 ====================
+        function transitionToCryptopolis() {
+            const overlay = document.getElementById('transition-overlay');
+            const sceneName = document.getElementById('scene-name');
+
+            // 淡出
+            overlay.classList.add('active');
+
+            setTimeout(() => {
+                // 切換場景
+                currentState = GameState.CRYPTOPOLIS;
+                sceneName.textContent = 'Cryptopolis';
+
+                // 重置玩家位置
+                player.x = 400;
+                player.y = 520;
+
+                // 淡入
+                setTimeout(() => {
+                    overlay.classList.remove('active');
+                }, 500);
+            }, 1500);
+        }
+
+        // ==================== 狀態訊息 ====================
+        function showStatusMessage(message, borderColor = '#3a3a3a') {
+            const statusMsg = document.getElementById('status-message');
+            statusMsg.textContent = message;
+            statusMsg.style.borderColor = borderColor;
+            statusMsg.style.display = 'block';
+
+            setTimeout(() => {
+                statusMsg.style.display = 'none';
+            }, 3000);
+        }
+
+        // ==================== 主遊戲循環 ====================
+        function gameLoop() {
+            // 清空畫布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 更新
+            updatePlayer();
+            updateInteractionPrompt();
+
+            // 繪製
+            if (currentState === GameState.GRANDPA_ROOM) {
+                drawGrandpaRoom();
+            } else if (currentState === GameState.CRYPTOPOLIS) {
+                drawCryptopolis();
+            }
+
+            drawPlayer();
+
+            // 繼續循環
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ==================== 事件監聽器 ====================
+        document.getElementById('submit-mnemonic').addEventListener('click', validateMnemonic);
+        document.getElementById('cancel-mnemonic').addEventListener('click', closeMnemonicModal);
+
+        // 輸入框自動驗證和跳轉
+        document.querySelectorAll('.word-input').forEach((input, index) => {
+            input.addEventListener('input', function() {
+                const value = this.value.trim().toLowerCase();
+
+                // 檢查是否為有效的 BIP39 單詞
+                if (value.length >= 3) {
+                    const wordlist = window.mnemonic.wordlists.EN;
+                    const isValidWord = wordlist.some(word => word === value);
+
+                    if (isValidWord) {
+                        this.classList.remove('invalid');
+                        this.classList.add('valid');
+
+                        // 自動跳到下一個輸入框
+                        if (index < 5 && value.length > 0) {
+                            document.querySelector(`[data-index="${index + 1}"]`).focus();
+                        }
+                    } else {
+                        this.classList.remove('valid');
+                    }
+                }
+            });
+
+            // Enter 鍵提交
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    validateMnemonic();
+                }
+            });
+        });
+
+        // ==================== 啟動遊戲 ====================
+        console.log('🎮 Cypherpunk Legacy - 遊戲啟動');
+        console.log('📝 提示: 使用方向鍵移動，按 E 鍵互動');
+        console.log('🔑 有效的助記詞:', validMnemonics);
+
+        gameLoop();
+    </script>
+</body>
+</html>

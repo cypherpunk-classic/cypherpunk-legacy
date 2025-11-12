@@ -77,6 +77,43 @@ Encryption Demo
 
 ---
 
+### Experiment 4: Grandpa's Room - Complete Game Prototype
+**File:** grandpa-room-prototype.html
+**Status:** ✓ Complete
+
+**Key Features:**
+- Fully playable pixel art game with keyboard controls (arrow keys/WASD)
+- Interactive scene: Grandfather's room with furniture, bookshelf, window, carpet
+- Playable character with smooth movement and collision detection
+- Interactive computer object with proximity detection
+- BIP39 mnemonic authentication system integrated
+- Scene transition with fade effect to Cryptopolis
+- Cryptopolis entry scene with cyberpunk cityscape
+
+**Game Flow:**
+1. Player spawns in grandfather's room
+2. Move using arrow keys or WASD
+3. Approach computer (interaction prompt appears)
+4. Press E to interact
+5. Enter 6-word mnemonic passphrase
+6. Upon correct authentication, fade transition to Cryptopolis
+7. Welcome to the digital world!
+
+**Technical Implementation:**
+- Canvas-based rendering with pixelated image mode
+- Game loop using requestAnimationFrame (60 FPS)
+- State machine for scene management
+- Event-driven interaction system
+- Smooth fade transitions between scenes
+- Real-time collision detection
+
+**Valid Mnemonics:**
+- `digital freedom privacy secure network future`
+- `crypto rebel underground anonymous protest freedom`
+- `cipher encrypt message secret digital revolution`
+
+---
+
 ## Tomorrow's Integration Plan
 
 ### Phase 1: Basic Scene Setup
