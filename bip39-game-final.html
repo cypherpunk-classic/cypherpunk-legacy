@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grandfather's Legacy - Access Terminal</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #0a0a0a;
+            color: #b0b0b0;
+        }
+        h1 {
+            text-align: center;
+            color: #8a8a8a;
+            letter-spacing: 2px;
+            font-size: 24px;
+        }
+        .terminal {
+            background-color: #151515;
+            border: 1px solid #3a3a3a;
+            padding: 30px;
+            border-radius: 5px;
+            min-height: 400px;
+        }
+        .terminal-header {
+            color: #6a6a6a;
+            font-size: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #9a9a9a;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            background-color: #0a0a0a;
+            color: #b0b0b0;
+            border: 1px solid #3a3a3a;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 60px;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #5a7a8a;
+        }
+        input.word-input {
+            padding: 10px;
+            background-color: #0a0a0a;
+            color: #b0b0b0;
+            border: 1px solid #3a3a3a;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        input.word-input:focus {
+            outline: none;
+            border-color: #5a7a8a;
+        }
+        input.word-input.valid {
+            border-color: #3a5a3a;
+            background-color: #0f1a0f;
+        }
+        input.word-input.invalid {
+            border-color: #5a3a3a;
+            background-color: #1a0f0f;
+        }
+        button {
+            background-color: #2a3a4a;
+            color: #b0b0b0;
+            padding: 12px 30px;
+            border: 1px solid #3a3a3a;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin-top: 10px;
+            margin-right: 10px;
+            transition: all 0.2s;
+        }
+        button:hover:not(:disabled) {
+            background-color: #3a4a5a;
+            border-color: #5a7a8a;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .phrase-option {
+            background-color: #0a0a0a;
+            border: 1px solid #3a3a3a;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .phrase-option:hover {
+            border-color: #5a7a8a;
+            background-color: #1a1a1a;
+        }
+        .phrase-option .phrase-text {
+            color: #9a9a9a;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .phrase-option .phrase-meaning {
+            color: #6a6a6a;
+            font-size: 12px;
+            font-style: italic;
+        }
+        .key-display {
+            word-break: break-all;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #000;
+            border-radius: 3px;
+            font-size: 11px;
+            border: 1px solid #2a2a2a;
+            color: #7a7a7a;
+            line-height: 1.6;
+        }
+        .section {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #0a0a0a;
+            border: 1px solid #3a3a3a;
+            border-radius: 3px;
+            display: none;
+        }
+        .section.show {
+            display: block;
+        }
+        .section-title {
+            color: #9a9a9a;
+            font-size: 14px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .status-message {
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+        .status-success {
+            background-color: #1a2a1a;
+            border: 1px solid #3a5a3a;
+            color: #9a9a9a;
+        }
+        .status-error {
+            background-color: #2a1a1a;
+            border: 1px solid #5a3a3a;
+            color: #9a9a9a;
+        }
+        .status-info {
+            background-color: #1a1a2a;
+            border: 1px solid #3a3a5a;
+            color: #9a9a9a;
+        }
+        .access-granted {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #1a2a3a 0%, #2a3a4a 100%);
+            border: 2px solid #5a7a8a;
+            border-radius: 5px;
+        }
+        .access-granted h2 {
+            color: #b0b0b0;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .access-granted p {
+            color: #8a8a8a;
+            line-height: 1.8;
+            margin: 10px 0;
+        }
+        .note {
+            font-size: 12px;
+            color: #6a6a6a;
+            line-height: 1.6;
+            margin-top: 15px;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #2a2a2a;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>CRYPTOPOLIS ACCESS TERMINAL</h1>
+    
+    <div class="terminal">
+        <div class="terminal-header">
+            SYSTEM: GRANDFATHER'S LEGACY v1.0<br>
+            STATUS: <span id="systemStatus">LOADING...</span>
+        </div>
+
+        <!-- Step 1: Enter or Select Passphrase -->
+        <div class="input-group">
+            <label>Grandfather left three possible passphrases. Choose one:</label>
+            
+            <div class="phrase-option" onclick="selectPhrase('secret code protect future youth always')">
+                <div class="phrase-text">secret code protect future youth always</div>
+                <div class="phrase-meaning">"Guard the code for future generations"</div>
+            </div>
+            
+            <div class="phrase-option" onclick="selectPhrase('trust verify never betray private truth')">
+                <div class="phrase-text">trust verify never betray private truth</div>
+                <div class="phrase-meaning">"Verify but preserve privacy"</div>
+            </div>
+            
+            <div class="phrase-option" onclick="selectPhrase('silent network whisper rebel power voice')">
+                <div class="phrase-text">silent network whisper rebel power voice</div>
+                <div class="phrase-meaning">"The power of anonymous communication"</div>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>Or manually enter the 6 words (one at a time):</label>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
+                <input type="text" id="word1" class="word-input" placeholder="Word 1" maxlength="20">
+                <input type="text" id="word2" class="word-input" placeholder="Word 2" maxlength="20">
+                <input type="text" id="word3" class="word-input" placeholder="Word 3" maxlength="20">
+                <input type="text" id="word4" class="word-input" placeholder="Word 4" maxlength="20">
+                <input type="text" id="word5" class="word-input" placeholder="Word 5" maxlength="20">
+                <input type="text" id="word6" class="word-input" placeholder="Word 6" maxlength="20">
+            </div>
+            <div id="wordValidation" style="margin-top: 10px; font-size: 12px; color: #6a6a6a;"></div>
+            <div class="note">
+                Game Mode: Using 6 words for easier gameplay.<br>
+                All words must be from the BIP39 standard wordlist.<br>
+                Type carefully - each word will be validated in real-time.
+            </div>
+        </div>
+
+        <button onclick="deriveKey()" style="width: 100%;">Derive Access Key</button>
+
+        <!-- Step 2: Show Derived Key -->
+        <div id="keySection" class="section">
+            <div class="section-title">ACCESS KEY DERIVED</div>
+            
+            <div id="derivationProcess" style="margin-bottom: 20px;">
+                <p style="color: #7a7a7a; font-size: 12px;">Processing passphrase through BIP39 derivation...</p>
+                <div style="background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 3px; padding: 10px; margin: 10px 0;">
+                    <div id="step1" style="color: #5a5a5a; margin: 5px 0;">→ Validating words against BIP39 wordlist</div>
+                    <div id="step2" style="color: #5a5a5a; margin: 5px 0;">→ Converting to entropy</div>
+                    <div id="step3" style="color: #5a5a5a; margin: 5px 0;">→ Applying PBKDF2 derivation function</div>
+                    <div id="step4" style="color: #5a5a5a; margin: 5px 0;">→ Extracting private key from seed</div>
+                </div>
+            </div>
+            
+            <p>Your passphrase has been processed. Private key generated:</p>
+            <div id="privateKeyDisplay" class="key-display"></div>
+            
+            <p style="margin-top: 20px;">This key is your digital identity in Cryptopolis. It must be verified to gain access.</p>
+            <button id="requestAccessBtn" onclick="requestAccess()">Request Access to Cryptopolis</button>
+        </div>
+
+        <!-- Step 3: Challenge-Response Authentication -->
+        <div id="authSection" class="section">
+            <div class="section-title">AUTHENTICATION PROTOCOL</div>
+            <div id="authStatus"></div>
+            
+            <p>The system has issued a challenge. Sign it with your private key to prove ownership:</p>
+            <div id="challengeDisplay" class="key-display"></div>
+            
+            <button id="signChallengeBtn" onclick="signChallenge()">Sign Challenge</button>
+            
+            <div id="signatureSection" style="display: none; margin-top: 20px;">
+                <p>Your signature:</p>
+                <div id="signatureDisplay" class="key-display"></div>
+                <button onclick="verifyAndEnter()">Submit for Verification</button>
+            </div>
+        </div>
+
+        <!-- Step 4: Access Granted -->
+        <div id="accessSection" class="section">
+            <div class="access-granted">
+                <h2>ACCESS GRANTED</h2>
+                <p>Authentication successful.</p>
+                <p>Welcome to Cryptopolis.</p>
+                <p style="margin-top: 30px; font-size: 12px;">
+                    The grandfather's world awaits...<br>
+                    [In the actual game, this would transition to the main game scene]
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load required libraries -->
+    <script type="module">
+        import * as bip39Module from 'https://esm.sh/bip39@3.1.0';
+        window.bip39 = bip39Module;
+        
+        // Simple crypto utilities
+        window.crypto_utils = {
+            simpleSign: async function(privateKey, message) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(privateKey + message);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            },
+            
+            simpleVerify: async function(privateKey, message, signature) {
+                const expectedSignature = await this.simpleSign(privateKey, message);
+                return expectedSignature === signature;
+            }
+        };
+        
+        // Mark system as ready
+        window.systemReady = true;
+        document.getElementById('systemStatus').textContent = 'AWAITING AUTHENTICATION';
+        document.getElementById('systemStatus').style.color = '#9a9a9a';
+        
+        console.log('Cryptopolis Access Terminal initialized');
+        console.log('BIP39 library loaded successfully');
+    </script>
+    
+    <script>
+        let currentPrivateKey = null;
+        let currentChallenge = null;
+        let currentSignature = null;
+
+        // Setup real-time word validation
+        function setupWordValidation() {
+            const inputs = ['word1', 'word2', 'word3', 'word4', 'word5', 'word6'];
+            inputs.forEach((id, index) => {
+                const input = document.getElementById(id);
+                input.addEventListener('input', function() {
+                    validateWord(this);
+                });
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && index < 5) {
+                        document.getElementById(inputs[index + 1]).focus();
+                    }
+                });
+            });
+        }
+
+        function validateWord(input) {
+            if (!window.bip39) return;
+            
+            const word = input.value.trim().toLowerCase();
+            if (word === '') {
+                input.className = 'word-input';
+                return;
+            }
+            
+            const wordlist = window.bip39.wordlists.english;
+            if (wordlist.includes(word)) {
+                input.className = 'word-input valid';
+            } else {
+                input.className = 'word-input invalid';
+            }
+            
+            updateValidationStatus();
+        }
+
+        function updateValidationStatus() {
+            const inputs = ['word1', 'word2', 'word3', 'word4', 'word5', 'word6'];
+            const words = inputs.map(id => document.getElementById(id).value.trim().toLowerCase());
+            const validCount = words.filter((word, index) => {
+                return word !== '' && document.getElementById(inputs[index]).classList.contains('valid');
+            }).length;
+            
+            const validationDiv = document.getElementById('wordValidation');
+            if (validCount === 6) {
+                validationDiv.textContent = '✓ All 6 words validated. Ready to derive key.';
+                validationDiv.style.color = '#7a9a7a';
+            } else if (validCount > 0) {
+                validationDiv.textContent = `${validCount}/6 words validated`;
+                validationDiv.style.color = '#7a7a7a';
+            } else {
+                validationDiv.textContent = '';
+            }
+        }
+
+        function selectPhrase(phrase) {
+            const words = phrase.split(' ');
+            words.forEach((word, index) => {
+                const input = document.getElementById(`word${index + 1}`);
+                input.value = word;
+                validateWord(input);
+            });
+            console.log('Phrase selected:', phrase);
+        }
+
+        async function deriveKey() {
+            if (!window.systemReady || !window.bip39) {
+                alert('System still loading. Please wait a moment and try again.');
+                return;
+            }
+            
+            // Get words from inputs
+            const inputs = ['word1', 'word2', 'word3', 'word4', 'word5', 'word6'];
+            const words = inputs.map(id => document.getElementById(id).value.trim().toLowerCase());
+            
+            if (words.some(word => word === '')) {
+                alert('Please enter all 6 words.');
+                return;
+            }
+            
+            const mnemonic = words.join(' ');
+            
+            try {
+                // Check if all words are in BIP39 wordlist
+                const wordlist = window.bip39.wordlists.english;
+                const invalidWords = words.filter(word => !wordlist.includes(word));
+                
+                if (invalidWords.length > 0) {
+                    alert('Invalid words detected: ' + invalidWords.join(', ') + '\nPlease use words from the BIP39 wordlist.');
+                    return;
+                }
+                
+                // Show key section with animation
+                resetSections();
+                document.getElementById('keySection').classList.add('show');
+                
+                // Animate derivation process
+                await animateDerivation();
+                
+                // Use BIP39's mnemonicToSeed function
+                const seed = window.bip39.mnemonicToSeedSync(mnemonic);
+                const seedHex = Array.from(seed)
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+                
+                currentPrivateKey = seedHex.slice(0, 64); // First 32 bytes
+                
+                // Display the key with typing effect
+                await typeText('privateKeyDisplay', currentPrivateKey, 5);
+                
+                console.log('Private key derived from 6-word phrase');
+                console.log('Phrase:', mnemonic);
+                console.log('Private key:', currentPrivateKey);
+                
+            } catch (error) {
+                console.error('Error in deriveKey:', error);
+                alert('Error deriving key: ' + error.message);
+            }
+        }
+
+        async function animateDerivation() {
+            const steps = ['step1', 'step2', 'step3', 'step4'];
+            for (let i = 0; i < steps.length; i++) {
+                await new Promise(resolve => setTimeout(resolve, 300));
+                document.getElementById(steps[i]).style.color = '#7a9a7a';
+            }
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        async function typeText(elementId, text, speed) {
+            const element = document.getElementById(elementId);
+            element.textContent = '';
+            
+            // Type in chunks for speed
+            const chunkSize = 8;
+            for (let i = 0; i < text.length; i += chunkSize) {
+                element.textContent += text.substring(i, i + chunkSize);
+                await new Promise(resolve => setTimeout(resolve, speed));
+            }
+        }
+
+        function requestAccess() {
+            if (!currentPrivateKey) {
+                alert('No private key available. Please derive key first.');
+                return;
+            }
+            
+            // Generate a random challenge
+            currentChallenge = 'CRYPTOPOLIS_ACCESS_' + Date.now() + '_' + Math.random().toString(36).substring(7);
+            
+            // Display challenge
+            document.getElementById('challengeDisplay').textContent = currentChallenge;
+            
+            // Show auth section
+            document.getElementById('authSection').classList.add('show');
+            document.getElementById('authStatus').innerHTML = 
+                '<div class="status-message status-info">Challenge issued. Sign to prove you own the private key.</div>';
+            
+            console.log('Challenge issued:', currentChallenge);
+        }
+
+        async function signChallenge() {
+            if (!currentPrivateKey || !currentChallenge) {
+                alert('Missing private key or challenge.');
+                return;
+            }
+            
+            // Add signing animation
+            const btn = document.getElementById('signChallengeBtn');
+            btn.disabled = true;
+            btn.textContent = 'Signing...';
+            
+            try {
+                // Sign the challenge
+                currentSignature = await window.crypto_utils.simpleSign(currentPrivateKey, currentChallenge);
+                
+                // Display signature with animation
+                await typeText('signatureDisplay', currentSignature, 3);
+                document.getElementById('signatureSection').style.display = 'block';
+                
+                document.getElementById('authStatus').innerHTML = 
+                    '<div class="status-message status-success">Challenge signed successfully.</div>';
+                
+                btn.textContent = 'Sign Challenge';
+                btn.disabled = false;
+                
+                console.log('Signature generated:', currentSignature);
+                
+            } catch (error) {
+                alert('Error signing challenge: ' + error.message);
+                btn.textContent = 'Sign Challenge';
+                btn.disabled = false;
+            }
+        }
+
+        async function verifyAndEnter() {
+            if (!currentPrivateKey || !currentChallenge || !currentSignature) {
+                alert('Missing authentication data.');
+                return;
+            }
+            
+            try {
+                // Verify the signature
+                const isValid = await window.crypto_utils.simpleVerify(
+                    currentPrivateKey, 
+                    currentChallenge, 
+                    currentSignature
+                );
+                
+                if (isValid) {
+                    // Grant access
+                    document.getElementById('authStatus').innerHTML = 
+                        '<div class="status-message status-success">Signature verified. Access granted.</div>';
+                    
+                    // Show access granted screen after a short delay
+                    setTimeout(() => {
+                        document.getElementById('accessSection').classList.add('show');
+                        document.getElementById('authSection').style.display = 'none';
+                        document.getElementById('keySection').style.display = 'none';
+                    }, 1000);
+                    
+                    console.log('Authentication successful - Access granted to Cryptopolis');
+                } else {
+                    alert('Signature verification failed. Access denied.');
+                }
+                
+            } catch (error) {
+                alert('Error verifying signature: ' + error.message);
+            }
+        }
+
+        function resetSections() {
+            document.getElementById('keySection').classList.remove('show');
+            document.getElementById('authSection').classList.remove('show');
+            document.getElementById('accessSection').classList.remove('show');
+            document.getElementById('signatureSection').style.display = 'none';
+            
+            // Reset derivation animation
+            const steps = ['step1', 'step2', 'step3', 'step4'];
+            steps.forEach(step => {
+                document.getElementById(step).style.color = '#5a5a5a';
+            });
+        }
+
+        // Initialize when system is ready
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                if (window.systemReady) {
+                    setupWordValidation();
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>
