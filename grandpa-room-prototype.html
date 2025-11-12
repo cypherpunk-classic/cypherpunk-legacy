@@ -668,8 +668,8 @@
                 { x: drawer.x, y: drawer.y, width: drawer.width, height: 40 },
                 // Bed right
                 { x: w - 250, y: h/2 - 80, width: 200, height: 150 },
-                // Desk back (only blocks from behind, not from front)
-                { x: computer.x - 20, y: computer.y - 20, width: computer.width + 40, height: 60 },
+                // Computer desk and computer (full collision box)
+                { x: computer.x - 10, y: computer.y, width: computer.width + 20, height: computer.height },
                 // Top wall area
                 { x: 0, y: 0, width: w, height: 100 }
             ];
@@ -1552,14 +1552,17 @@
 
             const mnemonic = words.join(' ');
 
-            // Validate with BIP39
+            // Validate each word against BIP39 wordlist (6-word game mode)
             try {
-                if (!window.bip39.validateMnemonic(mnemonic)) {
-                    alert('Invalid mnemonic phrase. Please check your words.');
-                    return;
+                const wordlist = window.bip39.wordlists.EN;
+                for (let word of words) {
+                    if (!wordlist.includes(word)) {
+                        alert(`Invalid word: "${word}". Please check your words against the BIP39 wordlist.`);
+                        return;
+                    }
                 }
             } catch (e) {
-                alert('Error validating mnemonic: ' + e.message);
+                alert('Error validating words: ' + e.message);
                 return;
             }
 
