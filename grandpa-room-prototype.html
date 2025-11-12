@@ -133,6 +133,42 @@
             background-color: #6a5a4a;
         }
 
+        /* Embedded iframe for BIP39 and Encryption Demo */
+        #embedded-page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: none;
+            z-index: 200;
+        }
+        #embedded-page.active {
+            display: block;
+        }
+        #embedded-page iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        #close-embedded {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(90, 122, 138, 0.9);
+            color: #fff;
+            border: 2px solid #5a7a8a;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 201;
+            font-family: 'Courier New', monospace;
+        }
+        #close-embedded:hover {
+            background-color: rgba(110, 142, 158, 0.9);
+        }
+
         #transition-overlay {
             position: absolute;
             top: 0;
@@ -235,6 +271,12 @@
 
         <div id="transition-overlay"></div>
 
+        <!-- Embedded Page Container -->
+        <div id="embedded-page">
+            <button id="close-embedded" onclick="closeEmbeddedPage()">✕ Close</button>
+            <iframe id="embedded-iframe" src=""></iframe>
+        </div>
+
         <div id="game-info">
             Cypherpunk Legacy - Pixel Art Adventure
         </div>
@@ -265,7 +307,7 @@
 
         // ==================== Pixel Art Settings ====================
         const PIXEL = 6; // Pixel block size
-        const CHAR_SIZE = 20; // Character size in pixels
+        const CHAR_SIZE = 28; // Character size in pixels (increased from 20)
 
         // ==================== Player Character ====================
         const player = {
@@ -307,8 +349,8 @@
         };
 
         function updateDrawerPosition() {
-            drawer.x = 150;
-            drawer.y = canvas.height / 2 + 80;
+            drawer.x = 80;
+            drawer.y = 120;
         }
         updateDrawerPosition();
 
@@ -320,16 +362,16 @@
             const h = canvas.height;
 
             collisionRects = [
-                // Bookshelf left
-                { x: 50, y: h/2 - 100, width: 120, height: 180 },
+                // Bookshelf (top-left, next to drawer)
+                { x: 200, y: 120, width: 120, height: 180 },
+                // Drawer (top-left corner)
+                { x: drawer.x, y: drawer.y, width: drawer.width, height: 40 },
                 // Bed right
                 { x: w - 250, y: h/2 - 80, width: 200, height: 150 },
                 // Desk back (only blocks from behind, not from front)
                 { x: computer.x - 20, y: computer.y - 20, width: computer.width + 40, height: 60 },
                 // Top wall area
-                { x: 0, y: 0, width: w, height: 100 },
-                // Drawer (only blocks from inside, not from front)
-                { x: drawer.x, y: drawer.y, width: drawer.width, height: 40 }
+                { x: 0, y: 0, width: w, height: 100 }
             ];
         }
         updateCollisionRects();
@@ -356,7 +398,7 @@
 
             // Shadow
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-            ctx.fillRect(px + p*5, py + p*18, p*10, p*2);
+            ctx.fillRect(px + p*7, py + p*25, p*14, p*3);
 
             const walk = player.isMoving && player.animFrame === 1 ? p : 0;
 
@@ -368,6 +410,14 @@
                 drawCharacterLeft(px, py, walk);
             } else if (player.direction === 'right') {
                 drawCharacterRight(px, py, walk);
+            } else if (player.direction === 'up-left') {
+                drawCharacterUpLeft(px, py, walk);
+            } else if (player.direction === 'up-right') {
+                drawCharacterUpRight(px, py, walk);
+            } else if (player.direction === 'down-left') {
+                drawCharacterDownLeft(px, py, walk);
+            } else if (player.direction === 'down-right') {
+                drawCharacterDownRight(px, py, walk);
             }
         }
 
@@ -446,6 +496,105 @@
             ctx.fillRect(px + p*11, py + p*16 + walk, p*2, p*4 - walk);
         }
 
+        // Diagonal directions (wa, wd, sa, sd)
+        function drawCharacterUpLeft(px, py, walk) {
+            const p = PIXEL;
+            // Hair
+            ctx.fillStyle = '#4a3a2a';
+            ctx.fillRect(px + p*5, py + p*3, p*8, p*5);
+            // Head (3/4 view)
+            ctx.fillStyle = '#d4a574';
+            ctx.fillRect(px + p*6, py + p*5, p*6, p*5);
+            // Eye
+            ctx.fillStyle = '#2a2a2a';
+            ctx.fillRect(px + p*7, py + p*7, p*1, p*1);
+            // Body
+            ctx.fillStyle = '#5a6a7a';
+            ctx.fillRect(px + p*6, py + p*10, p*7, p*6);
+            // Arms
+            ctx.fillStyle = '#d4a574';
+            ctx.fillRect(px + p*4, py + p*11, p*2, p*4);
+            ctx.fillRect(px + p*13, py + p*11, p*2, p*4);
+            // Legs
+            ctx.fillStyle = '#3a4a5a';
+            ctx.fillRect(px + p*7, py + p*16 - walk, p*2, p*4 + walk);
+            ctx.fillRect(px + p*10, py + p*16 + walk, p*2, p*4 - walk);
+        }
+
+        function drawCharacterUpRight(px, py, walk) {
+            const p = PIXEL;
+            // Hair
+            ctx.fillStyle = '#4a3a2a';
+            ctx.fillRect(px + p*7, py + p*3, p*8, p*5);
+            // Head (3/4 view)
+            ctx.fillStyle = '#d4a574';
+            ctx.fillRect(px + p*8, py + p*5, p*6, p*5);
+            // Eye
+            ctx.fillStyle = '#2a2a2a';
+            ctx.fillRect(px + p*12, py + p*7, p*1, p*1);
+            // Body
+            ctx.fillStyle = '#5a6a7a';
+            ctx.fillRect(px + p*7, py + p*10, p*7, p*6);
+            // Arms
+            ctx.fillStyle = '#d4a574';
+            ctx.fillRect(px + p*5, py + p*11, p*2, p*4);
+            ctx.fillRect(px + p*14, py + p*11, p*2, p*4);
+            // Legs
+            ctx.fillStyle = '#3a4a5a';
+            ctx.fillRect(px + p*8, py + p*16 - walk, p*2, p*4 + walk);
+            ctx.fillRect(px + p*11, py + p*16 + walk, p*2, p*4 - walk);
+        }
+
+        function drawCharacterDownLeft(px, py, walk) {
+            const p = PIXEL;
+            // Hair
+            ctx.fillStyle = '#4a3a2a';
+            ctx.fillRect(px + p*5, py + p*3, p*8, p*4);
+            // Head (3/4 view)
+            ctx.fillStyle = '#d4a574';
+            ctx.fillRect(px + p*6, py + p*5, p*6, p*5);
+            // Eyes
+            ctx.fillStyle = '#2a2a2a';
+            ctx.fillRect(px + p*7, py + p*7, p*1, p*1);
+            ctx.fillRect(px + p*10, py + p*7, p*1, p*1);
+            // Body
+            ctx.fillStyle = '#5a6a7a';
+            ctx.fillRect(px + p*6, py + p*10, p*7, p*6);
+            // Arms
+            ctx.fillStyle = '#d4a574';
+            ctx.fillRect(px + p*4, py + p*11, p*2, p*5);
+            ctx.fillRect(px + p*13, py + p*12, p*2, p*4);
+            // Legs
+            ctx.fillStyle = '#3a4a5a';
+            ctx.fillRect(px + p*7, py + p*16 - walk, p*2, p*4 + walk);
+            ctx.fillRect(px + p*10, py + p*16 + walk, p*2, p*4 - walk);
+        }
+
+        function drawCharacterDownRight(px, py, walk) {
+            const p = PIXEL;
+            // Hair
+            ctx.fillStyle = '#4a3a2a';
+            ctx.fillRect(px + p*7, py + p*3, p*8, p*4);
+            // Head (3/4 view)
+            ctx.fillStyle = '#d4a574';
+            ctx.fillRect(px + p*8, py + p*5, p*6, p*5);
+            // Eyes
+            ctx.fillStyle = '#2a2a2a';
+            ctx.fillRect(px + p*10, py + p*7, p*1, p*1);
+            ctx.fillRect(px + p*13, py + p*7, p*1, p*1);
+            // Body
+            ctx.fillStyle = '#5a6a7a';
+            ctx.fillRect(px + p*7, py + p*10, p*7, p*6);
+            // Arms
+            ctx.fillStyle = '#d4a574';
+            ctx.fillRect(px + p*5, py + p*12, p*2, p*4);
+            ctx.fillRect(px + p*14, py + p*11, p*2, p*5);
+            // Legs
+            ctx.fillStyle = '#3a4a5a';
+            ctx.fillRect(px + p*8, py + p*16 - walk, p*2, p*4 + walk);
+            ctx.fillRect(px + p*11, py + p*16 + walk, p*2, p*4 - walk);
+        }
+
         // ==================== Draw Wooden Cabin ====================
         function drawGrandpaCabin() {
             const w = canvas.width;
@@ -484,23 +633,26 @@
             // Window
             drawWindow(w - 200, 20);
 
-            // Bookshelf
-            drawBookshelf(50, h/2 - 100);
-
-            // Bed
-            drawBed(w - 250, h/2 - 80);
-
-            // Drawer/Cabinet
-            drawDrawer();
-
             // Rug under desk
             drawRug(computer.x - 60, computer.y + computer.height - 20, computer.width + 120, 140);
 
             // Desk
             drawDesk();
 
-            // Old CRT Computer
-            drawCRTComputer();
+            // Collect all objects with Y positions for z-ordering
+            const objects = [
+                { y: 120, draw: () => drawDrawer() }, // Drawer top-left
+                { y: 120, draw: () => drawBookshelf(200, 120) }, // Bookshelf next to drawer
+                { y: h/2 - 80, draw: () => drawBed(w - 250, h/2 - 80) }, // Bed
+                { y: computer.y + computer.height * 0.75, draw: () => drawCRTComputer() }, // Computer
+                { y: player.y, draw: () => drawPlayer() } // Player
+            ];
+
+            // Sort by Y position (back to front)
+            objects.sort((a, b) => a.y - b.y);
+
+            // Draw all objects in order
+            objects.forEach(obj => obj.draw());
         }
 
         function drawWindow(x, y) {
@@ -866,22 +1018,47 @@
             const prevY = player.y;
             player.isMoving = false;
 
-            if (keys['ArrowUp'] || keys['w'] || keys['W']) {
+            const up = keys['ArrowUp'] || keys['w'] || keys['W'];
+            const down = keys['ArrowDown'] || keys['s'] || keys['S'];
+            const left = keys['ArrowLeft'] || keys['a'] || keys['A'];
+            const right = keys['ArrowRight'] || keys['d'] || keys['D'];
+
+            // Diagonal movement (wa, wd, sa, sd)
+            if (up && left) {
+                player.y -= player.speed * 0.707; // Diagonal speed
+                player.x -= player.speed * 0.707;
+                player.direction = 'up-left';
+                player.isMoving = true;
+            } else if (up && right) {
+                player.y -= player.speed * 0.707;
+                player.x += player.speed * 0.707;
+                player.direction = 'up-right';
+                player.isMoving = true;
+            } else if (down && left) {
+                player.y += player.speed * 0.707;
+                player.x -= player.speed * 0.707;
+                player.direction = 'down-left';
+                player.isMoving = true;
+            } else if (down && right) {
+                player.y += player.speed * 0.707;
+                player.x += player.speed * 0.707;
+                player.direction = 'down-right';
+                player.isMoving = true;
+            }
+            // Cardinal directions
+            else if (up) {
                 player.y -= player.speed;
                 player.direction = 'up';
                 player.isMoving = true;
-            }
-            if (keys['ArrowDown'] || keys['s'] || keys['S']) {
+            } else if (down) {
                 player.y += player.speed;
                 player.direction = 'down';
                 player.isMoving = true;
-            }
-            if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+            } else if (left) {
                 player.x -= player.speed;
                 player.direction = 'left';
                 player.isMoving = true;
-            }
-            if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+            } else if (right) {
                 player.x += player.speed;
                 player.direction = 'right';
                 player.isMoving = true;
@@ -953,13 +1130,13 @@
                     // Open letter modal
                     openLetter();
                 } else if (isNearComputer() && hasReadLetter) {
-                    // Open bip39-game-final.html for authentication
-                    window.open('bip39-game-final.html', '_blank');
+                    // Embed bip39-game-final.html for authentication
+                    openEmbeddedPage('bip39-game-final.html');
                 }
             } else if (currentState === GameState.CRYPTOPOLIS_MENU) {
                 // Press E in Cryptopolis menu opens encryption-demo
                 if (gameStarted) {
-                    window.open('encryption-demo.html', '_blank');
+                    openEmbeddedPage('encryption-demo.html');
                 }
             }
         }
@@ -971,6 +1148,20 @@
         function closeLetter() {
             document.getElementById('letter-modal').classList.remove('active');
             hasReadLetter = true;
+        }
+
+        function openEmbeddedPage(url) {
+            const embeddedPage = document.getElementById('embedded-page');
+            const iframe = document.getElementById('embedded-iframe');
+            iframe.src = url;
+            embeddedPage.classList.add('active');
+        }
+
+        function closeEmbeddedPage() {
+            const embeddedPage = document.getElementById('embedded-page');
+            const iframe = document.getElementById('embedded-iframe');
+            embeddedPage.classList.remove('active');
+            iframe.src = '';
         }
 
         function updateInteractionPrompt() {
@@ -1045,8 +1236,8 @@
 
                 if (x >= buttonX && x <= buttonX + buttonW &&
                     y >= buttonY && y <= buttonY + buttonH) {
-                    // Continue button opens encryption-demo.html
-                    window.open('encryption-demo.html', '_blank');
+                    // Continue button embeds encryption-demo.html
+                    openEmbeddedPage('encryption-demo.html');
                 }
             }
         });
@@ -1056,9 +1247,8 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             if (currentState === GameState.GRANDPA_CABIN) {
-                drawGrandpaCabin();
                 updatePlayer();
-                drawPlayer();
+                drawGrandpaCabin(); // Includes player in z-order
                 updateInteractionPrompt();
             } else if (currentState === GameState.CRYPTOPOLIS_MENU) {
                 drawCryptopolisMenu();
