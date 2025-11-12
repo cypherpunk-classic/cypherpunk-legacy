@@ -59,6 +59,80 @@
             50% { transform: translateX(-50%) scale(1.05); }
         }
 
+        /* Letter Modal */
+        #letter-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        #letter-modal.active {
+            display: flex;
+        }
+        .letter-container {
+            background-color: #e8d4a8;
+            width: 700px;
+            max-width: 90%;
+            padding: 60px 50px;
+            border: 3px solid #8a7a5a;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            position: relative;
+            font-family: 'Courier New', monospace;
+            color: #3a2a1a;
+        }
+        .letter-header {
+            font-size: 24px;
+            margin-bottom: 30px;
+            text-align: center;
+            font-style: italic;
+            color: #4a3a2a;
+        }
+        .letter-body {
+            font-size: 16px;
+            line-height: 2;
+            margin-bottom: 30px;
+            color: #3a2a1a;
+        }
+        .mnemonic-group {
+            background-color: rgba(138, 122, 90, 0.1);
+            border-left: 3px solid #8a7a5a;
+            padding: 15px 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-style: italic;
+            color: #2a1a0a;
+            letter-spacing: 1px;
+        }
+        .mnemonic-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #5a4a3a;
+            margin-bottom: 8px;
+        }
+        .letter-close-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #5a4a3a;
+            color: #e8d4a8;
+            border: 2px solid #4a3a2a;
+            padding: 12px 40px;
+            font-size: 16px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+        .letter-close-btn:hover {
+            background-color: #6a5a4a;
+        }
+
         #transition-overlay {
             position: absolute;
             top: 0;
@@ -125,6 +199,40 @@
             Press E to access computer
         </div>
 
+        <!-- Letter Modal -->
+        <div id="letter-modal">
+            <div class="letter-container">
+                <div class="letter-header">Grandpa's Letter</div>
+                <div class="letter-body">
+                    My dear child,<br><br>
+                    If you're reading this, I'm no longer here. But don't be sad - I've left you something precious.<br><br>
+                    In Cryptopolis, you'll need these keys to unlock the legacy I've prepared for you. Guard them carefully:
+                </div>
+
+                <div class="mnemonic-group">
+                    <div class="mnemonic-label">First Path:</div>
+                    secret code protect future youth always
+                </div>
+
+                <div class="mnemonic-group">
+                    <div class="mnemonic-label">Second Path:</div>
+                    trust verify never betray private truth
+                </div>
+
+                <div class="mnemonic-group">
+                    <div class="mnemonic-label">Third Path:</div>
+                    silent network whisper rebel power voice
+                </div>
+
+                <div class="letter-body" style="margin-top: 30px; font-size: 14px; font-style: italic;">
+                    Remember: Trust, but verify. Privacy is freedom.<br>
+                    Your loving Grandpa
+                </div>
+
+                <button class="letter-close-btn" onclick="closeLetter()">Close Letter</button>
+            </div>
+        </div>
+
         <div id="transition-overlay"></div>
 
         <div id="game-info">
@@ -153,6 +261,7 @@
 
         let currentState = GameState.GRANDPA_CABIN;
         let gameStarted = false;
+        let hasReadLetter = false; // Track if player has read the letter
 
         // ==================== Pixel Art Settings ====================
         const PIXEL = 6; // Pixel block size
@@ -188,6 +297,21 @@
         }
         updateComputerPosition();
 
+        // ==================== Drawer/Cabinet ====================
+        const drawer = {
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 120,
+            interactRadius: 80
+        };
+
+        function updateDrawerPosition() {
+            drawer.x = 150;
+            drawer.y = canvas.height / 2 + 80;
+        }
+        updateDrawerPosition();
+
         // Collision boxes for furniture
         let collisionRects = [];
 
@@ -200,10 +324,12 @@
                 { x: 50, y: h/2 - 100, width: 120, height: 180 },
                 // Bed right
                 { x: w - 250, y: h/2 - 80, width: 200, height: 150 },
-                // Desk (computer area) - player can't walk through
-                { x: computer.x - 20, y: computer.y + computer.height - 40, width: computer.width + 40, height: 100 },
+                // Desk back (only blocks from behind, not from front)
+                { x: computer.x - 20, y: computer.y - 20, width: computer.width + 40, height: 60 },
                 // Top wall area
-                { x: 0, y: 0, width: w, height: 100 }
+                { x: 0, y: 0, width: w, height: 100 },
+                // Drawer (only blocks from inside, not from front)
+                { x: drawer.x, y: drawer.y, width: drawer.width, height: 40 }
             ];
         }
         updateCollisionRects();
@@ -364,6 +490,9 @@
             // Bed
             drawBed(w - 250, h/2 - 80);
 
+            // Drawer/Cabinet
+            drawDrawer();
+
             // Rug under desk
             drawRug(computer.x - 60, computer.y + computer.height - 20, computer.width + 120, 140);
 
@@ -427,6 +556,48 @@
             // Blanket
             ctx.fillStyle = '#6a5a4a';
             ctx.fillRect(x + 30, y + 80, w - 60, 50);
+        }
+
+        function drawDrawer() {
+            const x = drawer.x;
+            const y = drawer.y;
+            const w = drawer.width;
+            const h = drawer.height;
+            const p = PIXEL;
+
+            // Cabinet body
+            ctx.fillStyle = '#5a4a3a';
+            ctx.fillRect(x, y, w, h);
+
+            // Cabinet top
+            ctx.fillStyle = '#6a5a4a';
+            ctx.fillRect(x, y, w, 8);
+
+            // Drawer fronts
+            const drawerHeight = (h - 20) / 3;
+            for (let i = 0; i < 3; i++) {
+                const drawerY = y + 12 + i * (drawerHeight + 4);
+
+                // Drawer front
+                ctx.fillStyle = '#6a5a4a';
+                ctx.fillRect(x + 6, drawerY, w - 12, drawerHeight);
+
+                // Drawer border
+                ctx.strokeStyle = '#4a3a2a';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x + 6, drawerY, w - 12, drawerHeight);
+
+                // Drawer handle
+                ctx.fillStyle = '#3a2a1a';
+                ctx.fillRect(x + w/2 - 8, drawerY + drawerHeight/2 - 3, 16, 6);
+            }
+
+            // Highlight if near
+            if (isNearDrawer() && !hasReadLetter) {
+                ctx.strokeStyle = '#8a7a5a';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(x - 2, y - 2, w + 4, h + 4);
+            }
         }
 
         function drawRug(x, y, w, h) {
@@ -759,19 +930,32 @@
 
         function isNearComputer() {
             const dx = player.x - (computer.x + computer.width/2);
-            const dy = player.y - (computer.y + computer.height);
+            const dy = player.y - (computer.y + computer.height * 0.75);
             const distance = Math.sqrt(dx * dx + dy * dy);
 
-            // Must be in front of computer (below it)
-            const isFacingComputer = player.direction === 'up' && player.y > computer.y + computer.height;
+            // Must be in front of computer (below it) and facing up
+            const isFacingComputer = player.direction === 'up' && player.y > computer.y + computer.height * 0.5;
 
             return distance < computer.interactRadius && isFacingComputer;
         }
 
+        function isNearDrawer() {
+            const dx = player.x - (drawer.x + drawer.width/2);
+            const dy = player.y - (drawer.y + drawer.height/2);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            return distance < drawer.interactRadius;
+        }
+
         function checkInteraction() {
-            if (currentState === GameState.GRANDPA_CABIN && isNearComputer()) {
-                // Open encryption-demo.html in new tab
-                window.open('encryption-demo.html', '_blank');
+            if (currentState === GameState.GRANDPA_CABIN) {
+                if (isNearDrawer() && !hasReadLetter) {
+                    // Open letter modal
+                    openLetter();
+                } else if (isNearComputer() && hasReadLetter) {
+                    // Open encryption-demo.html in new tab
+                    window.open('encryption-demo.html', '_blank');
+                }
             } else if (currentState === GameState.CRYPTOPOLIS_MENU) {
                 // Check which button was clicked (simplified - just Continue for now)
                 if (gameStarted) {
@@ -780,10 +964,27 @@
             }
         }
 
+        function openLetter() {
+            document.getElementById('letter-modal').classList.add('active');
+        }
+
+        function closeLetter() {
+            document.getElementById('letter-modal').classList.remove('active');
+            hasReadLetter = true;
+        }
+
         function updateInteractionPrompt() {
             const prompt = document.getElementById('interaction-prompt');
-            if (currentState === GameState.GRANDPA_CABIN && isNearComputer()) {
-                prompt.style.display = 'block';
+            if (currentState === GameState.GRANDPA_CABIN) {
+                if (isNearDrawer() && !hasReadLetter) {
+                    prompt.textContent = 'Press E to open drawer';
+                    prompt.style.display = 'block';
+                } else if (isNearComputer() && hasReadLetter) {
+                    prompt.textContent = 'Press E to access computer';
+                    prompt.style.display = 'block';
+                } else {
+                    prompt.style.display = 'none';
+                }
             } else {
                 prompt.style.display = 'none';
             }
@@ -868,6 +1069,7 @@
         // ==================== Initialize ====================
         window.addEventListener('resize', () => {
             updateComputerPosition();
+            updateDrawerPosition();
             updateCollisionRects();
         });
 
