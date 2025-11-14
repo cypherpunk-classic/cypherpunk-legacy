@@ -1,0 +1,441 @@
+/* Cypherpunk Legacy - Grandpa's Cabin Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background-color: #0a0a0a;
+    color: #b0b0b0;
+    overflow: hidden;
+}
+
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000;
+}
+
+#game-canvas {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+#ui-overlay {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: #fff;
+    font-size: 16px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    pointer-events: none;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 10px 15px;
+    border-radius: 5px;
+}
+
+#interaction-prompt {
+    position: absolute;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(20, 20, 20, 0.95);
+    border: 2px solid #5a7a8a;
+    padding: 15px 35px;
+    border-radius: 5px;
+    display: none;
+    animation: pulse 1.5s infinite;
+    color: #b0b0b0;
+    font-size: 18px;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.05); }
+}
+
+/* Letter Modal */
+#letter-modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.95);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+#letter-modal.active {
+    display: flex;
+}
+
+.letter-container {
+    background-color: #e8d4a8;
+    width: 700px;
+    max-width: 90%;
+    padding: 60px 50px;
+    border: 3px solid #8a7a5a;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    position: relative;
+    font-family: 'Courier New', monospace;
+    color: #3a2a1a;
+}
+
+.letter-header {
+    font-size: 24px;
+    margin-bottom: 30px;
+    text-align: center;
+    font-style: italic;
+    color: #4a3a2a;
+}
+
+.letter-body {
+    font-size: 16px;
+    line-height: 2;
+    margin-bottom: 30px;
+    color: #3a2a1a;
+}
+
+.mnemonic-group {
+    background-color: rgba(138, 122, 90, 0.1);
+    border-left: 3px solid #8a7a5a;
+    padding: 15px 20px;
+    margin: 20px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    font-style: italic;
+    color: #2a1a0a;
+    letter-spacing: 1px;
+}
+
+.mnemonic-label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #5a4a3a;
+    margin-bottom: 8px;
+}
+
+.letter-close-btn {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #5a4a3a;
+    color: #e8d4a8;
+    border: 2px solid #4a3a2a;
+    padding: 12px 40px;
+    font-size: 16px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+}
+
+.letter-close-btn:hover {
+    background-color: #6a5a4a;
+}
+
+/* BIP39 Modal - Dark Cyberpunk Style */
+#bip39-modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.98);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    z-index: 100;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+#bip39-modal.active {
+    display: flex;
+}
+
+.bip39-container {
+    background-color: #0a0a0a;
+    max-width: 900px;
+    width: 100%;
+    margin: 20px auto;
+    padding: 20px;
+    border: 2px solid #3a3a3a;
+    border-radius: 5px;
+}
+
+.bip39-container h1 {
+    text-align: center;
+    color: #8a8a8a;
+    letter-spacing: 2px;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.terminal {
+    background-color: #151515;
+    border: 1px solid #3a3a3a;
+    padding: 30px;
+    border-radius: 5px;
+    min-height: 400px;
+}
+
+.terminal-header {
+    color: #6a6a6a;
+    font-size: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #2a2a2a;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #9a9a9a;
+}
+
+.phrase-option {
+    background-color: #0a0a0a;
+    border: 1px solid #3a3a3a;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.phrase-option:hover {
+    border-color: #5a7a8a;
+    background-color: #1a1a1a;
+}
+
+.phrase-option .phrase-text {
+    color: #9a9a9a;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.phrase-option .phrase-meaning {
+    color: #6a6a6a;
+    font-size: 12px;
+    font-style: italic;
+}
+
+input.word-input {
+    padding: 10px;
+    background-color: #0a0a0a;
+    color: #b0b0b0;
+    border: 1px solid #3a3a3a;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    text-align: center;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+input.word-input:focus {
+    outline: none;
+    border-color: #5a7a8a;
+}
+
+input.word-input.valid {
+    border-color: #3a5a3a;
+    background-color: #0f1a0f;
+}
+
+input.word-input.invalid {
+    border-color: #5a3a3a;
+    background-color: #1a0f0f;
+}
+
+button {
+    background-color: #2a3a4a;
+    color: #b0b0b0;
+    padding: 12px 30px;
+    border: 1px solid #3a3a3a;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    margin-top: 10px;
+    margin-right: 10px;
+    transition: all 0.2s;
+}
+
+button:hover:not(:disabled) {
+    background-color: #3a4a5a;
+    border-color: #5a7a8a;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.key-display {
+    word-break: break-all;
+    margin: 15px 0;
+    padding: 12px;
+    background-color: #000;
+    border-radius: 3px;
+    font-size: 11px;
+    border: 1px solid #2a2a2a;
+    color: #7a7a7a;
+    line-height: 1.6;
+}
+
+.section {
+    margin-top: 25px;
+    padding: 20px;
+    background-color: #0a0a0a;
+    border: 1px solid #3a3a3a;
+    border-radius: 3px;
+    display: none;
+}
+
+.section.show {
+    display: block;
+}
+
+.section-title {
+    color: #9a9a9a;
+    font-size: 14px;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.status-message {
+    padding: 12px;
+    margin: 15px 0;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.status-success {
+    background-color: #1a2a1a;
+    border: 1px solid #3a5a3a;
+    color: #9a9a9a;
+}
+
+.status-info {
+    background-color: #1a1a2a;
+    border: 1px solid #3a3a5a;
+    color: #9a9a9a;
+}
+
+.access-granted {
+    text-align: center;
+    padding: 40px;
+    background: linear-gradient(135deg, #1a2a3a 0%, #2a3a4a 100%);
+    border: 2px solid #5a7a8a;
+    border-radius: 5px;
+}
+
+.access-granted h2 {
+    color: #b0b0b0;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.access-granted p {
+    color: #8a8a8a;
+    line-height: 1.8;
+    margin: 10px 0;
+}
+
+.note {
+    font-size: 12px;
+    color: #6a6a6a;
+    line-height: 1.6;
+    margin-top: 15px;
+}
+
+.close-modal {
+    position: sticky;
+    top: 10px;
+    float: right;
+    background: none;
+    border: none;
+    color: #6a6a6a;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px 10px;
+}
+
+.close-modal:hover {
+    color: #9a9a9a;
+}
+
+.scroll-target {
+    scroll-margin-top: 20px;
+}
+
+#transition-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.5s ease-in-out;
+    z-index: 50;
+}
+
+#transition-overlay.active {
+    opacity: 1;
+}
+
+#game-info {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    color: #7a7a7a;
+    font-size: 13px;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 10px 20px;
+    border-radius: 5px;
+    pointer-events: none;
+}
+
+/* Cryptopolis Menu Buttons */
+.menu-button {
+    background: linear-gradient(to bottom, #2a3a4a 0%, #1a2a3a 100%);
+    border: 2px solid #5a7a8a;
+    color: #b0b0b0;
+    padding: 20px 50px;
+    font-size: 24px;
+    margin: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+}
+
+.menu-button:hover {
+    background: linear-gradient(to bottom, #3a4a5a 0%, #2a3a4a 100%);
+    border-color: #7a9aaa;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.6);
+}
+
+.menu-button.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

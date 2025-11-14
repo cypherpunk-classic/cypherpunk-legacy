@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cypherpunk Legacy - Grandpa's Cabin</title>
+    <link rel="stylesheet" href="../css/grandpa-room.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+
+        <div id="ui-overlay">
+            <div><strong>Scene:</strong> <span id="scene-name">Grandpa's Cabin</span></div>
+            <div style="margin-top: 5px; font-size: 14px;">WASD or Arrow keys to move</div>
+        </div>
+
+        <div id="interaction-prompt">
+            Press E to access computer
+        </div>
+
+        <!-- Letter Modal -->
+        <div id="letter-modal">
+            <div class="letter-container">
+                <div class="letter-header">Grandpa's Letter</div>
+                <div class="letter-body">
+                    My dear child,<br><br>
+                    If you're reading this, I'm no longer here. But don't be sad - I've left you something precious.<br><br>
+                    In Cryptopolis, you'll need these keys to unlock the legacy I've prepared for you. Guard them carefully:
+                </div>
+
+                <div class="mnemonic-group">
+                    <div class="mnemonic-label">First Path:</div>
+                    secret code protect future youth always
+                </div>
+
+                <div class="mnemonic-group">
+                    <div class="mnemonic-label">Second Path:</div>
+                    trust verify never betray private truth
+                </div>
+
+                <div class="mnemonic-group">
+                    <div class="mnemonic-label">Third Path:</div>
+                    silent network whisper rebel power voice
+                </div>
+
+                <div class="letter-body" style="margin-top: 30px; font-size: 14px; font-style: italic;">
+                    Remember: Trust, but verify. Privacy is freedom.<br>
+                    Your loving Grandpa
+                </div>
+
+                <button class="letter-close-btn" onclick="closeLetter()">Close Letter</button>
+            </div>
+        </div>
+
+        <!-- BIP39 Authentication Modal -->
+        <div id="bip39-modal">
+            <div class="bip39-container">
+                <button class="close-modal" onclick="closeBIP39Modal()">×</button>
+
+                <h1>CRYPTOPOLIS ACCESS TERMINAL</h1>
+
+                <div class="terminal">
+                    <div class="terminal-header">
+                        SYSTEM: GRANDFATHER'S LEGACY v1.0<br>
+                        STATUS: <span id="systemStatus">LOADING...</span>
+                    </div>
+
+                    <div class="input-group scroll-target" id="step1-select">
+                        <label>Grandfather left three possible passphrases. Choose one:</label>
+
+                        <div class="phrase-option" onclick="selectPhrase('secret code protect future youth always')">
+                            <div class="phrase-text">secret code protect future youth always</div>
+                            <div class="phrase-meaning">"Guard the code for future generations"</div>
+                        </div>
+
+                        <div class="phrase-option" onclick="selectPhrase('trust verify never betray private truth')">
+                            <div class="phrase-text">trust verify never betray private truth</div>
+                            <div class="phrase-meaning">"Verify but preserve privacy"</div>
+                        </div>
+
+                        <div class="phrase-option" onclick="selectPhrase('silent network whisper rebel power voice')">
+                            <div class="phrase-text">silent network whisper rebel power voice</div>
+                            <div class="phrase-meaning">"The power of anonymous communication"</div>
+                        </div>
+                    </div>
+
+                    <div class="input-group scroll-target" id="step1-manual">
+                        <label>Or manually enter the 6 words (one at a time):</label>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
+                            <input type="text" id="word1" class="word-input" placeholder="Word 1" maxlength="20">
+                            <input type="text" id="word2" class="word-input" placeholder="Word 2" maxlength="20">
+                            <input type="text" id="word3" class="word-input" placeholder="Word 3" maxlength="20">
+                            <input type="text" id="word4" class="word-input" placeholder="Word 4" maxlength="20">
+                            <input type="text" id="word5" class="word-input" placeholder="Word 5" maxlength="20">
+                            <input type="text" id="word6" class="word-input" placeholder="Word 6" maxlength="20">
+                        </div>
+                        <div id="wordValidation" style="margin-top: 10px; font-size: 12px; color: #6a6a6a;"></div>
+                        <div class="note">
+                            Game Mode: Using 6 words for easier gameplay.<br>
+                            All words must be from the BIP39 standard wordlist.<br>
+                            Type carefully - each word will be validated in real-time.
+                        </div>
+                    </div>
+
+                    <button onclick="deriveKey()" style="width: 100%;">Derive Access Key</button>
+
+                    <div id="keySection" class="section scroll-target">
+                        <div class="section-title">ACCESS KEY DERIVED</div>
+
+                        <div id="derivationProcess" style="margin-bottom: 20px;">
+                            <p style="color: #7a7a7a; font-size: 12px;">Processing passphrase through BIP39 derivation...</p>
+                            <div style="background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 3px; padding: 10px; margin: 10px 0;">
+                                <div id="step1" style="color: #5a5a5a; margin: 5px 0;">→ Validating words against BIP39 wordlist</div>
+                                <div id="step2" style="color: #5a5a5a; margin: 5px 0;">→ Converting to entropy</div>
+                                <div id="step3" style="color: #5a5a5a; margin: 5px 0;">→ Applying PBKDF2 derivation function</div>
+                                <div id="step4" style="color: #5a5a5a; margin: 5px 0;">→ Extracting private key from seed</div>
+                            </div>
+                        </div>
+
+                        <p>Your passphrase has been processed. Private key generated:</p>
+                        <div id="privateKeyDisplay" class="key-display"></div>
+
+                        <p style="margin-top: 20px;">This key is your digital identity in Cryptopolis. It must be verified to gain access.</p>
+                        <button id="requestAccessBtn" onclick="requestAccess()">Request Access to Cryptopolis</button>
+                    </div>
+
+                    <div id="authSection" class="section scroll-target">
+                        <div class="section-title">AUTHENTICATION PROTOCOL</div>
+                        <div id="authStatus"></div>
+
+                        <p>The system has issued a challenge. Sign it with your private key to prove ownership:</p>
+                        <div id="challengeDisplay" class="key-display"></div>
+
+                        <button id="signChallengeBtn" onclick="signChallenge()">Sign Challenge</button>
+
+                        <div id="signatureSection" style="display: none; margin-top: 20px;">
+                            <p>Your signature:</p>
+                            <div id="signatureDisplay" class="key-display"></div>
+                            <button onclick="verifyAndEnter()">Submit for Verification</button>
+                        </div>
+                    </div>
+
+                    <div id="accessSection" class="section scroll-target">
+                        <div class="access-granted">
+                            <h2>ACCESS GRANTED</h2>
+                            <p>Authentication successful.</p>
+                            <p>Welcome to Cryptopolis.</p>
+                            <p style="margin-top: 30px; font-size: 12px;">
+                                Grandfather's digital world awaits...<br>
+                                [Transitioning to Cryptopolis]
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="transition-overlay"></div>
+
+        <div id="game-info">
+            Cypherpunk Legacy - Pixel Art Adventure
+        </div>
+    </div>
+
+    <script type="module">
+        import * as bip39Module from 'https://esm.sh/bip39@3.1.0';
+        window.bip39 = bip39Module;
+
+        window.crypto_utils = {
+            simpleSign: async function(privateKey, message) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(privateKey + message);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            },
+
+            simpleVerify: async function(privateKey, message, signature) {
+                const expectedSignature = await this.simpleSign(privateKey, message);
+                return expectedSignature === signature;
+            }
+        };
+
+        window.systemReady = true;
+        const statusEl = document.getElementById('systemStatus');
+        if (statusEl) {
+            statusEl.textContent = 'AWAITING AUTHENTICATION';
+            statusEl.style.color = '#9a9a9a';
+        }
+
+        console.log('Cryptopolis Access Terminal initialized');
+    </script>
+    <script src="../js/grandpa-room.js"></script>
+</body>
+</html>

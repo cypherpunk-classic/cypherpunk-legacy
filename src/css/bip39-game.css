@@ -1,0 +1,228 @@
+body {
+    font-family: 'Courier New', monospace;
+    max-width: 900px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #0a0a0a;
+    color: #b0b0b0;
+}
+
+h1 {
+    text-align: center;
+    color: #8a8a8a;
+    letter-spacing: 2px;
+    font-size: 24px;
+}
+
+.terminal {
+    background-color: #151515;
+    border: 1px solid #3a3a3a;
+    padding: 30px;
+    border-radius: 5px;
+    min-height: 400px;
+}
+
+.terminal-header {
+    color: #6a6a6a;
+    font-size: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #2a2a2a;
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #9a9a9a;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+textarea {
+    width: 100%;
+    padding: 10px;
+    background-color: #0a0a0a;
+    color: #b0b0b0;
+    border: 1px solid #3a3a3a;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 60px;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: #5a7a8a;
+}
+
+input.word-input {
+    padding: 10px;
+    background-color: #0a0a0a;
+    color: #b0b0b0;
+    border: 1px solid #3a3a3a;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+input.word-input:focus {
+    outline: none;
+    border-color: #5a7a8a;
+}
+
+input.word-input.valid {
+    border-color: #3a5a3a;
+    background-color: #0f1a0f;
+}
+
+input.word-input.invalid {
+    border-color: #5a3a3a;
+    background-color: #1a0f0f;
+}
+
+button {
+    background-color: #2a3a4a;
+    color: #b0b0b0;
+    padding: 12px 30px;
+    border: 1px solid #3a3a3a;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    margin-top: 10px;
+    margin-right: 10px;
+    transition: all 0.2s;
+}
+
+button:hover:not(:disabled) {
+    background-color: #3a4a5a;
+    border-color: #5a7a8a;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.phrase-option {
+    background-color: #0a0a0a;
+    border: 1px solid #3a3a3a;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.phrase-option:hover {
+    border-color: #5a7a8a;
+    background-color: #1a1a1a;
+}
+
+.phrase-option .phrase-text {
+    color: #9a9a9a;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.phrase-option .phrase-meaning {
+    color: #6a6a6a;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.key-display {
+    word-break: break-all;
+    margin: 15px 0;
+    padding: 12px;
+    background-color: #000;
+    border-radius: 3px;
+    font-size: 11px;
+    border: 1px solid #2a2a2a;
+    color: #7a7a7a;
+    line-height: 1.6;
+}
+
+.section {
+    margin-top: 25px;
+    padding: 20px;
+    background-color: #0a0a0a;
+    border: 1px solid #3a3a3a;
+    border-radius: 3px;
+    display: none;
+}
+
+.section.show {
+    display: block;
+}
+
+.section-title {
+    color: #9a9a9a;
+    font-size: 14px;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.status-message {
+    padding: 12px;
+    margin: 15px 0;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.status-success {
+    background-color: #1a2a1a;
+    border: 1px solid #3a5a3a;
+    color: #9a9a9a;
+}
+
+.status-error {
+    background-color: #2a1a1a;
+    border: 1px solid #5a3a3a;
+    color: #9a9a9a;
+}
+
+.status-info {
+    background-color: #1a1a2a;
+    border: 1px solid #3a3a5a;
+    color: #9a9a9a;
+}
+
+.access-granted {
+    text-align: center;
+    padding: 40px;
+    background: linear-gradient(135deg, #1a2a3a 0%, #2a3a4a 100%);
+    border: 2px solid #5a7a8a;
+    border-radius: 5px;
+}
+
+.access-granted h2 {
+    color: #b0b0b0;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.access-granted p {
+    color: #8a8a8a;
+    line-height: 1.8;
+    margin: 10px 0;
+}
+
+.note {
+    font-size: 12px;
+    color: #6a6a6a;
+    line-height: 1.6;
+    margin-top: 15px;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #2a2a2a;
+    margin: 20px 0;
+}

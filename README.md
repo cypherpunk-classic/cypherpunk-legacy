@@ -1,203 +1,195 @@
-# Cypherpunk Legacy - 密碼朋克傳承
+# 🔐 Cypherpunk Legacy
 
-一個融合密碼學教育與像素藝術的網頁遊戲。探索爺爺留下的數位遺產，學習密碼學的核心概念。
+> *An educational game journey through cryptography, the crypto wars, and the fight for digital privacy*
 
-## 🎮 遊戲原型
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/status-Prototype-yellow.svg)]()
 
-### 已完成的實驗
+## 🎮 Overview
 
-1. **BIP39 助記詞認證系統** (`bip39-game-final.html`)
-   - 6 個單詞的助記詞系統
-   - 即時驗證與視覺反饋
-   - 密鑰派生與數位簽章驗證
+**Cypherpunk Legacy** is an interactive educational game that teaches cryptography through gameplay. Inspired by the cypherpunk movement and the ongoing crypto wars, this project combines:
 
-2. **像素藝術渲染測試** (`pixel-art-test.html`)
-   - 16x16 像素精靈系統
-   - CSS 渲染模式比較
-   - 互動式縮放測試
-   - 多種調色板選項
+- 🎓 **Cryptographic Education** - Learn real encryption algorithms
+- 🕹️ **Engaging Gameplay** - Interactive challenges and puzzles
+- 📚 **Historical Context** - Understand the crypto wars and why encryption matters
+- 🔬 **Hands-on Implementation** - See algorithms in action
 
-3. **加密/解密演示** (`encryption-demo.html`)
-   - 多種加密演算法 (AES-256, 3DES, RC4)
-   - 即時加密/解密操作
-   - 視覺化流程展示
-   - 效能指標
+### Current Features
 
-4. **爺爺的房間 - 完整遊戲原型** (`grandpa-room-prototype.html`) ⭐ **NEW**
-   - 可玩的像素藝術遊戲
-   - 鍵盤控制的角色移動
-   - 互動式場景與物件
-   - 整合 BIP39 認證系統
-   - 場景轉場效果
-   - 進入 Cryptopolis 數位世界
+✅ **Grandpa's Cabin** - Explore a pixel-art cabin and discover a cryptographic legacy
+✅ **BIP39 Authentication** - Learn mnemonic phrases and key derivation (6-word game mode)
+✅ **Encryption Demo** - Interactive symmetric/asymmetric cryptography workshop
+✅ **8-Direction Movement** - Smooth character controls with diagonal movement
+✅ **Z-Ordering System** - Depth-based rendering for object occlusion
 
-## 🚀 快速開始
+## 🚀 Quick Start
 
-### 方式 1: 直接打開 HTML 文件
+### Play Online
+Simply open `index.html` in a modern web browser to access the game selection menu.
 
-1. 克隆此儲存庫
-2. 用瀏覽器打開任何 `.html` 文件
-3. 開始探索！
-
-### 方式 2: 本地伺服器（推薦）
-
+### Local Development
 ```bash
-# 使用 Python
+# Clone the repository
+git clone https://github.com/cypherpunk-classic/cypherpunk-legacy.git
+cd cypherpunk-legacy
+
+# Serve locally (choose one)
 python -m http.server 8000
+# or
+npx http-server .
 
-# 或使用 Node.js
-npx http-server
+# Open browser to http://localhost:8000
 ```
 
-然後在瀏覽器中訪問 `http://localhost:8000`
-
-## 🎯 遊戲原型使用指南
-
-### 爺爺的房間原型 (grandpa-room-prototype.html)
-
-**控制方式:**
-- **方向鍵** 或 **WASD**: 移動角色
-- **E 鍵**: 與物件互動（當靠近電腦時）
-
-**遊戲流程:**
-1. 遊戲開始時，你在爺爺的房間中
-2. 使用方向鍵探索房間
-3. 走到電腦旁邊（會出現「按 E 鍵互動」提示）
-4. 按下 E 鍵開啟電腦的認證界面
-5. 輸入 6 個助記詞解鎖電腦
-6. 認證成功後，畫面會淡出並轉場到 Cryptopolis
-7. 歡迎來到數位世界！
-
-**有效的助記詞:**
-- `digital freedom privacy secure network future`
-- `crypto rebel underground anonymous protest freedom`
-- `cipher encrypt message secret digital revolution`
-
-**提示:**
-- 探索房間中的細節：書架、窗戶、地毯
-- 角色有簡單的碰撞檢測，無法穿過桌子
-- 靠近電腦時，螢幕會發光
-
-## 🛠️ 技術架構
-
-### 核心技術
-- **純 HTML/CSS/JavaScript** - 無需框架
-- **Canvas API** - 2D 遊戲渲染
-- **BIP39 庫** - 真實的助記詞驗證
-- **CryptoJS** - 加密演算法
-
-### 視覺風格
-- **解析度**: 16x16 像素精靈，縮放至 64x64 (4x)
-- **調色板**: 三色灰階配藍灰色強調
-- **渲染**: CSS `image-rendering: pixelated`
-
-### 遊戲引擎
-- 60 FPS 遊戲循環
-- 狀態機場景管理
-- 事件驅動互動系統
-- 平滑轉場效果
-
-## 📁 檔案結構
+## 📁 Project Structure
 
 ```
-cypherpunk-legacy/
-├── bip39-game-final.html          # BIP39 認證實驗
-├── pixel-art-test.html            # 像素藝術測試
-├── encryption-demo.html           # 加密演示
-├── grandpa-room-prototype.html    # 完整遊戲原型 ⭐
-├── EXPERIMENT_SUMMARY.md          # 實驗總結
-└── README.md                      # 本文件
+/cypherpunk-legacy/
+├── index.html              # 🎯 Main game menu
+├── docs/                   # 📚 Documentation
+│   ├── README.md
+│   ├── STRUCTURE.md        # Detailed structure guide
+│   └── crypto-modules/     # Crypto algorithm docs
+├── src/
+│   ├── html/              # 🎮 Game files
+│   │   ├── grandpa-room.html
+│   │   ├── bip39-game.html
+│   │   └── encryption-demo.html
+│   ├── css/               # 🎨 Stylesheets
+│   │   └── grandpa-room.css
+│   └── js/                # 💻 JavaScript modules (future)
+├── assets/                # 🖼️ Game assets
+│   ├── sprites/
+│   └── images/
+└── lib/                   # 📦 External libraries
 ```
 
-## 🎨 遊戲特色
+See [docs/STRUCTURE.md](docs/STRUCTURE.md) for detailed documentation.
 
-### 敘事設計
-遊戲透過「爺爺的遺產」這個故事框架，將密碼學概念自然地融入遊戲體驗：
-- 爺爺是一位密碼朋克先驅
-- 他留下了一台需要助記詞解鎖的電腦
-- 電腦是通往 Cryptopolis 數位世界的入口
-- 玩家通過解謎學習密碼學知識
+## 🎯 Roadmap
 
-### 視覺風格
-- 復古像素藝術風格
-- 賽博朋克色調（深色背景、藍灰色調）
-- 簡約但有細節的場景設計
-- 平滑的動畫過渡
+### Phase 1: Core Gameplay ✅ (Current)
+- [x] Pixel art cabin environment
+- [x] Character movement and animations (8 directions)
+- [x] BIP39 mnemonic authentication system
+- [x] Basic encryption demonstrations
+- [x] Scene transitions (Cabin → BIP39 → Cryptopolis)
 
-### 教育價值
-- 實際使用 BIP39 助記詞系統
-- 體驗密鑰派生過程
-- 理解認證與授權概念
-- 探索密碼學在數位世界中的應用
+### Phase 2: Algorithm Capture System 🚧 (Next)
+- [ ] Collectible encryption algorithm system
+- [ ] Algorithm combination mechanics (UC Model)
+- [ ] Visual protocol composition
+- [ ] Cryptographic puzzle challenges
 
-## 🔮 未來計劃
+### Phase 3: Advanced Cryptography 📋 (Planned)
+- [ ] **Lattice Cryptography** - LLL algorithm, post-quantum crypto
+- [ ] **Cryptanalysis Challenges** - Break weak encryption
+- [ ] **Zero-Knowledge Proofs** - Interactive ZK demonstrations
+- [ ] **Multi-Party Computation** - Collaborative crypto puzzles
 
-### 近期目標
-- [ ] 添加更多房間和場景
-- [ ] 實現 NPC 互動系統
-- [ ] 擴展 Cryptopolis 世界
-- [ ] 加入音效和背景音樂
-- [ ] 添加更多密碼學謎題
+### Phase 4: Library Integration 📋 (Planned)
+- [ ] [Rust Crypto WASM](https://github.com/buttercup/rust-crypto-wasm) integration
+- [ ] [SageMath](https://www.sagemath.org/) for lattice cryptanalysis
+- [ ] Advanced ZK libraries from [PCS ZKPunk](https://pcs.zkpunk.pro/)
+- [ ] Educational content from [Lacom Wiki](https://wiki.lacom.io/)
 
-### 中期目標
-- [ ] 存檔/讀檔系統
-- [ ] 多個角色精靈動畫
-- [ ] 進階光照效果
-- [ ] 任務與成就系統
-- [ ] 密碼學知識庫
+## 🧩 Game Modules
 
-### 長期願景
-- [ ] 多人協作模式
-- [ ] 創建自己的密碼學謎題
-- [ ] 與真實區塊鏈互動
-- [ ] 社群驅動的內容
-- [ ] 教育版本與課程整合
+### 🏠 Grandpa's Cabin
+Your grandfather, a cypherpunk pioneer, has left you his cabin. Inside, you'll find:
+- An old CRT computer requiring BIP39 authentication
+- A mysterious letter with mnemonic clues
+- A portal to Cryptopolis, the digital city he helped build
 
-## 📚 學習資源
+**Learning Objectives**: Introduction to cryptographic legacy, BIP39 mnemonics
 
-### 密碼學基礎
-- [BIP39 規範](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki)
-- [密碼學入門](https://www.coursera.org/learn/crypto)
-- [密碼朋克宣言](https://www.activism.net/cypherpunk/manifesto.html)
+### 🔑 BIP39 Authentication
+Master the art of mnemonic phrases:
+- Select from 3 pre-generated phrases or enter your own
+- Understand key derivation (PBKDF2)
+- See how 6 words can secure digital identity
+- Challenge-response authentication flow
 
-### 遊戲開發
-- [Canvas API 文件](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
-- [像素藝術教程](https://www.pixilart.com/tutorials)
-- [遊戲設計模式](https://gameprogrammingpatterns.com/)
+**Learning Objectives**: BIP39 standard, key derivation, authentication protocols
 
-## 🤝 貢獻
+### 🔐 Encryption Workshop
+Hands-on cryptography:
+- Symmetric encryption (AES)
+- Asymmetric encryption (RSA)
+- Key generation and management
+- Encrypt/decrypt messages interactively
 
-歡迎貢獻！這個專案仍在早期開發階段。
+**Learning Objectives**: Symmetric vs asymmetric crypto, practical encryption use
 
-### 貢獻方式
-1. Fork 此儲存庫
-2. 創建功能分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'Add amazing feature'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 開啟 Pull Request
+## 🎓 Educational Philosophy
 
-### 貢獻領域
-- 🎨 像素藝術與視覺設計
-- 🎮 遊戲機制與關卡設計
-- 🔐 密碼學謎題與教育內容
-- 🎵 音效與音樂
-- 📖 文檔與教程
-- 🐛 Bug 修復與優化
+### The Crypto Wars
+This game teaches cryptography through the lens of the **crypto wars** - the historical and ongoing battle for:
+- Strong encryption without backdoors
+- Individual privacy rights
+- Freedom from mass surveillance
+- Open-source cryptographic tools
 
-## 📜 授權
+### Learn by Doing
+Instead of passive reading, players:
+1. **Explore** cryptographic environments
+2. **Experiment** with real algorithms
+3. **Solve** puzzles requiring crypto knowledge
+4. **Build** complex systems from simple components
+5. **Understand** why cryptography matters for freedom
 
-MIT License - 自由使用、修改和分享
+## 🔬 Technical Details
 
-## 🙏 致謝
+### Technologies
+- **Frontend**: Pure HTML5, CSS3, JavaScript (no framework dependencies)
+- **Graphics**: Canvas API with pixel-perfect rendering
+- **Crypto**: Native Web Crypto API + BIP39 library
+- **Future**: Rust-WASM for performance-critical crypto
 
-- 密碼朋克運動的先驅們
-- BIP39 與 CryptoJS 的開發者
-- 所有熱愛自由軟體與隱私的人們
+### Architecture Principles
+- **Modular Design**: Separation of HTML, CSS, JS
+- **Progressive Enhancement**: Works without modern features
+- **Educational Focus**: Code readability over optimization
+- **Open Source**: All algorithms are transparent and auditable
 
-## 📞 聯繫
+## 🤝 Contributing
 
-有問題或建議？歡迎開 Issue 或 Pull Request！
+We welcome contributions! Areas where you can help:
+
+- 🎮 **Game Design** - New puzzles, mechanics, storylines
+- 🔐 **Cryptography** - Implementing new algorithms, educational content
+- 🎨 **Art** - Pixel art sprites, backgrounds, UI elements
+- 📚 **Documentation** - Tutorials, algorithm explanations
+- 🐛 **Bug Reports** - Testing and issue reporting
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines (coming soon).
+
+## 📚 Resources
+
+### Learning Materials
+- [Crypto Module Documentation](docs/crypto-modules/README.md)
+- [PCS ZKPunk](https://pcs.zkpunk.pro/) - ZK proof systems
+- [Lacom Wiki](https://wiki.lacom.io/) - Comprehensive cryptography wiki
+- [Crypto 101](https://www.crypto101.io/) - Introductory cryptography book
+
+### Historical Context
+- [A Cypherpunk's Manifesto](https://www.activism.net/cypherpunk/manifesto.html) (1993)
+- [Cypherpunks Mailing List Archive](https://www.activism.net/cypherpunk/)
+- [Crypto Wars](https://en.wikipedia.org/wiki/Crypto_Wars) (Wikipedia)
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- The cypherpunk movement and pioneers who fought for encryption
+- The open-source cryptography community
+- Everyone building tools for digital privacy and freedom
 
 ---
 
-**Remember: Privacy is not a crime. Encryption is a human right.** 🔐✨
+*"Privacy is necessary for an open society in the electronic age."*
+— Eric Hughes, A Cypherpunk's Manifesto (1993)
+
+**Built with ❤️ for education, privacy, and freedom**

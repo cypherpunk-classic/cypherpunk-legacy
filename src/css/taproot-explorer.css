@@ -1,0 +1,885 @@
+/* ==================== Bitcoin Cypherpunk Theme ==================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background-color: #0a0a0a;
+    color: #b0b0b0;
+    min-height: 100vh;
+    padding: 20px;
+    line-height: 1.6;
+}
+
+#game-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background-color: #0f0f0f;
+    border: 2px solid #2a2a2a;
+    border-radius: 5px;
+}
+
+/* ==================== Header ==================== */
+header {
+    background-color: #151515;
+    border-bottom: 2px solid #f7931a;
+    padding: 30px;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 32px;
+    color: #f7931a;
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px rgba(247, 147, 26, 0.3);
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: #6a6a6a;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+/* ==================== Mission Status Bar ==================== */
+#mission-status {
+    background-color: #0a0a0a;
+    border-bottom: 1px solid #2a2a2a;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mission-info {
+    color: #7a7a7a;
+    font-size: 13px;
+}
+
+.mission-info strong {
+    color: #f7931a;
+}
+
+#score-display {
+    color: #9a9a9a;
+    font-size: 14px;
+}
+
+.score-value {
+    color: #f7931a;
+    font-weight: bold;
+    font-size: 18px;
+    margin-left: 10px;
+}
+
+/* ==================== Stage Selector ==================== */
+#stage-selector {
+    background-color: #151515;
+    padding: 20px 30px;
+    border-bottom: 1px solid #2a2a2a;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+}
+
+.stage-btn {
+    background-color: #1a1a1a;
+    border: 1px solid #3a3a3a;
+    color: #7a7a7a;
+    padding: 12px 25px;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+.stage-btn:hover {
+    background-color: #2a2a2a;
+    border-color: #f7931a;
+}
+
+.stage-btn.completed {
+    background-color: #1a2a1a;
+    border-color: #3a5a3a;
+    color: #7a9a7a;
+}
+
+.stage-btn.completed::before {
+    content: '✓ ';
+    color: #5a8a5a;
+}
+
+.stage-btn.active {
+    background-color: #2a1a0a;
+    border-color: #f7931a;
+    color: #f7931a;
+    box-shadow: 0 0 10px rgba(247, 147, 26, 0.2);
+}
+
+.stage-btn.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ==================== Main Content Area ==================== */
+#game-area {
+    padding: 30px;
+}
+
+.stage {
+    display: none;
+}
+
+.stage.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==================== Terminal/Challenge Box ==================== */
+.challenge-box {
+    background-color: #151515;
+    border: 1px solid #3a3a3a;
+    border-radius: 3px;
+    padding: 25px;
+    margin: 20px 0;
+}
+
+.challenge-header {
+    color: #f7931a;
+    font-size: 18px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #2a2a2a;
+}
+
+.challenge-description {
+    color: #9a9a9a;
+    margin-bottom: 20px;
+    line-height: 1.8;
+}
+
+.challenge-objective {
+    background-color: #0a0a0a;
+    border-left: 3px solid #f7931a;
+    padding: 15px;
+    margin: 15px 0;
+    color: #b0b0b0;
+}
+
+.challenge-objective strong {
+    color: #f7931a;
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* ==================== Code Display ==================== */
+.code-display {
+    background-color: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 3px;
+    padding: 15px;
+    margin: 15px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #7a7a7a;
+    overflow-x: auto;
+}
+
+.code-display.highlight {
+    border-color: #f7931a;
+    box-shadow: 0 0 10px rgba(247, 147, 26, 0.1);
+}
+
+.code-line {
+    margin: 5px 0;
+}
+
+.code-comment {
+    color: #5a5a5a;
+}
+
+.code-keyword {
+    color: #f7931a;
+}
+
+.code-value {
+    color: #9a9a9a;
+}
+
+.code-variable {
+    color: #7a9a7a;
+}
+
+/* ==================== Input Fields ==================== */
+.input-group {
+    margin: 20px 0;
+}
+
+.input-group label {
+    display: block;
+    color: #9a9a9a;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.input-group input[type="text"],
+.input-group input[type="number"],
+.input-group textarea {
+    width: 100%;
+    padding: 12px;
+    background-color: #0a0a0a;
+    border: 1px solid #3a3a3a;
+    border-radius: 3px;
+    color: #b0b0b0;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus,
+.input-group textarea:focus {
+    outline: none;
+    border-color: #f7931a;
+    box-shadow: 0 0 10px rgba(247, 147, 26, 0.2);
+}
+
+.input-group input.correct {
+    border-color: #5a8a5a;
+    background-color: #0f1a0f;
+}
+
+.input-group input.wrong {
+    border-color: #8a5a5a;
+    background-color: #1a0f0f;
+}
+
+/* ==================== Buttons ==================== */
+button {
+    background-color: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    color: #b0b0b0;
+    padding: 12px 30px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    margin: 5px;
+}
+
+button:hover:not(:disabled) {
+    background-color: #3a3a3a;
+    border-color: #f7931a;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background-color: #f7931a;
+    border-color: #f7931a;
+    color: #0a0a0a;
+    font-weight: bold;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: #ff9f2e;
+    box-shadow: 0 0 15px rgba(247, 147, 26, 0.4);
+}
+
+.btn-danger {
+    background-color: #5a2a2a;
+    border-color: #8a3a3a;
+    color: #ba7a7a;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background-color: #7a3a3a;
+    border-color: #aa5a5a;
+}
+
+.btn-success {
+    background-color: #2a4a2a;
+    border-color: #3a5a3a;
+    color: #7a9a7a;
+}
+
+/* ==================== Result Display ==================== */
+.result-box {
+    background-color: #0a0a0a;
+    border: 2px solid #3a3a3a;
+    border-radius: 3px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.result-box.success {
+    border-color: #5a8a5a;
+    background-color: #0f1a0f;
+}
+
+.result-box.error {
+    border-color: #8a5a5a;
+    background-color: #1a0f0f;
+}
+
+.result-box.warning {
+    border-color: #f7931a;
+    background-color: #1a1a0a;
+}
+
+.result-header {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.result-box.success .result-header {
+    color: #7a9a7a;
+}
+
+.result-box.error .result-header {
+    color: #ba7a7a;
+}
+
+.result-box.warning .result-header {
+    color: #f7931a;
+}
+
+.result-icon {
+    font-size: 24px;
+}
+
+.result-content {
+    color: #9a9a9a;
+    line-height: 1.8;
+}
+
+.result-data {
+    background-color: #000;
+    padding: 12px;
+    border-radius: 3px;
+    margin: 10px 0;
+    color: #7a7a7a;
+    font-size: 12px;
+    word-break: break-all;
+}
+
+.result-data.highlight {
+    color: #f7931a;
+    border: 1px solid #f7931a;
+}
+
+/* ==================== Attack Simulator ==================== */
+.attack-simulator {
+    background-color: #1a0f0f;
+    border: 2px solid #8a3a3a;
+    border-radius: 3px;
+    padding: 25px;
+    margin: 20px 0;
+}
+
+.attack-header {
+    color: #ba7a7a;
+    font-size: 18px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.attack-header::before {
+    content: '⚠';
+    font-size: 24px;
+}
+
+.hacker-scenario {
+    background-color: #0a0a0a;
+    border: 1px solid #3a3a3a;
+    border-radius: 3px;
+    padding: 20px;
+    margin: 15px 0;
+}
+
+.scenario-title {
+    color: #f7931a;
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.scenario-story {
+    color: #9a9a9a;
+    line-height: 1.8;
+    margin-bottom: 15px;
+}
+
+.leaked-data {
+    background-color: #1a0a0a;
+    border-left: 3px solid #8a3a3a;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.leaked-data-title {
+    color: #ba7a7a;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.data-item {
+    margin: 8px 0;
+    font-size: 13px;
+}
+
+.data-label {
+    color: #7a7a7a;
+    display: inline-block;
+    width: 150px;
+}
+
+.data-value {
+    color: #9a9a9a;
+    font-family: 'Courier New', monospace;
+}
+
+/* ==================== Progress Tracker ==================== */
+.progress-tracker {
+    background-color: #151515;
+    border: 1px solid #2a2a2a;
+    border-radius: 3px;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.progress-bar {
+    background-color: #0a0a0a;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, #f7931a 0%, #ff9f2e 100%);
+    height: 100%;
+    transition: width 0.5s ease;
+}
+
+.progress-label {
+    color: #7a7a7a;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+}
+
+/* ==================== Key Display ==================== */
+.key-pair-display {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.key-card {
+    background-color: #151515;
+    border: 1px solid #3a3a3a;
+    border-radius: 3px;
+    padding: 15px;
+}
+
+.key-card-header {
+    color: #f7931a;
+    font-size: 14px;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.key-card-value {
+    background-color: #0a0a0a;
+    padding: 10px;
+    border-radius: 3px;
+    color: #7a7a7a;
+    font-size: 11px;
+    word-break: break-all;
+    font-family: 'Courier New', monospace;
+}
+
+/* ==================== Visualization Area ==================== */
+.visualization {
+    background-color: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 3px;
+    padding: 25px;
+    margin: 20px 0;
+    min-height: 200px;
+}
+
+.merkle-tree-visual {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.tree-level {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.tree-node {
+    background-color: #151515;
+    border: 2px solid #3a3a3a;
+    border-radius: 3px;
+    padding: 12px;
+    min-width: 150px;
+    text-align: center;
+    font-size: 11px;
+    color: #7a7a7a;
+}
+
+.tree-node.root {
+    border-color: #f7931a;
+    color: #f7931a;
+    font-weight: bold;
+}
+
+.tree-node.highlighted {
+    border-color: #f7931a;
+    background-color: #1a1a0a;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(247, 147, 26, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(247, 147, 26, 0.5);
+    }
+}
+
+.tree-connector {
+    width: 2px;
+    height: 20px;
+    background-color: #3a3a3a;
+    margin: 0 auto;
+}
+
+/* ==================== Info Panels ==================== */
+.info-panel {
+    background-color: #151515;
+    border-left: 3px solid #f7931a;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 3px;
+}
+
+.info-panel.tip {
+    border-left-color: #5a8a5a;
+}
+
+.info-panel.warning {
+    border-left-color: #8a5a5a;
+}
+
+.info-panel-title {
+    color: #f7931a;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.info-panel.tip .info-panel-title {
+    color: #7a9a7a;
+}
+
+.info-panel.warning .info-panel-title {
+    color: #ba7a7a;
+}
+
+.info-panel-content {
+    color: #9a9a9a;
+    line-height: 1.6;
+}
+
+/* ==================== Achievement Badge ==================== */
+.achievement-badge {
+    background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+    border: 2px solid #f7931a;
+    border-radius: 5px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.achievement-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.achievement-title {
+    color: #f7931a;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.achievement-description {
+    color: #7a7a7a;
+    font-size: 13px;
+}
+
+/* ==================== Comparison Table ==================== */
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background-color: #151515;
+}
+
+.comparison-table th {
+    background-color: #1a1a1a;
+    color: #f7931a;
+    padding: 12px;
+    text-align: left;
+    border: 1px solid #2a2a2a;
+}
+
+.comparison-table td {
+    color: #9a9a9a;
+    padding: 12px;
+    border: 1px solid #2a2a2a;
+}
+
+.comparison-table tr:hover {
+    background-color: #1a1a1a;
+}
+
+.comparison-better {
+    color: #7a9a7a;
+    font-weight: bold;
+}
+
+.comparison-worse {
+    color: #ba7a7a;
+}
+
+/* ==================== Hidden Utility ==================== */
+.hidden {
+    display: none !important;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* ==================== Loading Animation ==================== */
+.loading {
+    display: inline-block;
+    color: #f7931a;
+}
+
+.loading::after {
+    content: '';
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { content: '.'; }
+    33% { content: '..'; }
+    66% { content: '...'; }
+}
+
+/* ==================== Responsive Design ==================== */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    header h1 {
+        font-size: 24px;
+    }
+
+    #game-area {
+        padding: 15px;
+    }
+
+    .key-pair-display {
+        grid-template-columns: 1fr;
+    }
+
+    #stage-selector {
+        flex-wrap: wrap;
+    }
+
+    .comparison-table {
+        font-size: 12px;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+        padding: 8px;
+    }
+}
+
+/* Challenge Navigation */
+.challenge-nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #2a2a2a;
+}
+
+.challenge-nav button {
+    min-width: 150px;
+}
+
+/* MuSig2 Phases */
+.musig-phase {
+    margin: 30px 0;
+    padding: 25px;
+    background-color: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 5px;
+}
+
+.musig-phase h3 {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #2a2a2a;
+}
+
+.info-panel.warning {
+    background-color: #1a0a0a;
+    border-left: 3px solid #f7931a;
+}
+
+.info-panel.warning .info-panel-title {
+    color: #f7931a;
+}
+
+.info-panel.warning .info-panel-content {
+    color: #b0b0b0;
+}
+
+.info-panel.warning code {
+    background-color: #0a0a0a;
+    color: #f7931a;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+}
+
+/* Quiz Styles */
+.quiz-question {
+    background-color: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.quiz-number {
+    color: #f7931a;
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.quiz-text {
+    color: #d0d0d0;
+    font-size: 15px;
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.quiz-option {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px;
+    background-color: #151515;
+    border: 2px solid #3a3a3a;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quiz-option:hover {
+    background-color: #1a1a1a;
+    border-color: #5a5a5a;
+}
+
+.quiz-option input[type="radio"] {
+    margin-right: 12px;
+    margin-top: 3px;
+    accent-color: #f7931a;
+    cursor: pointer;
+}
+
+.quiz-option span {
+    color: #b0b0b0;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.quiz-option:has(input:checked) {
+    border-color: #f7931a;
+    background-color: rgba(247, 147, 26, 0.1);
+}
+
+.quiz-option:has(input:checked) span {
+    color: #e0e0e0;
+}
+
+.quiz-result {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.6;
+    display: none;
+}
+
+.quiz-result.correct {
+    background-color: rgba(34, 197, 94, 0.2);
+    border: 2px solid #22c55e;
+    color: #4ade80;
+    display: block;
+}
+
+.quiz-result.incorrect {
+    background-color: rgba(239, 68, 68, 0.2);
+    border: 2px solid #ef4444;
+    color: #f87171;
+    display: block;
+}

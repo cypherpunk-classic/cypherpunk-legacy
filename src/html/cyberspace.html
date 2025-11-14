@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyberspace - Lagrange Interpolation Challenge</title>
+    <link rel="stylesheet" href="../css/cyberspace.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <div class="header-left">
+                <h1 class="game-title">⚡ CYBERSPACE</h1>
+                <div class="subtitle">SYSTEM INFILTRATION PROTOCOL</div>
+            </div>
+            <div class="header-right">
+                <div class="stat-display">
+                    <span class="stat-label">SCORE:</span>
+                    <span id="score" class="stat-value">0</span>
+                </div>
+                <div class="stat-display">
+                    <span class="stat-label">SHIELDS:</span>
+                    <span id="lives" class="stat-value">3</span>
+                </div>
+                <div class="stat-display">
+                    <span class="stat-label">WAVE:</span>
+                    <span id="wave" class="stat-value">1</span>
+                </div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="game-controls">
+            <div class="control-group">
+                <div class="control-label">MOVE UP</div>
+                <div class="keys">
+                    <span class="key">W</span>
+                    <span class="key">↑</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="control-label">MOVE DOWN</div>
+                <div class="keys">
+                    <span class="key">S</span>
+                    <span class="key">↓</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="control-label">MOVE LEFT</div>
+                <div class="keys">
+                    <span class="key">A</span>
+                    <span class="key">←</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="control-label">MOVE RIGHT</div>
+                <div class="keys">
+                    <span class="key">D</span>
+                    <span class="key">→</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="control-label">SOLVE</div>
+                <div class="keys">
+                    <span class="key">SPACE</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen" class="overlay-screen">
+            <div class="screen-content">
+                <h2 class="screen-title glitch">SYSTEM BREACH</h2>
+                <p class="screen-message">Your defenses have been compromised</p>
+                <div class="final-stats">
+                    <div class="final-stat">
+                        <span class="stat-label">FINAL SCORE:</span>
+                        <span id="finalScore" class="stat-value">0</span>
+                    </div>
+                    <div class="final-stat">
+                        <span class="stat-label">WAVES SURVIVED:</span>
+                        <span id="finalWave" class="stat-value">0</span>
+                    </div>
+                </div>
+                <button id="restartBtn" class="cyber-button">
+                    <span class="button-text">REBOOT SYSTEM</span>
+                </button>
+                <button id="exitBtn" class="cyber-button secondary">
+                    <span class="button-text">EXIT TO HUB</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="startScreen" class="overlay-screen active">
+            <div class="screen-content">
+                <h2 class="screen-title glitch">ENTERING CYBERSPACE</h2>
+                <p class="screen-message">
+                    The cypherpunks have hidden a secret using Shamir's Secret Sharing!<br>
+                    Navigate the mathematical grid to recover the secret values.
+                </p>
+                <div class="story-text">
+                    <h3 style="color: #00ffff; margin-bottom: 10px;">📜 Mission Briefing</h3>
+                    <p>In 1979, Adi Shamir invented a cryptographic scheme to split secrets into shares.</p>
+                    <p>The secret is hidden as <span class="highlight">f(0)</span> in a polynomial. You have <span class="highlight">3 shares</span> (points on the curve).</p>
+                    <p>Navigate the 2D grid and use <span class="highlight">Lagrange interpolation</span> to recover the secret!</p>
+
+                    <h3 style="color: #ff00ff; margin-top: 15px; margin-bottom: 10px;">🎮 Controls (Top-Down View)</h3>
+                    <p><span class="highlight">WASD / Arrow Keys</span> - move on the 2D grid plane</p>
+                    <p><span class="highlight">SPACE</span> - solve challenge when near yellow ?</p>
+
+                    <h3 style="color: #ffff00; margin-top: 15px; margin-bottom: 10px;">🔍 Visual Guide</h3>
+                    <p style="color: #00ffff;">
+                        • <strong>Cyan dots</strong> = Secret shares (3 known points)
+                    </p>
+                    <p style="color: #ff00ff;">
+                        • <strong>Magenta curve</strong> = Secret polynomial f(x) = ax² + bx + c
+                    </p>
+                    <p style="color: #ffff00;">
+                        • <strong>Yellow ?</strong> = Query point to calculate
+                    </p>
+                    <p style="color: #00ff00;">
+                        • <strong>Green dot</strong> = You (the player)
+                    </p>
+                    <p style="margin-top: 10px; color: #00ff00; font-size: 12px;">
+                        💡 <strong>Walk on the grid</strong> to explore the polynomial curve!
+                    </p>
+                    <p style="margin-top: 8px; color: #0088ff; font-size: 10px;">
+                        Lagrange Formula: L(x) = Σ yᵢ · Πⱼ≠ᵢ (x - xⱼ)/(xᵢ - xⱼ)
+                    </p>
+                </div>
+                <button id="startBtn" class="cyber-button pulse">
+                    <span class="button-text">INITIALIZE PROTOCOL</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Pause Screen -->
+        <div id="pauseScreen" class="overlay-screen">
+            <div class="screen-content">
+                <h2 class="screen-title">SYSTEM PAUSED</h2>
+                <p class="screen-message">Execution suspended</p>
+                <button id="resumeBtn" class="cyber-button">
+                    <span class="button-text">RESUME</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/cyberspace.js"></script>
+</body>
+</html>
