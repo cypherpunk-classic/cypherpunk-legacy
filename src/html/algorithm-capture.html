@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithm Capture - Cryptomon Adventure</title>
+    <link rel="stylesheet" href="../css/algorithm-capture.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Header -->
+        <div class="game-header">
+            <div class="logo">
+                <h1>🔐 CRYPTOMON</h1>
+                <p class="tagline">Gotta Encrypt 'Em All!</p>
+            </div>
+            <div class="player-info">
+                <div class="player-name">Trainer: <span id="playerName">Crypto Master</span></div>
+                <div class="collection-count">
+                    <span id="caughtCount">0</span> / <span id="totalCount">0</span> Captured
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Game Area -->
+        <div class="main-content">
+            <!-- Left Panel - Current View -->
+            <div class="game-panel">
+                <div class="panel-header">
+                    <h2 id="panelTitle">Wild Algorithms Appear!</h2>
+                    <div class="panel-tabs">
+                        <button class="tab-btn active" data-view="encounter">Encounter</button>
+                        <button class="tab-btn" data-view="collection">Collection</button>
+                        <button class="tab-btn" data-view="evolution">Evolution</button>
+                        <button class="tab-btn" data-view="fusion">Fusion</button>
+                    </div>
+                </div>
+
+                <!-- Encounter View -->
+                <div id="encounterView" class="view-content active">
+                    <div class="encounter-area">
+                        <div class="wild-algorithm" id="wildAlgorithm">
+                            <div class="algorithm-sprite" id="wildSprite"></div>
+                            <div class="algorithm-info">
+                                <h3 id="wildName">???</h3>
+                                <div class="type-badges" id="wildTypes"></div>
+                                <div class="stats-bar">
+                                    <div class="stat">
+                                        <span class="stat-label">HP:</span>
+                                        <div class="hp-bar">
+                                            <div class="hp-fill" id="wildHP"></div>
+                                        </div>
+                                        <span id="wildHPText">0/0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="vs-indicator">VS</div>
+
+                        <div class="player-algorithm" id="playerAlgorithm">
+                            <div class="algorithm-info">
+                                <h3 id="playerAlgoName">Select Algorithm</h3>
+                                <div class="type-badges" id="playerTypes"></div>
+                                <div class="stats-bar">
+                                    <div class="stat">
+                                        <span class="stat-label">HP:</span>
+                                        <div class="hp-bar">
+                                            <div class="hp-fill" id="playerHP"></div>
+                                        </div>
+                                        <span id="playerHPText">0/0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="algorithm-sprite" id="playerSprite"></div>
+                        </div>
+                    </div>
+
+                    <div class="battle-log" id="battleLog">
+                        <div class="log-entry">A wild algorithm appeared! Choose your action.</div>
+                    </div>
+
+                    <div class="battle-actions">
+                        <button class="action-btn" id="attackBtn">
+                            <span class="btn-icon">⚔️</span>
+                            <span>Attack</span>
+                        </button>
+                        <button class="action-btn" id="captureBtn">
+                            <span class="btn-icon">🎯</span>
+                            <span>Capture</span>
+                        </button>
+                        <button class="action-btn" id="analyzeBtn">
+                            <span class="btn-icon">🔍</span>
+                            <span>Analyze</span>
+                        </button>
+                        <button class="action-btn" id="fleeBtn">
+                            <span class="btn-icon">🏃</span>
+                            <span>Flee</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Collection View -->
+                <div id="collectionView" class="view-content">
+                    <div class="collection-grid" id="collectionGrid">
+                        <!-- Algorithms will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Evolution View -->
+                <div id="evolutionView" class="view-content">
+                    <div class="evolution-container">
+                        <div class="evolution-section">
+                            <h3>Select Algorithm to Evolve</h3>
+                            <div class="evolution-select" id="evolutionSelect">
+                                <!-- Evolvable algorithms will appear here -->
+                            </div>
+                        </div>
+                        <div class="evolution-preview" id="evolutionPreview">
+                            <p class="hint-text">Select an algorithm to see its evolution path</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fusion View -->
+                <div id="fusionView" class="view-content">
+                    <div class="fusion-container">
+                        <div class="fusion-slots">
+                            <div class="fusion-slot" id="fusionSlot1">
+                                <div class="slot-label">Algorithm 1</div>
+                                <div class="slot-content" data-slot="1">+</div>
+                            </div>
+                            <div class="fusion-operator">+</div>
+                            <div class="fusion-slot" id="fusionSlot2">
+                                <div class="slot-label">Algorithm 2</div>
+                                <div class="slot-content" data-slot="2">+</div>
+                            </div>
+                            <div class="fusion-operator">=</div>
+                            <div class="fusion-result" id="fusionResult">
+                                <div class="slot-label">Result</div>
+                                <div class="result-content">?</div>
+                            </div>
+                        </div>
+                        <button class="fusion-btn" id="fuseBtn" disabled>Fuse Algorithms</button>
+                        <div class="fusion-recipes" id="fusionRecipes">
+                            <h4>Known Fusion Recipes</h4>
+                            <div class="recipe-list" id="recipeList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Encyclopedia -->
+            <div class="encyclopedia-panel">
+                <div class="panel-header">
+                    <h2>📖 CryptoDex</h2>
+                </div>
+                <div class="dex-content" id="dexContent">
+                    <div class="dex-entry-detail" id="dexDetail">
+                        <p class="hint-text">Click on an algorithm to view details</p>
+                    </div>
+                </div>
+                <div class="dex-stats">
+                    <h3>Type Effectiveness</h3>
+                    <div class="type-chart">
+                        <div class="type-row">
+                            <span class="type-badge symmetric">Symmetric</span>
+                            <span class="effective-vs">Strong vs: Stream</span>
+                        </div>
+                        <div class="type-row">
+                            <span class="type-badge asymmetric">Asymmetric</span>
+                            <span class="effective-vs">Strong vs: Symmetric</span>
+                        </div>
+                        <div class="type-row">
+                            <span class="type-badge hash">Hash</span>
+                            <span class="effective-vs">Strong vs: Asymmetric</span>
+                        </div>
+                        <div class="type-row">
+                            <span class="type-badge stream">Stream</span>
+                            <span class="effective-vs">Strong vs: Hash</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Capture Animation Overlay -->
+        <div class="capture-overlay" id="captureOverlay">
+            <div class="pokeball-animation">
+                <div class="pokeball"></div>
+            </div>
+            <div class="capture-text" id="captureText"></div>
+        </div>
+
+        <!-- Algorithm Selection Modal -->
+        <div class="selection-modal" id="selectionModal">
+            <div class="modal-content">
+                <h2>Select Your Algorithm</h2>
+                <div class="selection-grid" id="selectionGrid"></div>
+                <button class="modal-close" id="closeModal">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/algorithm-capture.js"></script>
+</body>
+</html>

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lattice Cryptanalysis - LLL Algorithm Lab</title>
+    <link rel="stylesheet" href="../css/lattice-cryptanalysis.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Header -->
+        <div class="game-header">
+            <div class="header-left">
+                <h1>🧮 LATTICE CRYPTANALYSIS</h1>
+                <p class="subtitle">Master the LLL Algorithm & Post-Quantum Cryptography</p>
+            </div>
+            <div class="header-right">
+                <div class="stat-box">
+                    <span class="stat-label">Level:</span>
+                    <span id="playerLevel" class="stat-value">1</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Puzzles Solved:</span>
+                    <span id="puzzlesSolved" class="stat-value">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-layout">
+            <!-- Left Panel - Navigation -->
+            <div class="nav-panel">
+                <h2>🎓 Learning Path</h2>
+                <div class="nav-list">
+                    <div class="nav-item active" data-section="intro">
+                        <span class="nav-icon">📖</span>
+                        <div>
+                            <div class="nav-title">Introduction</div>
+                            <div class="nav-desc">What are Lattices?</div>
+                        </div>
+                    </div>
+                    <div class="nav-item locked" data-section="basics">
+                        <span class="nav-icon">📐</span>
+                        <div>
+                            <div class="nav-title">Lattice Basics</div>
+                            <div class="nav-desc">Vectors & Basis</div>
+                        </div>
+                    </div>
+                    <div class="nav-item locked" data-section="svp">
+                        <span class="nav-icon">🎯</span>
+                        <div>
+                            <div class="nav-title">SVP Challenge</div>
+                            <div class="nav-desc">Shortest Vector Problem</div>
+                        </div>
+                    </div>
+                    <div class="nav-item locked" data-section="lll">
+                        <span class="nav-icon">🔬</span>
+                        <div>
+                            <div class="nav-title">LLL Algorithm</div>
+                            <div class="nav-desc">Lattice Reduction</div>
+                        </div>
+                    </div>
+                    <div class="nav-item locked" data-section="attack">
+                        <span class="nav-icon">⚔️</span>
+                        <div>
+                            <div class="nav-title">RSA Attack</div>
+                            <div class="nav-desc">Breaking Weak RSA</div>
+                        </div>
+                    </div>
+                    <div class="nav-item locked" data-section="quantum">
+                        <span class="nav-icon">🔮</span>
+                        <div>
+                            <div class="nav-title">Post-Quantum</div>
+                            <div class="nav-desc">Lattice-Based Crypto</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Panel - Content -->
+            <div class="content-panel">
+                <!-- Introduction Section -->
+                <div id="intro" class="section active">
+                    <h2>Welcome to Lattice Cryptanalysis Lab</h2>
+                    <div class="info-card">
+                        <h3>🧮 What is a Lattice?</h3>
+                        <p>A <strong>lattice</strong> is a regular arrangement of points in n-dimensional space, formed by integer linear combinations of basis vectors.</p>
+                        <div class="math-formula">
+                            L = {Σ z<sub>i</sub>b<sub>i</sub> : z<sub>i</sub> ∈ ℤ}
+                        </div>
+                        <p>Think of it as an infinite grid of points extending in all directions!</p>
+                    </div>
+
+                    <div class="lattice-canvas-container">
+                        <h3>Interactive 2D Lattice</h3>
+                        <div class="interaction-tips">
+                            <span class="tip">🖱️ <strong>Drag</strong> basis vectors to change the lattice</span>
+                            <span class="tip">🔍 <strong>Scroll</strong> to zoom in/out</span>
+                            <span class="tip">👆 <strong>Hover</strong> over points to see coordinates</span>
+                        </div>
+                        <canvas id="introCanvas" width="500" height="500"></canvas>
+                        <div class="canvas-controls">
+                            <button id="randomBasis">🎲 Random Basis</button>
+                            <button id="resetBasis">↻ Reset</button>
+                            <button id="toggleGrid">⊞ Toggle Grid</button>
+                        </div>
+                        <div class="basis-display">
+                            <div class="basis-vector">
+                                <strong>b₁ =</strong>
+                                <span id="b1Display">(4, 1)</span>
+                            </div>
+                            <div class="basis-vector">
+                                <strong>b₂ =</strong>
+                                <span id="b2Display">(1, 3)</span>
+                            </div>
+                            <div class="basis-vector">
+                                <strong>Det(B) =</strong>
+                                <span id="detDisplay">11</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <h3>🎯 Why Study Lattices?</h3>
+                        <ul>
+                            <li><strong>Post-Quantum Cryptography:</strong> Lattice problems are hard even for quantum computers</li>
+                            <li><strong>Cryptanalysis:</strong> Break certain cryptographic systems (RSA, knapsack)</li>
+                            <li><strong>LLL Algorithm:</strong> Powerful tool for lattice reduction</li>
+                        </ul>
+                    </div>
+
+                    <button class="next-btn" onclick="unlockSection('basics')">Continue to Basics →</button>
+                </div>
+
+                <!-- Lattice Basics Section -->
+                <div id="basics" class="section">
+                    <h2>Lattice Basics: Vectors & Basis</h2>
+
+                    <div class="info-card">
+                        <h3>📐 Basis Vectors</h3>
+                        <p>A lattice is defined by its <strong>basis vectors</strong>. For a 2D lattice:</p>
+                        <div class="math-formula">
+                            b<sub>1</sub> = (x<sub>1</sub>, y<sub>1</sub>), b<sub>2</sub> = (x<sub>2</sub>, y<sub>2</sub>)
+                        </div>
+                        <p>Any lattice point can be written as: <strong>z<sub>1</sub>b<sub>1</sub> + z<sub>2</sub>b<sub>2</sub></strong> where z<sub>1</sub>, z<sub>2</sub> are integers.</p>
+                    </div>
+
+                    <div class="puzzle-container">
+                        <h3>🎮 Puzzle 1: Find the Lattice Point</h3>
+                        <p>Click on a lattice point to verify your understanding!</p>
+                        <canvas id="basicsCanvas" width="500" height="500"></canvas>
+                        <div class="puzzle-feedback" id="basicsFeedback"></div>
+                    </div>
+
+                    <button class="next-btn" onclick="unlockSection('svp')">Continue to SVP →</button>
+                </div>
+
+                <!-- SVP Section -->
+                <div id="svp" class="section">
+                    <h2>Shortest Vector Problem (SVP)</h2>
+
+                    <div class="info-card alert">
+                        <h3>⚠️ The Hard Problem</h3>
+                        <p>The <strong>Shortest Vector Problem (SVP)</strong> asks:</p>
+                        <div class="math-formula">
+                            Find the shortest non-zero vector v in lattice L
+                        </div>
+                        <p>This problem is <strong>NP-hard</strong> and forms the basis of lattice-based cryptography!</p>
+                    </div>
+
+                    <div class="puzzle-container">
+                        <h3>🎯 Challenge: Find the Shortest Vector</h3>
+                        <canvas id="svpCanvas" width="500" height="500"></canvas>
+                        <div class="vector-info">
+                            <div>Selected Vector: <span id="selectedVector">None</span></div>
+                            <div>Length: <span id="vectorLength">-</span></div>
+                            <div>Shortest Found: <span id="shortestLength">∞</span></div>
+                        </div>
+                        <button id="checkSVP" class="action-btn">Check Solution</button>
+                        <div class="puzzle-feedback" id="svpFeedback"></div>
+                    </div>
+
+                    <button class="next-btn" onclick="unlockSection('lll')">Continue to LLL →</button>
+                </div>
+
+                <!-- LLL Algorithm Section -->
+                <div id="lll" class="section">
+                    <h2>LLL Algorithm: Lattice Reduction</h2>
+
+                    <div class="info-card">
+                        <h3>🔬 The Lenstra-Lenstra-Lovász Algorithm</h3>
+                        <p>The LLL algorithm finds a "reduced" basis - vectors that are shorter and more orthogonal.</p>
+                        <div class="algorithm-box">
+                            <h4>Algorithm Steps:</h4>
+                            <ol>
+                                <li><strong>Gram-Schmidt Orthogonalization:</strong> Compute orthogonal projection</li>
+                                <li><strong>Size Reduction:</strong> Make basis coefficients small</li>
+                                <li><strong>Lovász Condition:</strong> Check if basis is reduced</li>
+                                <li><strong>Swap if needed:</strong> Swap vectors if condition fails</li>
+                                <li><strong>Repeat:</strong> Until all vectors satisfy conditions</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <div class="lll-demo">
+                        <h3>🎬 Interactive LLL Visualization</h3>
+                        <div class="demo-controls">
+                            <div class="input-group">
+                                <label>Basis Vector 1:</label>
+                                <input type="number" id="b1x" value="15" placeholder="x">
+                                <input type="number" id="b1y" value="4" placeholder="y">
+                            </div>
+                            <div class="input-group">
+                                <label>Basis Vector 2:</label>
+                                <input type="number" id="b2x" value="8" placeholder="x">
+                                <input type="number" id="b2y" value="17" placeholder="y">
+                            </div>
+                            <button id="runLLL" class="action-btn primary">Run LLL Algorithm</button>
+                            <button id="stepLLL" class="action-btn">Step Through</button>
+                        </div>
+                        <canvas id="lllCanvas" width="600" height="500"></canvas>
+                        <div class="lll-status">
+                            <div id="lllStep">Step: 0</div>
+                            <div id="lllInfo">Click 'Run LLL' to start</div>
+                        </div>
+                    </div>
+
+                    <button class="next-btn" onclick="unlockSection('attack')">Continue to Attack →</button>
+                </div>
+
+                <!-- RSA Attack Section -->
+                <div id="attack" class="section">
+                    <h2>Breaking RSA with Lattice Attack</h2>
+
+                    <div class="info-card alert">
+                        <h3>⚔️ Real-World Attack</h3>
+                        <p>When RSA uses small encryption exponents with related messages, we can use lattice attacks to break it!</p>
+                        <p><strong>Coppersmith's Attack</strong> uses LLL to find small roots of polynomial equations.</p>
+                    </div>
+
+                    <div class="attack-scenario">
+                        <h3>📨 Scenario: Intercepted RSA Messages</h3>
+                        <p>Alice sent the same message to 3 people using small exponent e=3. You intercepted the ciphertexts!</p>
+
+                        <div class="cipher-display">
+                            <div class="cipher-item">
+                                <strong>c₁:</strong> <span id="c1">234872384729387</span>
+                            </div>
+                            <div class="cipher-item">
+                                <strong>c₂:</strong> <span id="c2">892374982374987</span>
+                            </div>
+                            <div class="cipher-item">
+                                <strong>c₃:</strong> <span id="c3">192873498273498</span>
+                            </div>
+                        </div>
+
+                        <button id="performAttack" class="action-btn primary">Perform Lattice Attack</button>
+
+                        <div class="attack-progress" id="attackProgress">
+                            <div class="progress-step">
+                                <span class="step-icon">⏳</span>
+                                <span class="step-text">Constructing lattice from ciphertexts...</span>
+                            </div>
+                        </div>
+
+                        <div class="attack-result" id="attackResult"></div>
+                    </div>
+
+                    <button class="next-btn" onclick="unlockSection('quantum')">Continue to Post-Quantum →</button>
+                </div>
+
+                <!-- Post-Quantum Section -->
+                <div id="quantum" class="section">
+                    <h2>Post-Quantum Cryptography</h2>
+
+                    <div class="info-card success">
+                        <h3>🔮 The Future of Cryptography</h3>
+                        <p>Quantum computers threaten RSA and ECC, but lattice-based cryptography remains secure!</p>
+                    </div>
+
+                    <div class="crypto-schemes">
+                        <h3>Popular Lattice-Based Schemes</h3>
+                        <div class="scheme-grid">
+                            <div class="scheme-card">
+                                <div class="scheme-icon">🏆</div>
+                                <h4>NTRU</h4>
+                                <p>Fast encryption using polynomial rings over lattices</p>
+                                <div class="scheme-status">✅ NIST Finalist</div>
+                            </div>
+                            <div class="scheme-card">
+                                <div class="scheme-icon">🎖️</div>
+                                <h4>Kyber</h4>
+                                <p>Key encapsulation mechanism, NIST standard</p>
+                                <div class="scheme-status">🌟 NIST Winner</div>
+                            </div>
+                            <div class="scheme-card">
+                                <div class="scheme-icon">🔐</div>
+                                <h4>Dilithium</h4>
+                                <p>Digital signatures based on Module-LWE</p>
+                                <div class="scheme-status">🌟 NIST Winner</div>
+                            </div>
+                            <div class="scheme-card">
+                                <div class="scheme-icon">🛡️</div>
+                                <h4>FALCON</h4>
+                                <p>Fast signatures using NTRU lattices</p>
+                                <div class="scheme-status">✅ NIST Finalist</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="completion-card">
+                        <h2>🎉 Congratulations!</h2>
+                        <p>You've completed the Lattice Cryptanalysis course!</p>
+                        <div class="achievement">
+                            <div class="achievement-icon">🏅</div>
+                            <div class="achievement-text">
+                                <strong>Master of Lattices</strong>
+                                <p>You understand lattice-based cryptography and the LLL algorithm</p>
+                            </div>
+                        </div>
+                        <button class="action-btn primary" onclick="location.href='../../index.html'">Return to Hub</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Info -->
+            <div class="info-panel">
+                <h3>📚 Quick Reference</h3>
+                <div class="reference-content">
+                    <div class="ref-section">
+                        <h4>Key Concepts</h4>
+                        <ul>
+                            <li><strong>Lattice:</strong> Regular grid of points</li>
+                            <li><strong>Basis:</strong> Vectors defining the lattice</li>
+                            <li><strong>SVP:</strong> Find shortest vector</li>
+                            <li><strong>LLL:</strong> Basis reduction algorithm</li>
+                        </ul>
+                    </div>
+                    <div class="ref-section">
+                        <h4>Complexity</h4>
+                        <ul>
+                            <li>SVP: NP-hard</li>
+                            <li>LLL: Polynomial time</li>
+                            <li>Approximation: 2<sup>n/2</sup></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/lattice-cryptanalysis.js"></script>
+</body>
+</html>

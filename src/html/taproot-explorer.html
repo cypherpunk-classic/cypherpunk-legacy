@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Taproot Security Lab</title>
+    <link rel="stylesheet" href="../css/taproot-explorer.css">
+</head>
+<body>
+    <div id="game-container">
+        <header>
+            <h1>₿ TAPROOT SECURITY LAB</h1>
+            <p class="subtitle">Interactive Challenges: BIP 340 Schnorr Signatures & BIP 341 Taproot</p>
+        </header>
+
+        <!-- Mission Status -->
+        <div id="mission-status">
+            <div class="mission-info">
+                <strong>Mission:</strong> <span id="current-mission">Complete all security challenges</span>
+            </div>
+            <div id="score-display">
+                Score: <span class="score-value" id="score">0</span> / 400 points
+            </div>
+        </div>
+
+        <!-- Stage Selector -->
+        <div id="stage-selector">
+            <button class="stage-btn active" onclick="switchStage(0)">Challenge 1: Nonce Attack</button>
+            <button class="stage-btn locked" onclick="switchStage(1)" id="stage-1-btn">Challenge 2: Key Aggregation</button>
+            <button class="stage-btn locked" onclick="switchStage(2)" id="stage-2-btn">Challenge 3: Taproot Builder</button>
+            <button class="stage-btn locked" onclick="switchStage(3)" id="stage-3-btn">Challenge 4: MAST Detective</button>
+            <button class="stage-btn locked" onclick="switchStage(4)" id="stage-4-btn">Final: Security Analysis</button>
+        </div>
+
+        <!-- Main Game Area -->
+        <div id="game-area">
+
+            <!-- Stage 0: Nonce Reuse Attack -->
+            <div class="stage active" id="stage-0">
+                <div class="challenge-box">
+                    <div class="challenge-header">🎯 CHALLENGE 1: Exploit Nonce Reuse Vulnerability</div>
+                    <div class="challenge-description">
+                        <p>You've intercepted two Bitcoin transactions signed by the same private key. The signer made a critical mistake: <strong>reusing the same nonce (k)</strong> for both signatures!</p>
+                        <p>Your mission: Recover the private key and forge a signature to prove you've cracked it.</p>
+                    </div>
+
+                    <div class="challenge-objective">
+                        <strong>OBJECTIVE:</strong>
+                        Calculate the private key using the two leaked signatures with reused nonce.
+                    </div>
+
+                    <div class="attack-simulator">
+                        <div class="attack-header">⚠ INTERCEPTED DATA FROM THE BLOCKCHAIN</div>
+
+                        <div class="hacker-scenario">
+                            <div class="scenario-title">📡 Scenario: Careless Wallet Implementation</div>
+                            <div class="scenario-story">
+                                A poorly coded wallet reused the same random nonce for two different transactions.
+                                Both transactions are now visible on the blockchain. With Schnorr signatures,
+                                this mistake is <strong>fatal</strong> - it allows anyone to calculate the private key!
+                            </div>
+
+                            <div class="leaked-data">
+                                <div class="leaked-data-title">🔓 LEAKED SIGNATURE DATA:</div>
+                                <div class="data-item">
+                                    <span class="data-label">Public Key (P):</span>
+                                    <span class="data-value" id="leaked-pubkey">Loading...</span>
+                                </div>
+                                <div class="data-item">
+                                    <span class="data-label">Message 1:</span>
+                                    <span class="data-value" id="leaked-msg1">Loading...</span>
+                                </div>
+                                <div class="data-item">
+                                    <span class="data-label">Signature 1 (R, s1):</span>
+                                    <span class="data-value" id="leaked-sig1">Loading...</span>
+                                </div>
+                                <div class="data-item">
+                                    <span class="data-label">Message 2:</span>
+                                    <span class="data-value" id="leaked-msg2">Loading...</span>
+                                </div>
+                                <div class="data-item">
+                                    <span class="data-label">Signature 2 (R, s2):</span>
+                                    <span class="data-value" id="leaked-sig2">Loading...</span>
+                                </div>
+                            </div>
+
+                            <button class="btn-primary" onclick="generateLeakedData()">Generate Leaked Data</button>
+                        </div>
+
+                        <div id="attack-workspace" class="hacker-scenario hidden">
+                            <div class="scenario-title">🔨 YOUR ATTACK WORKSPACE</div>
+
+                            <div class="info-panel tip">
+                                <div class="info-panel-title">💡 HINT: Schnorr Signature Math</div>
+                                <div class="info-panel-content">
+                                    For Schnorr: s = k + e·d (where d is private key, k is nonce)<br>
+                                    If nonce is reused: s1 = k + e1·d and s2 = k + e2·d<br>
+                                    Therefore: s1 - s2 = (e1 - e2)·d<br>
+                                    <strong>Private Key: d = (s1 - s2) / (e1 - e2)</strong>
+                                </div>
+                            </div>
+
+                            <div class="code-display">
+                                <div class="code-line"><span class="code-comment">// Step 1: Calculate challenges</span></div>
+                                <div class="code-line"><span class="code-keyword">e1</span> = hash(R || P || msg1)</div>
+                                <div class="code-line"><span class="code-keyword">e2</span> = hash(R || P || msg2)</div>
+                                <div class="code-line"><span class="code-comment">// Step 2: Recover private key</span></div>
+                                <div class="code-line"><span class="code-keyword">d</span> = (s1 - s2) / (e1 - e2)</div>
+                            </div>
+
+                            <button class="btn-danger" onclick="calculatePrivateKey()">🔓 Calculate Private Key</button>
+
+                            <div id="recovered-key" class="result-box success hidden">
+                                <div class="result-header">
+                                    <span class="result-icon">✓</span>
+                                    PRIVATE KEY RECOVERED!
+                                </div>
+                                <div class="result-content">
+                                    <p>You've successfully exploited the nonce reuse vulnerability!</p>
+                                    <div class="result-data highlight">
+                                        Private Key (d): <span id="recovered-key-value"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="forge-section" class="hidden">
+                                <h4 style="color: #f7931a; margin: 20px 0;">🎭 Final Step: Forge a Signature</h4>
+                                <div class="input-group">
+                                    <label>Enter your message to sign with the stolen key:</label>
+                                    <input type="text" id="forge-message" placeholder="I am the real owner!">
+                                </div>
+                                <button class="btn-danger" onclick="forgeSignature()">🔏 Forge Signature</button>
+
+                                <div id="forged-result" class="result-box warning hidden">
+                                    <div class="result-header">
+                                        <span class="result-icon">⚠</span>
+                                        SIGNATURE FORGED SUCCESSFULLY
+                                    </div>
+                                    <div class="result-content">
+                                        <p>You've proven that nonce reuse is catastrophic!</p>
+                                        <div class="result-data">
+                                            Forged Signature: <span id="forged-sig-value"></span>
+                                        </div>
+                                        <button class="btn-primary" onclick="completeChallenge(0, 100)">Complete Challenge (+100 pts)</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="challenge-nav">
+                    <button class="btn-secondary" disabled>← Previous</button>
+                    <button class="btn-primary" onclick="switchStage(1)" id="next-to-1" disabled>Next Challenge →</button>
+                </div>
+            </div>
+
+            <!-- Stage 1: MuSig2 Protocol -->
+            <div class="stage" id="stage-1">
+                <div class="challenge-box">
+                    <div class="challenge-header">🎯 CHALLENGE 2: MuSig2 - Secure Multi-Signature Protocol</div>
+                    <div class="challenge-description">
+                        <p>Schnorr signatures support <strong>key aggregation</strong>, but naive aggregation has a fatal flaw: the <strong>Rogue Key Attack</strong>!</p>
+                        <p>Your mission: Understand the attack, then learn how <strong>BIP 327: MuSig2</strong> solves this problem.</p>
+                    </div>
+
+                    <div class="challenge-objective">
+                        <strong>OBJECTIVE:</strong>
+                        First, witness the Rogue Key Attack. Then, use the MuSig2 protocol to create a secure 2-of-2 multisig.
+                    </div>
+
+                    <!-- Phase 1: Rogue Key Attack Demo -->
+                    <div class="musig-phase">
+                        <h3 style="color: #f7931a; margin-bottom: 15px;">⚠️ Phase 1: Rogue Key Attack Demo</h3>
+
+                        <div class="info-panel warning">
+                            <div class="info-panel-title">🚨 Vulnerability: Naive Key Aggregation</div>
+                            <div class="info-panel-content">
+                                <strong>Vulnerable Formula:</strong> P_agg = P_alice + P_bob<br><br>
+                                <strong>Attack Scenario:</strong> Malicious Bob can choose his public key as:<br>
+                                <code style="background: #2d2d2d; padding: 5px; display: block; margin-top: 5px;">
+                                    P_bob_malicious = P_bob_real - P_alice
+                                </code>
+                                After aggregation: P_agg = P_alice + (P_bob_real - P_alice) = P_bob_real<br>
+                                <strong>Result: Bob controls the "multisig" address alone! 🔥</strong>
+                            </div>
+                        </div>
+
+                        <button class="btn-primary" onclick="musigDemoAttack()">👹 Demonstrate Rogue Key Attack</button>
+
+                        <div id="attack-demo-result" class="result-box error hidden">
+                            <div class="result-header">
+                                <span class="result-icon">⚠</span>
+                                ATTACK SUCCESSFUL! Security Compromised
+                            </div>
+                            <div class="result-content">
+                                <div class="result-data">Alice Public Key: <span id="attack-alice-pub"></span></div>
+                                <div class="result-data">Bob Honest Public Key: <span id="attack-bob-honest"></span></div>
+                                <div class="result-data" style="color: #ff6b6b;">Bob Rogue Public Key: <span id="attack-bob-rogue"></span></div>
+                                <div class="result-data highlight">Aggregated Result: <span id="attack-agg-key"></span></div>
+                                <p style="margin-top: 15px; color: #ff6b6b;">
+                                    ⛔ Verification: Aggregated key equals Bob's honest pubkey!<br>
+                                    Bob can spend from this "multisig" address alone.
+                                </p>
+                                <button class="btn-primary" onclick="proceedToMusig2()">💡 Learn MuSig2 Solution</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phase 2: MuSig2 Key Aggregation -->
+                    <div id="musig2-section" class="musig-phase hidden">
+                        <h3 style="color: #f7931a; margin-bottom: 15px;">✅ Phase 2: MuSig2 Key Aggregation</h3>
+
+                        <div class="info-panel">
+                            <div class="info-panel-title">🛡️ MuSig2 Secure Formula</div>
+                            <div class="info-panel-content">
+                                <strong>Step 1: Calculate key aggregation coefficients</strong><br>
+                                <code style="background: #2d2d2d; padding: 5px; display: block; margin: 5px 0;">
+                                    L = H(P₁ || P₂ || ... || Pₙ)  // Hash of all pubkeys<br>
+                                    aᵢ = H(L || Pᵢ)                 // Each signer's coefficient
+                                </code>
+                                <strong>Step 2: Weighted aggregation</strong><br>
+                                <code style="background: #2d2d2d; padding: 5px; display: block; margin-top: 5px;">
+                                    P_agg = a₁·P₁ + a₂·P₂ + ... + aₙ·Pₙ
+                                </code>
+                                <strong>Defense Principle:</strong> Attackers can't choose malicious keys before knowing aᵢ!
+                            </div>
+                        </div>
+
+                        <div class="key-pair-display">
+                            <div class="key-card">
+                                <div class="key-card-header">👤 Alice's Keys</div>
+                                <button onclick="musigGenerateKeys('alice')">Generate Alice's Keys</button>
+                                <div id="musig-alice-keys" class="hidden" style="margin-top: 10px;">
+                                    <div class="result-data">Private: <span id="musig-alice-priv"></span></div>
+                                    <div class="result-data">Public: <span id="musig-alice-pub"></span></div>
+                                </div>
+                            </div>
+
+                            <div class="key-card">
+                                <div class="key-card-header">👤 Bob's Keys</div>
+                                <button onclick="musigGenerateKeys('bob')">Generate Bob's Keys</button>
+                                <div id="musig-bob-keys" class="hidden" style="margin-top: 10px;">
+                                    <div class="result-data">Private: <span id="musig-bob-priv"></span></div>
+                                    <div class="result-data">Public: <span id="musig-bob-pub"></span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="musig2-aggregate-section" class="hidden">
+                            <button class="btn-primary" onclick="musig2AggregateKeys()">🔗 MuSig2 Secure Aggregation</button>
+
+                            <div id="musig2-agg-result" class="result-box success hidden">
+                                <div class="result-header">
+                                    <span class="result-icon">✓</span>
+                                    SECURE AGGREGATION COMPLETE
+                                </div>
+                                <div class="result-content">
+                                    <div class="result-data">L (Pubkey List Hash): <span id="musig2-L"></span></div>
+                                    <div class="result-data">a_alice (Alice Coefficient): <span id="musig2-a-alice"></span></div>
+                                    <div class="result-data">a_bob (Bob Coefficient): <span id="musig2-a-bob"></span></div>
+                                    <div class="result-data highlight">P_agg (Aggregated Pubkey): <span id="musig2-agg-pub"></span></div>
+                                    <p style="margin-top: 15px; color: #7a9a7a;">
+                                        ✅ Rogue Key Attack is now impossible!
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phase 3: Nonce Commitment -->
+                    <div id="musig2-nonce-section" class="musig-phase hidden">
+                        <h3 style="color: #f7931a; margin-bottom: 15px;">🔐 Phase 3: Nonce Commitment Round</h3>
+
+                        <div class="info-panel">
+                            <div class="info-panel-title">🎲 MuSig2 Two-Round Nonce Protocol</div>
+                            <div class="info-panel-content">
+                                Each signer generates two random nonces: <code>r₁</code> and <code>r₂</code><br>
+                                Compute commitments: <code>R₁ = r₁·G</code> and <code>R₂ = r₂·G</code><br>
+                                <strong>Key Point:</strong> Broadcast commitment H(R₁||R₂) first to prevent nonce manipulation!
+                            </div>
+                        </div>
+
+                        <button class="btn-primary" onclick="musig2GenerateNonces()">🎲 Generate Nonce Commitments</button>
+
+                        <div id="musig2-nonce-result" class="result-box success hidden">
+                            <div class="result-header">
+                                <span class="result-icon">✓</span>
+                                NONCE COMMITMENTS GENERATED
+                            </div>
+                            <div class="result-content">
+                                <div class="result-data">Alice Commitment: <span id="musig2-alice-commit"></span></div>
+                                <div class="result-data">Bob Commitment: <span id="musig2-bob-commit"></span></div>
+                                <p style="margin-top: 15px;">📡 Commitments exchanged, now safe to reveal nonces...</p>
+                                <button class="btn-primary" onclick="musig2RevealNonces()">👁️ Reveal Nonces</button>
+                            </div>
+                        </div>
+
+                        <div id="musig2-reveal-result" class="result-box success hidden">
+                            <div class="result-header">
+                                <span class="result-icon">✓</span>
+                                NONCES REVEALED
+                            </div>
+                            <div class="result-content">
+                                <div class="result-data">Alice R₁: <span id="musig2-alice-R1"></span></div>
+                                <div class="result-data">Alice R₂: <span id="musig2-alice-R2"></span></div>
+                                <div class="result-data">Bob R₁: <span id="musig2-bob-R1"></span></div>
+                                <div class="result-data">Bob R₂: <span id="musig2-bob-R2"></span></div>
+                                <div class="result-data highlight">R_agg (Aggregated Nonce): <span id="musig2-R-agg"></span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phase 4: Partial Signatures -->
+                    <div id="musig2-partial-section" class="musig-phase hidden">
+                        <h3 style="color: #f7931a; margin-bottom: 15px;">✍️ Phase 4: Partial Signature Generation</h3>
+
+                        <div class="input-group">
+                            <label>Message to sign:</label>
+                            <input type="text" id="musig2-message" placeholder="Joint Bitcoin transaction" value="Transfer 1 BTC to Alice">
+                        </div>
+
+                        <div class="info-panel">
+                            <div class="info-panel-title">📝 Partial Signature Formula</div>
+                            <div class="info-panel-content">
+                                Challenge hash: <code>e = H(R_agg || P_agg || m)</code><br>
+                                Alice partial sig: <code>s_alice = r_alice + e · a_alice · d_alice</code><br>
+                                Bob partial sig: <code>s_bob = r_bob + e · a_bob · d_bob</code><br>
+                                where <code>a_i</code> is the key aggregation coefficient, <code>d_i</code> is the private key
+                            </div>
+                        </div>
+
+                        <button class="btn-primary" onclick="musig2CreatePartialSigs()">✍️ Create Partial Signatures</button>
+
+                        <div id="musig2-partial-result" class="result-box success hidden">
+                            <div class="result-header">
+                                <span class="result-icon">✓</span>
+                                PARTIAL SIGNATURES CREATED
+                            </div>
+                            <div class="result-content">
+                                <div class="result-data">Challenge e: <span id="musig2-challenge"></span></div>
+                                <div class="result-data">s_alice: <span id="musig2-s-alice"></span></div>
+                                <div class="result-data">s_bob: <span id="musig2-s-bob"></span></div>
+                                <p style="margin-top: 15px;">📡 Partial signatures ready for aggregation...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phase 5: Signature Aggregation -->
+                    <div id="musig2-final-section" class="musig-phase hidden">
+                        <h3 style="color: #f7931a; margin-bottom: 15px;">🎯 Phase 5: Signature Aggregation</h3>
+
+                        <div class="info-panel">
+                            <div class="info-panel-title">🔗 Final Aggregation</div>
+                            <div class="info-panel-content">
+                                Aggregate signatures: <code>s = s_alice + s_bob + ... + s_n (mod n)</code><br>
+                                Final Schnorr signature: <code>(R_agg, s)</code><br>
+                                <strong>The Magic:</strong> This signature is indistinguishable from a single Schnorr signature!
+                            </div>
+                        </div>
+
+                        <button class="btn-primary" onclick="musig2AggregateSignature()">🔗 Aggregate Final Signature</button>
+
+                        <div id="musig2-final-result" class="result-box success hidden">
+                            <div class="result-header">
+                                <span class="result-icon">✓</span>
+                                MUSIG2 SIGNATURE COMPLETE
+                            </div>
+                            <div class="result-content">
+                                <div class="result-data highlight">Final Signature (R, s): <span id="musig2-final-sig"></span></div>
+                                <p style="margin-top: 15px; color: #7a9a7a;">
+                                    ✨ This 2-of-2 multisig is indistinguishable from a single-sig on-chain!<br>
+                                    🛡️ Defends against Rogue Key attacks<br>
+                                    🔐 Defends against concurrent signing attacks<br>
+                                    🎭 Perfect privacy<br>
+                                    💰 Lower transaction fees
+                                </p>
+                                <button class="btn-primary" onclick="completeChallenge(1, 100)">Complete Challenge (+100 pts)</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="challenge-nav">
+                    <button class="btn-secondary" onclick="switchStage(0)">← Previous</button>
+                    <button class="btn-primary" onclick="switchStage(2)" id="next-to-2" disabled>Next Challenge →</button>
+                </div>
+            </div>
+
+            <!-- Stage 2: Taproot Address Builder -->
+            <div class="stage" id="stage-2">
+                <div class="challenge-box">
+                    <div class="challenge-header">🎯 CHALLENGE 3: Build a Taproot Address</div>
+                    <div class="challenge-description">
+                        <p>Time to build a real Taproot address! You'll create an address that supports both:</p>
+                        <ul style="margin-left: 25px; margin-top: 10px;">
+                            <li>🔑 <strong>Key Path</strong>: Direct spending (cheap & private)</li>
+                            <li>📜 <strong>Script Path</strong>: Alternative conditions hidden in a Merkle tree</li>
+                        </ul>
+                    </div>
+
+                    <div class="challenge-objective">
+                        <strong>OBJECTIVE:</strong>
+                        Build a Taproot address with 3 alternative spending scripts.
+                    </div>
+
+                    <div class="progress-tracker">
+                        <div>Building Taproot Address...</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="taproot-progress" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-label">
+                            <span>Step <span id="taproot-step">0</span>/5</span>
+                            <span><span id="taproot-percent">0</span>%</span>
+                        </div>
+                    </div>
+
+                    <div id="taproot-builder">
+                        <!-- Step 1 -->
+                        <div class="builder-step">
+                            <h4 style="color: #f7931a;">Step 1: Generate Internal Key</h4>
+                            <p>This is the key for the key-path spend (the normal, cheap way).</p>
+                            <button onclick="taprootStep1()">Generate Internal Key</button>
+                            <div id="taproot-internal" class="result-data hidden" style="margin-top: 10px;"></div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="builder-step hidden" id="taproot-step2">
+                            <h4 style="color: #f7931a;">Step 2: Define Script Conditions</h4>
+                            <p>Select 3 alternative spending conditions:</p>
+                            <div style="margin: 15px 0;">
+                                <label style="display: block; margin: 10px 0;">
+                                    <input type="checkbox" class="script-check" data-script="timelock">
+                                    ⏰ Timelock: Can spend after 144 blocks (~24 hours)
+                                </label>
+                                <label style="display: block; margin: 10px 0;">
+                                    <input type="checkbox" class="script-check" data-script="multisig">
+                                    👥 2-of-3 Multisig: Requires 2 out of 3 signatures
+                                </label>
+                                <label style="display: block; margin: 10px 0;">
+                                    <input type="checkbox" class="script-check" data-script="hashlock">
+                                    🔒 Hash Lock: Requires preimage of a hash
+                                </label>
+                                <label style="display: block; margin: 10px 0;">
+                                    <input type="checkbox" class="script-check" data-script="oracle">
+                                    🔮 Oracle Signature: Requires signature from oracle
+                                </label>
+                            </div>
+                            <button onclick="taprootStep2()">Confirm Scripts</button>
+                            <div id="scripts-selected" class="result-box hidden" style="margin-top: 15px;"></div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="builder-step hidden" id="taproot-step3">
+                            <h4 style="color: #f7931a;">Step 3: Build Merkle Tree</h4>
+                            <p>Organize scripts into a Merkle tree for efficient proofs.</p>
+                            <button onclick="taprootStep3()">Build Merkle Tree</button>
+                            <div id="merkle-visual" class="visualization hidden"></div>
+                        </div>
+
+                        <!-- Step 4 -->
+                        <div class="builder-step hidden" id="taproot-step4">
+                            <h4 style="color: #f7931a;">Step 4: Tweak Internal Key</h4>
+                            <p>Commit to the script tree by tweaking the internal key.</p>
+                            <div class="code-display">
+                                <div class="code-line"><span class="code-keyword">tweak</span> = hash(internal_key || merkle_root)</div>
+                                <div class="code-line"><span class="code-keyword">output_key</span> = internal_key + tweak·G</div>
+                            </div>
+                            <button onclick="taprootStep4()">Apply Tweak</button>
+                            <div id="tweaked-key" class="result-data hidden" style="margin-top: 10px;"></div>
+                        </div>
+
+                        <!-- Step 5 -->
+                        <div class="builder-step hidden" id="taproot-step5">
+                            <h4 style="color: #f7931a;">Step 5: Encode as Bech32m Address</h4>
+                            <p>Final step: Create the bc1p... address!</p>
+                            <button onclick="taprootStep5()">Generate Address</button>
+                            <div id="final-address" class="result-box success hidden">
+                                <div class="result-header">
+                                    <span class="result-icon">🎉</span>
+                                    TAPROOT ADDRESS CREATED!
+                                </div>
+                                <div class="result-content">
+                                    <div class="result-data highlight" style="font-size: 14px;">
+                                        <span id="taproot-address-value"></span>
+                                    </div>
+                                    <p style="margin-top: 15px;">
+                                        ✨ This address hides 3 alternative spending conditions.<br>
+                                        On-chain, it's indistinguishable from any other Taproot address!
+                                    </p>
+                                    <button class="btn-primary" onclick="completeChallenge(2, 100)">Complete Challenge (+100 pts)</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="challenge-nav">
+                    <button class="btn-secondary" onclick="switchStage(1)">← Previous</button>
+                    <button class="btn-primary" onclick="switchStage(3)" id="next-to-3" disabled>Next Challenge →</button>
+                </div>
+            </div>
+
+            <!-- Stage 3: MAST Detective -->
+            <div class="stage" id="stage-3">
+                <div class="challenge-box">
+                    <div class="challenge-header">🎯 CHALLENGE 4: MAST Detective - Find the Hidden Script</div>
+                    <div class="challenge-description">
+                        <p>A Taproot transaction was just broadcast! Someone used a script-path spend, revealing ONE script from their tree.</p>
+                        <p>Your mission: Analyze the witness data and figure out which script was used.</p>
+                    </div>
+
+                    <div class="challenge-objective">
+                        <strong>OBJECTIVE:</strong>
+                        Examine the transaction witness and identify the spending condition.
+                    </div>
+
+                    <div class="hacker-scenario">
+                        <div class="scenario-title">🔍 TRANSACTION INTERCEPTED</div>
+
+                        <div class="code-display">
+                            <div class="code-line"><span class="code-comment">// Taproot Script-Path Spend Witness</span></div>
+                            <div class="code-line"><span class="code-keyword">witness[0]</span>: <span class="code-value" id="witness-0">Loading...</span></div>
+                            <div class="code-line"><span class="code-keyword">witness[1]</span>: <span class="code-value" id="witness-1">Loading...</span></div>
+                            <div class="code-line"><span class="code-keyword">witness[2]</span>: <span class="code-value" id="witness-2">Loading...</span></div>
+                            <div class="code-line"><span class="code-comment">// Control block contains: version + internal_key + merkle_proof</span></div>
+                        </div>
+
+                        <button class="btn-primary" onclick="generateMysteryTx()">Intercept Transaction</button>
+
+                        <div id="detective-workspace" class="hidden" style="margin-top: 20px;">
+                            <h4 style="color: #f7931a;">🕵️ What script was used?</h4>
+                            <div style="margin: 20px 0;">
+                                <button class="quiz-option" onclick="checkScript('timelock')">
+                                    ⏰ Timelock Script (OP_CHECKSEQUENCEVERIFY)
+                                </button>
+                                <button class="quiz-option" onclick="checkScript('multisig')">
+                                    👥 2-of-3 Multisig Script
+                                </button>
+                                <button class="quiz-option" onclick="checkScript('hashlock')">
+                                    🔒 Hash Lock Script (OP_HASH160)
+                                </button>
+                                <button class="quiz-option" onclick="checkScript('oracle')">
+                                    🔮 Oracle Signature Script
+                                </button>
+                            </div>
+
+                            <div id="detective-result" class="result-box hidden"></div>
+
+                            <div id="merkle-explanation" class="hidden">
+                                <div class="info-panel tip">
+                                    <div class="info-panel-title">✨ Privacy Win!</div>
+                                    <div class="info-panel-content">
+                                        Only the used script was revealed. The other scripts in the tree remain hidden forever!
+                                        This is the power of Merkelized Alternative Script Trees (MAST).
+                                    </div>
+                                </div>
+
+                                <div class="visualization">
+                                    <h4 style="color: #9a9a9a; text-align: center; margin-bottom: 15px;">
+                                        Merkle Proof Verification
+                                    </h4>
+                                    <div id="merkle-proof-visual"></div>
+                                </div>
+
+                                <button class="btn-primary" onclick="completeChallenge(3, 50)">Complete Challenge (+50 pts)</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="challenge-nav">
+                    <button class="btn-secondary" onclick="switchStage(2)">← Previous</button>
+                    <button class="btn-primary" onclick="switchStage(4)" id="next-to-4" disabled>Final Challenge →</button>
+                </div>
+            </div>
+
+            <!-- Stage 4: Security Analysis -->
+            <div class="stage" id="stage-4">
+                <div class="challenge-box">
+                    <div class="challenge-header">🎯 FINAL CHALLENGE: Security Expert Analysis</div>
+                    <div class="challenge-description">
+                        <p>Time to prove your mastery! Answer critical security questions about Schnorr and Taproot.</p>
+                    </div>
+
+                    <div class="challenge-objective">
+                        <strong>OBJECTIVE:</strong>
+                        Answer all 5 questions correctly to complete the final challenge.
+                    </div>
+
+                    <div id="quiz-container" style="margin-top: 20px;">
+                        <!-- Question 1 -->
+                        <div class="quiz-question">
+                            <div class="quiz-number">Question 1:</div>
+                            <div class="quiz-text">What is the MAIN security advantage of Schnorr signatures over ECDSA?</div>
+                            <div class="quiz-options">
+                                <label class="quiz-option">
+                                    <input type="radio" name="q1" value="a">
+                                    <span>Smaller signature size (32 bytes vs 64 bytes)</span>
+                                </label>
+                                <label class="quiz-option">
+                                    <input type="radio" name="q1" value="b">
+                                    <span>Linear signature aggregation property</span>
+                                </label>
+                                <label class="quiz-option">
+                                    <input type="radio" name="q1" value="c">
+                                    <span>Faster verification speed</span>
+                                </label>
+                                <label class="quiz-option">
+                                    <input type="radio" name="q1" value="d">
+                                    <span>Better resistance to quantum computers</span>
+                                </label>
+                            </div>
+                            <div id="result-q1" class="quiz-result"></div>
+                        </div>
+
+                        <!-- Question 2 -->
+                        <div class="quiz-question">
+                            <div class="quiz-number">Question 2:</div>
+                            <div class="quiz-text">What happens if you reuse a nonce (k) in two different Schnorr signatures?</div>
+                            <div class="quiz-options">
+                                <label class="quiz-option">
+                                    <input type="radio" name="q2" value="a">
+                                    <span>The signatures become invalid</span>
+                                </label>
+                                <label class="quiz-option">
+                                    <input type="radio" name="q2" value="b">
+                                    <span>It's fine, nonces can be reused safely</span>
+                                </label>
+                                <label class="quiz-option">
+                                    <input type="radio" name="q2" value="c">
+                                    <span>The private key can be calculated from the two signatures</span>
+                                </label>
+                                <label class="quiz-option">
+                                    <input type="radio" name="q2" value="d">
+                                    <span>Only the public key is compromised</span>
+                                </label>
+                            </div>
+                            <div id="result-q2" class="quiz-result"></div>
+                        </div>
+
+                        <!-- Question 3 -->
+                        <div class="quiz-question">
+                            <div class="quiz-number">Question 3:</div>
+                            <div class="quiz-text">What is the PRIMARY privacy benefit of Taproot addresses?</div>
+                            <div class="quiz-options">
+                                <label class="quiz-option">
+                                    <input type="radio" name="q3" value="a">
+                                    <span>They hide the transaction amount</span>
+                                </label>
+                                <label class="quiz-option">
+                                    <input type="radio" name="q3" value="b">
+                                    <span>Single-sig, multisig, and script outputs all look identical</span>
+                                </label>
+                                <label class="quiz-option">
+                                    <input type="radio" name="q3" value="c">
+                                    <span>They encrypt the recipient's address</span>
+                                </label>
+                                <label class="quiz-option">
+                                    <input type="radio" name="q3" value="d">
+                                    <span>They hide the transaction from blockchain explorers</span>
+                                </label>
+                            </div>
+                            <div id="result-q3" class="quiz-result"></div>
+                        </div>
+
+                        <!-- Question 4 -->
+                        <div class="quiz-question">
+                            <div class="quiz-number">Question 4:</div>
+                            <div class="quiz-text">In a Taproot script-path spend, what information is revealed on-chain?</div>
+                            <div class="quiz-options">
+                                <label class="quiz-option">
+                                    <input type="radio" name="q4" value="a">
+                                    <span>Only the script being used + Merkle proof for that script</span>
+                                </label>
+                                <label class="quiz-option">
+                                    <input type="radio" name="q4" value="b">
+                                    <span>All scripts in the Merkle tree</span>
+                                </label>
+                                <label class="quiz-option">
+                                    <input type="radio" name="q4" value="c">
+                                    <span>The entire script tree structure</span>
+                                </label>
+                                <label class="quiz-option">
+                                    <input type="radio" name="q4" value="d">
+                                    <span>Nothing - all scripts remain hidden</span>
+                                </label>
+                            </div>
+                            <div id="result-q4" class="quiz-result"></div>
+                        </div>
+
+                        <!-- Question 5 -->
+                        <div class="quiz-question">
+                            <div class="quiz-number">Question 5:</div>
+                            <div class="quiz-text">How is the Taproot output key (Q) computed from the internal key (P)?</div>
+                            <div class="quiz-options">
+                                <label class="quiz-option">
+                                    <input type="radio" name="q5" value="a">
+                                    <span>Q = P + H(P)</span>
+                                </label>
+                                <label class="quiz-option">
+                                    <input type="radio" name="q5" value="b">
+                                    <span>Q = P + H(P || merkle_root) · G</span>
+                                </label>
+                                <label class="quiz-option">
+                                    <input type="radio" name="q5" value="c">
+                                    <span>Q = H(P || merkle_root)</span>
+                                </label>
+                                <label class="quiz-option">
+                                    <input type="radio" name="q5" value="d">
+                                    <span>Q = P · merkle_root</span>
+                                </label>
+                            </div>
+                            <div id="result-q5" class="quiz-result"></div>
+                        </div>
+
+                        <button class="btn-primary" onclick="submitQuiz()" style="margin-top: 30px; width: 100%;">Submit Answers</button>
+                    </div>
+
+                    <div id="final-score" class="result-box success hidden">
+                        <div class="result-header">
+                            <span class="result-icon">🏆</span>
+                            SECURITY LAB COMPLETED!
+                        </div>
+                        <div class="result-content">
+                            <p style="font-size: 18px; margin-bottom: 15px;">
+                                <strong>Final Score: <span id="total-score"></span> / 450 points</span></strong>
+                            </p>
+                            <div class="achievement-badge">
+                                <div class="achievement-icon">🎓</div>
+                                <div class="achievement-title">Taproot Security Expert</div>
+                                <div class="achievement-description">
+                                    You've mastered BIP 340 Schnorr Signatures and BIP 341 Taproot
+                                </div>
+                            </div>
+                            <button class="btn-primary" onclick="location.reload()">🔄 Restart Lab</button>
+                            <button class="btn-secondary" onclick="downloadCertificate()">📥 Download Certificate</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="challenge-nav">
+                    <button class="btn-secondary" onclick="switchStage(3)">← Previous</button>
+                    <button class="btn-secondary" disabled>Completed 🎉</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="../js/taproot-explorer.js"></script>
+</body>
+</html>
