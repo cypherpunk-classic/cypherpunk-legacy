@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyberspace: Lagrange Interceptor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #0ff;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+        }
+
+        #game-canvas {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #0ff;
+            box-shadow: 0 0 20px #0ff, inset 0 0 20px rgba(0, 255, 255, 0.2);
+            background: #000;
+            cursor: crosshair;
+        }
+
+        #controls {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 20, 40, 0.8);
+            border: 1px solid #0ff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #0ff;
+            font-size: 2em;
+            letter-spacing: 3px;
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #0aa;
+            font-size: 0.9em;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .input-field {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #0ff;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            background: rgba(0, 50, 100, 0.5);
+            border: 1px solid #0ff;
+            color: #0ff;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            box-shadow: 0 0 10px #0ff;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: transparent;
+            border: 2px solid #0ff;
+            color: #0ff;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        button:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 20px #0ff;
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        #info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 50, 100, 0.3);
+            border-left: 3px solid #0ff;
+            font-size: 0.9em;
+        }
+
+        .info-item {
+            margin: 5px 0;
+        }
+
+        .highlight {
+            color: #ff0;
+            text-shadow: 0 0 5px #ff0;
+        }
+
+        #status {
+            text-align: center;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 1.1em;
+            min-height: 30px;
+        }
+
+        .success {
+            color: #0f0;
+            text-shadow: 0 0 10px #0f0;
+        }
+
+        .error {
+            color: #f00;
+            text-shadow: 0 0 10px #f00;
+        }
+
+        .formula {
+            font-family: 'Courier New', monospace;
+            color: #ff0;
+            background: rgba(255, 255, 0, 0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        @keyframes glow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .glow {
+            animation: glow 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>⚡ CYBERSPACE: LAGRANGE INTERCEPTOR ⚡</h1>
+        <div class="subtitle">Calculate the polynomial curve to intercept the enemy</div>
+
+        <canvas id="game-canvas" width="1200" height="600"></canvas>
+
+        <div id="controls">
+            <div class="input-group">
+                <div class="input-field">
+                    <label for="coef-a">Coefficient a (x²):</label>
+                    <input type="number" id="coef-a" value="0" step="0.001">
+                </div>
+                <div class="input-field">
+                    <label for="coef-b">Coefficient b (x):</label>
+                    <input type="number" id="coef-b" value="0" step="0.001">
+                </div>
+                <div class="input-field">
+                    <label for="coef-c">Coefficient c (constant):</label>
+                    <input type="number" id="coef-c" value="0" step="0.001">
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="draw-btn">DRAW CURVE</button>
+                <button id="launch-btn">LAUNCH DISC</button>
+                <button id="reset-btn">RESET LEVEL</button>
+            </div>
+
+            <div id="status"></div>
+        </div>
+
+        <div id="info">
+            <div class="info-item"><span class="highlight">Mission:</span> Use Lagrange interpolation to find the polynomial that passes through the given share points</div>
+            <div class="info-item"><span class="highlight">Goal:</span> Your curve must hit the <span style="color: #f00;">RED TARGET ENEMY</span></div>
+            <div class="info-item"><span class="highlight">Hint:</span> Given points (shares) define a unique polynomial. Calculate the coefficients!</div>
+            <div class="info-item"><span class="highlight">Formula:</span> <span class="formula">y = ax² + bx + c</span></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game state
+        let gameState = {
+            sharePoints: [],
+            targetEnemy: null,
+            playerCurve: null,
+            disc: null,
+            isLaunching: false,
+            hitTarget: false,
+            level: 1
+        };
+
+        // Lagrange interpolation function
+        function lagrangeInterpolation(points, x) {
+            let result = 0;
+            const n = points.length;
+
+            for (let i = 0; i < n; i++) {
+                let term = points[i].y;
+                for (let j = 0; j < n; j++) {
+                    if (i !== j) {
+                        term *= (x - points[j].x) / (points[i].x - points[j].x);
+                    }
+                }
+                result += term;
+            }
+
+            return result;
+        }
+
+        // Convert canvas coordinates to mathematical coordinates
+        function toMathCoords(canvasX, canvasY) {
+            return {
+                x: (canvasX - canvas.width / 2) / 50,
+                y: (canvas.height / 2 - canvasY) / 50
+            };
+        }
+
+        // Convert mathematical coordinates to canvas coordinates
+        function toCanvasCoords(mathX, mathY) {
+            return {
+                x: mathX * 50 + canvas.width / 2,
+                y: canvas.height / 2 - mathY * 50
+            };
+        }
+
+        // Generate random level
+        function generateLevel(level) {
+            gameState.sharePoints = [];
+            gameState.hitTarget = false;
+            gameState.isLaunching = false;
+
+            // Generate 3 random points for a quadratic polynomial
+            const a = (Math.random() - 0.5) * 0.5;
+            const b = (Math.random() - 0.5) * 2;
+            const c = (Math.random() - 0.5) * 4;
+
+            // Generate share points
+            for (let i = 0; i < 3; i++) {
+                const x = -8 + i * 8;
+                const y = a * x * x + b * x + c;
+                gameState.sharePoints.push({ x, y });
+            }
+
+            // Place enemy on the curve
+            const enemyX = Math.random() * 12 - 6;
+            const enemyY = a * enemyX * enemyX + b * enemyX + c;
+            gameState.targetEnemy = { x: enemyX, y: enemyY };
+
+            // Store correct coefficients (for hint)
+            gameState.correctCoeffs = { a, b, c };
+        }
+
+        // Draw grid background (Tron style)
+        function drawGrid() {
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+
+            // Vertical lines
+            for (let x = 0; x < canvas.width; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            // Horizontal lines
+            for (let y = 0; y < canvas.height; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Axes
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+
+            // X-axis
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height / 2);
+            ctx.lineTo(canvas.width, canvas.height / 2);
+            ctx.stroke();
+
+            // Y-axis
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+        }
+
+        // Draw share points
+        function drawSharePoints() {
+            gameState.sharePoints.forEach((point, index) => {
+                const coords = toCanvasCoords(point.x, point.y);
+
+                // Glow effect
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#0ff';
+
+                // Point
+                ctx.fillStyle = '#0ff';
+                ctx.beginPath();
+                ctx.arc(coords.x, coords.y, 8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Inner glow
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(coords.x, coords.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+
+                // Label
+                ctx.fillStyle = '#0ff';
+                ctx.font = '14px Courier New';
+                ctx.fillText(`S${index + 1}(${point.x.toFixed(1)}, ${point.y.toFixed(1)})`,
+                           coords.x + 15, coords.y - 10);
+            });
+        }
+
+        // Draw enemy target
+        function drawEnemy() {
+            if (!gameState.targetEnemy) return;
+
+            const coords = toCanvasCoords(gameState.targetEnemy.x, gameState.targetEnemy.y);
+
+            // Pulsing glow
+            const pulse = Math.sin(Date.now() / 200) * 0.5 + 0.5;
+            ctx.shadowBlur = 20 + pulse * 20;
+            ctx.shadowColor = '#f00';
+
+            // Enemy body
+            ctx.fillStyle = '#f00';
+            ctx.beginPath();
+            ctx.arc(coords.x, coords.y, 12, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Enemy core
+            ctx.fillStyle = '#ff0';
+            ctx.beginPath();
+            ctx.arc(coords.x, coords.y, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+
+            // Target marker
+            ctx.strokeStyle = '#f00';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(coords.x, coords.y, 20, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(coords.x, coords.y, 25, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // Draw polynomial curve
+        function drawCurve(a, b, c, color = '#0ff', lineWidth = 2) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = color;
+
+            ctx.beginPath();
+            let firstPoint = true;
+
+            for (let mathX = -12; mathX <= 12; mathX += 0.1) {
+                const mathY = a * mathX * mathX + b * mathX + c;
+                const coords = toCanvasCoords(mathX, mathY);
+
+                if (coords.y >= 0 && coords.y <= canvas.height) {
+                    if (firstPoint) {
+                        ctx.moveTo(coords.x, coords.y);
+                        firstPoint = false;
+                    } else {
+                        ctx.lineTo(coords.x, coords.y);
+                    }
+                }
+            }
+
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        // Draw disc
+        function drawDisc() {
+            if (!gameState.disc) return;
+
+            const coords = toCanvasCoords(gameState.disc.x, gameState.disc.y);
+
+            // Disc trail
+            ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#ff0';
+
+            if (gameState.disc.trail && gameState.disc.trail.length > 1) {
+                ctx.beginPath();
+                const firstTrail = toCanvasCoords(gameState.disc.trail[0].x, gameState.disc.trail[0].y);
+                ctx.moveTo(firstTrail.x, firstTrail.y);
+
+                for (let i = 1; i < gameState.disc.trail.length; i++) {
+                    const trailCoords = toCanvasCoords(gameState.disc.trail[i].x, gameState.disc.trail[i].y);
+                    ctx.lineTo(trailCoords.x, trailCoords.y);
+                }
+                ctx.stroke();
+            }
+
+            // Disc rotation
+            const rotation = gameState.disc.rotation || 0;
+
+            ctx.save();
+            ctx.translate(coords.x, coords.y);
+            ctx.rotate(rotation);
+
+            // Disc outer ring
+            ctx.strokeStyle = '#ff0';
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#ff0';
+            ctx.beginPath();
+            ctx.arc(0, 0, 15, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Disc inner glow
+            ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+            ctx.beginPath();
+            ctx.arc(0, 0, 12, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Disc center
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(0, 0, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Disc spokes
+            ctx.strokeStyle = '#ff0';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                const angle = (Math.PI / 2) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(Math.cos(angle) * 12, Math.sin(angle) * 12);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+            ctx.shadowBlur = 0;
+        }
+
+        // Launch disc animation
+        function launchDisc() {
+            const a = parseFloat(document.getElementById('coef-a').value);
+            const b = parseFloat(document.getElementById('coef-b').value);
+            const c = parseFloat(document.getElementById('coef-c').value);
+
+            gameState.isLaunching = true;
+            gameState.disc = {
+                x: -12,
+                y: a * 144 + b * (-12) + c,
+                speed: 0.15,
+                trail: [],
+                rotation: 0
+            };
+
+            document.getElementById('status').textContent = 'DISC LAUNCHED!';
+            document.getElementById('status').className = '';
+        }
+
+        // Update disc position
+        function updateDisc() {
+            if (!gameState.disc || !gameState.isLaunching) return;
+
+            const a = parseFloat(document.getElementById('coef-a').value);
+            const b = parseFloat(document.getElementById('coef-b').value);
+            const c = parseFloat(document.getElementById('coef-c').value);
+
+            // Update position
+            gameState.disc.x += gameState.disc.speed;
+            gameState.disc.y = a * gameState.disc.x * gameState.disc.x +
+                              b * gameState.disc.x + c;
+
+            // Update rotation
+            gameState.disc.rotation += 0.2;
+
+            // Add to trail
+            gameState.disc.trail.push({ x: gameState.disc.x, y: gameState.disc.y });
+            if (gameState.disc.trail.length > 50) {
+                gameState.disc.trail.shift();
+            }
+
+            // Check collision with enemy
+            if (gameState.targetEnemy) {
+                const dx = gameState.disc.x - gameState.targetEnemy.x;
+                const dy = gameState.disc.y - gameState.targetEnemy.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < 0.8) {
+                    gameState.hitTarget = true;
+                    gameState.isLaunching = false;
+                    document.getElementById('status').textContent = '🎯 TARGET DESTROYED! MISSION SUCCESS!';
+                    document.getElementById('status').className = 'success';
+
+                    // Explosion effect
+                    createExplosion(gameState.targetEnemy.x, gameState.targetEnemy.y);
+                }
+            }
+
+            // Check if disc is out of bounds
+            if (gameState.disc.x > 12) {
+                gameState.isLaunching = false;
+                if (!gameState.hitTarget) {
+                    document.getElementById('status').textContent = '❌ MISS! Adjust your coefficients and try again.';
+                    document.getElementById('status').className = 'error';
+                }
+            }
+        }
+
+        // Explosion particles
+        let explosionParticles = [];
+
+        function createExplosion(x, y) {
+            for (let i = 0; i < 30; i++) {
+                explosionParticles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    life: 1.0,
+                    color: Math.random() > 0.5 ? '#ff0' : '#f00'
+                });
+            }
+        }
+
+        function updateExplosions() {
+            explosionParticles = explosionParticles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+                return p.life > 0;
+            });
+        }
+
+        function drawExplosions() {
+            explosionParticles.forEach(p => {
+                const coords = toCanvasCoords(p.x, p.y);
+                ctx.fillStyle = p.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = p.color;
+                ctx.globalAlpha = p.life;
+                ctx.beginPath();
+                ctx.arc(coords.x, coords.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+            ctx.shadowBlur = 0;
+        }
+
+        // Main render loop
+        function render() {
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw elements
+            drawGrid();
+            drawSharePoints();
+
+            // Draw player's curve if coefficients are entered
+            const a = parseFloat(document.getElementById('coef-a').value);
+            const b = parseFloat(document.getElementById('coef-b').value);
+            const c = parseFloat(document.getElementById('coef-c').value);
+
+            if (a !== 0 || b !== 0 || c !== 0) {
+                drawCurve(a, b, c, '#00ff00', 3);
+            }
+
+            // Draw enemy (unless destroyed)
+            if (!gameState.hitTarget) {
+                drawEnemy();
+            }
+
+            // Update and draw disc
+            if (gameState.isLaunching) {
+                updateDisc();
+            }
+            drawDisc();
+
+            // Update and draw explosions
+            updateExplosions();
+            drawExplosions();
+
+            requestAnimationFrame(render);
+        }
+
+        // Event handlers
+        document.getElementById('draw-btn').addEventListener('click', () => {
+            document.getElementById('status').textContent = 'Curve drawn. Ready to launch!';
+            document.getElementById('status').className = '';
+        });
+
+        document.getElementById('launch-btn').addEventListener('click', () => {
+            if (gameState.isLaunching) {
+                document.getElementById('status').textContent = 'Disc already in flight!';
+                return;
+            }
+            launchDisc();
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            generateLevel(gameState.level);
+            gameState.disc = null;
+            explosionParticles = [];
+            document.getElementById('coef-a').value = 0;
+            document.getElementById('coef-b').value = 0;
+            document.getElementById('coef-c').value = 0;
+            document.getElementById('status').textContent = 'Level reset. Calculate the polynomial!';
+            document.getElementById('status').className = '';
+        });
+
+        // Show hint (Lagrange interpolation solution)
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'h' || e.key === 'H') {
+                const { a, b, c } = gameState.correctCoeffs;
+                document.getElementById('status').textContent =
+                    `HINT: a ≈ ${a.toFixed(3)}, b ≈ ${b.toFixed(3)}, c ≈ ${c.toFixed(3)}`;
+                document.getElementById('status').className = 'highlight';
+            }
+        });
+
+        // Initialize game
+        generateLevel(1);
+        render();
+    </script>
+</body>
+</html>
