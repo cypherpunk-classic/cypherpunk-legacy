@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cypherpunk Legacy - Crypto Wars Education Game</title>
+    <link rel="stylesheet" href="src/css/grandpa-room.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2a 100%);
+        }
+
+        .main-container {
+            max-width: 1200px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 48px;
+            color: #b0b0b0;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 8px rgba(90, 122, 138, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #7a7a7a;
+            margin-bottom: 50px;
+            line-height: 1.6;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .game-card {
+            background: linear-gradient(135deg, #1a2a3a 0%, #2a3a4a 100%);
+            border: 2px solid #5a7a8a;
+            border-radius: 10px;
+            padding: 30px;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card.unlocked:hover {
+            transform: translateY(-5px);
+            border-color: #7a9aaa;
+            box-shadow: 0 10px 30px rgba(90, 122, 138, 0.3);
+        }
+
+        .game-card.locked {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .game-card.locked:hover {
+            transform: none;
+        }
+
+        .level-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .lock-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            backdrop-filter: blur(2px);
+        }
+
+        .game-card.locked .lock-overlay {
+            display: flex;
+        }
+
+        .lock-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            animation: shake 2s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+
+        .lock-text {
+            color: #f59e0b;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .status.completed {
+            background-color: rgba(16, 185, 129, 0.3);
+            color: #10b981;
+        }
+
+        .game-card h2 {
+            color: #b0b0b0;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .game-card p {
+            color: #8a8a8a;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .game-card .status {
+            display: inline-block;
+            padding: 5px 15px;
+            background-color: rgba(90, 122, 138, 0.3);
+            border-radius: 20px;
+            font-size: 12px;
+            color: #9a9a9a;
+        }
+
+        .status.prototype {
+            background-color: rgba(90, 154, 90, 0.3);
+            color: #9aaa9a;
+        }
+
+        .footer {
+            margin-top: 60px;
+            padding: 30px;
+            border-top: 1px solid #3a3a3a;
+            color: #6a6a6a;
+            font-size: 14px;
+        }
+
+        .footer a {
+            color: #7a9aaa;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            color: #9abacc;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>🔐 CYPHERPUNK LEGACY</h1>
+        <div class="subtitle">
+            An Educational Game Journey Through Cryptography and the Crypto Wars<br>
+            Learn encryption, BIP39, lattice cryptography, and the UC model through interactive gameplay
+        </div>
+
+        <div class="game-grid" id="gameGrid">
+            <div class="game-card unlocked" data-game="grandpa-room" data-level="1">
+                <div class="level-badge">Level 1</div>
+                <h2>🏠 Grandpa's Cabin</h2>
+                <p>
+                    Explore your grandfather's cabin and discover his cryptographic legacy.
+                    Learn about BIP39 mnemonic phrases and begin your journey into Cryptopolis.
+                </p>
+                <span class="status prototype">✓ Prototype Ready</span>
+                <div class="lock-overlay">
+                    <div class="lock-icon">🔒</div>
+                    <div class="lock-text">Complete previous level</div>
+                </div>
+            </div>
+
+            <div class="game-card locked" data-game="bip39-game" data-level="2">
+                <div class="level-badge">Level 2</div>
+                <h2>🔑 BIP39 Authentication</h2>
+                <p>
+                    Master the BIP39 mnemonic system. Learn how 12 simple words can
+                    secure your digital identity through key derivation.
+                </p>
+                <span class="status prototype">✓ Prototype Ready</span>
+                <div class="lock-overlay">
+                    <div class="lock-icon">🔒</div>
+                    <div class="lock-text">Complete Grandpa's Cabin</div>
+                </div>
+            </div>
+
+            <div class="game-card locked" data-game="encryption-demo" data-level="3">
+                <div class="level-badge">Level 3</div>
+                <h2>🔐 Encryption Workshop</h2>
+                <p>
+                    Hands-on encryption and decryption demonstration. Understand
+                    symmetric and asymmetric cryptography fundamentals.
+                </p>
+                <span class="status prototype">✓ Prototype Ready</span>
+                <div class="lock-overlay">
+                    <div class="lock-icon">🔒</div>
+                    <div class="lock-text">Complete BIP39 Authentication</div>
+                </div>
+            </div>
+
+            <div class="game-card locked" data-game="taproot-explorer" data-level="4">
+                <div class="level-badge">Level 4</div>
+                <h2>🌳 Taproot Explorer</h2>
+                <p>
+                    Master Bitcoin's Schnorr signatures and Taproot technology.
+                    Learn BIP 340, BIP 327 MuSig2, and defend against cryptographic attacks.
+                </p>
+                <span class="status prototype">✓ Prototype Ready</span>
+                <div class="lock-overlay">
+                    <div class="lock-icon">🔒</div>
+                    <div class="lock-text">Complete Encryption Workshop</div>
+                </div>
+            </div>
+
+            <div class="game-card locked" data-game="cyberspace" data-level="5">
+                <div class="level-badge">Level 5</div>
+                <h2>⚡ Cyberspace</h2>
+                <p>
+                    Master Lagrange polynomial interpolation in the digital grid.
+                    Solve mathematical challenges in real-time to defend the system.
+                    Learn interpolation formulas through interactive gameplay.
+                </p>
+                <span class="status prototype">✓ Prototype Ready</span>
+                <div class="lock-overlay">
+                    <div class="lock-icon">🔒</div>
+                    <div class="lock-text">Complete Taproot Explorer</div>
+                </div>
+            </div>
+
+            <div class="game-card locked" data-game="algorithm-capture" data-level="6">
+                <div class="level-badge">Level 6</div>
+                <h2>⚔️ Algorithm Capture</h2>
+                <p>
+                    Collect and combine encryption algorithms in a Pokemon-style adventure.
+                    Capture, evolve, and fuse cryptographic algorithms. Gotta encrypt 'em all!
+                </p>
+                <span class="status prototype">✓ Prototype Ready</span>
+                <div class="lock-overlay">
+                    <div class="lock-icon">🔒</div>
+                    <div class="lock-text">Complete Cyberspace</div>
+                </div>
+            </div>
+
+            <div class="game-card locked" data-game="lattice-cryptanalysis" data-level="7">
+                <div class="level-badge">Level 7</div>
+                <h2>🧮 Lattice Cryptanalysis</h2>
+                <p>
+                    Learn lattice-based cryptography and the LLL algorithm.
+                    Solve puzzles, visualize lattice reduction, and break weak RSA!
+                </p>
+                <span class="status prototype">✓ Prototype Ready</span>
+                <div class="lock-overlay">
+                    <div class="lock-icon">🔒</div>
+                    <div class="lock-text">Complete Algorithm Capture</div>
+                </div>
+            </div>
+
+            
+
+        <div class="footer">
+            <p><strong>Educational Resources</strong></p>
+            <p>
+                <a href="docs/README.md">Documentation</a> |
+                <a href="https://pcs.zkpunk.pro/" target="_blank">PCS ZKPunk</a> |
+                <a href="https://wiki.lacom.io/" target="_blank">Lacom Wiki</a> |
+                <a href="https://github.com/buttercup/rust-crypto-wasm" target="_blank">Rust Crypto WASM</a>
+            </p>
+            <p style="margin-top: 20px;">
+                Built with a vision to teach cryptography through gameplay.<br>
+                Combining crypto war ideology education with hands-on algorithm learning.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Game progression system
+        const GAMES = [
+            'grandpa-room',
+            'bip39-game',
+            'encryption-demo',
+            'taproot-explorer',
+            'cyberspace',
+            'algorithm-capture',
+            'lattice-cryptanalysis'
+        ];
+
+        // Load progress from localStorage
+        function loadProgress() {
+            const progress = localStorage.getItem('cypherpunk_progress');
+            if (progress) {
+                return JSON.parse(progress);
+            }
+            // Default: only first game unlocked
+            return { completed: [], unlocked: ['grandpa-room'] };
+        }
+
+        // Save progress to localStorage
+        function saveProgress(progress) {
+            localStorage.setItem('cypherpunk_progress', JSON.stringify(progress));
+        }
+
+        // Mark game as completed and unlock next
+        function completeGame(gameName) {
+            const progress = loadProgress();
+
+            if (!progress.completed.includes(gameName)) {
+                progress.completed.push(gameName);
+
+                // Unlock next game
+                const currentIndex = GAMES.indexOf(gameName);
+                if (currentIndex >= 0 && currentIndex < GAMES.length - 1) {
+                    const nextGame = GAMES[currentIndex + 1];
+                    if (!progress.unlocked.includes(nextGame)) {
+                        progress.unlocked.push(nextGame);
+                    }
+                }
+
+                saveProgress(progress);
+            }
+
+            return progress;
+        }
+
+        // Check if game is unlocked
+        function isGameUnlocked(gameName) {
+            const progress = loadProgress();
+            return progress.unlocked.includes(gameName);
+        }
+
+        // Initialize game cards
+        function initializeGameCards() {
+            const progress = loadProgress();
+            const cards = document.querySelectorAll('.game-card');
+
+            cards.forEach(card => {
+                const gameName = card.dataset.game;
+                const isUnlocked = progress.unlocked.includes(gameName);
+                const isCompleted = progress.completed.includes(gameName);
+
+                if (isUnlocked) {
+                    card.classList.remove('locked');
+                    card.classList.add('unlocked');
+
+                    // Add click handler
+                    card.addEventListener('click', () => {
+                        const url = `src/html/${gameName}.html`;
+                        // Mark as completed when entering
+                        completeGame(gameName);
+                        location.href = url;
+                    });
+
+                    // Update status if completed
+                    if (isCompleted) {
+                        const statusElement = card.querySelector('.status');
+                        statusElement.classList.add('completed');
+                        statusElement.textContent = '✓ Completed';
+                    }
+                } else {
+                    card.classList.add('locked');
+                    card.classList.remove('unlocked');
+
+                    // Show alert when clicking locked card
+                    card.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const lockText = card.querySelector('.lock-text').textContent;
+                        alert('🔒 ' + lockText);
+                    });
+                }
+            });
+        }
+
+        // Add debug controls (remove in production)
+        function addDebugControls() {
+            const style = document.createElement('style');
+            style.textContent = `
+                .debug-controls {
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    background: rgba(0, 0, 0, 0.8);
+                    color: white;
+                    padding: 15px;
+                    border-radius: 10px;
+                    z-index: 1000;
+                    font-family: monospace;
+                }
+                .debug-controls button {
+                    margin: 5px;
+                    padding: 5px 10px;
+                    cursor: pointer;
+                }
+            `;
+            document.head.appendChild(style);
+
+            const debugDiv = document.createElement('div');
+            debugDiv.className = 'debug-controls';
+            debugDiv.innerHTML = `
+                <strong>Debug Controls</strong><br>
+                <button onclick="unlockAll()">Unlock All</button>
+                <button onclick="resetProgress()">Reset Progress</button>
+                <button onclick="showProgress()">Show Progress</button>
+            `;
+            document.body.appendChild(debugDiv);
+        }
+
+        // Debug functions
+        window.unlockAll = function() {
+            const progress = {
+                completed: [...GAMES],
+                unlocked: [...GAMES]
+            };
+            saveProgress(progress);
+            location.reload();
+        };
+
+        window.resetProgress = function() {
+            localStorage.removeItem('cypherpunk_progress');
+            location.reload();
+        };
+
+        window.showProgress = function() {
+            const progress = loadProgress();
+            alert('Completed: ' + progress.completed.join(', ') + '\nUnlocked: ' + progress.unlocked.join(', '));
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeGameCards();
+            addDebugControls(); // Comment out in production
+        });
+
+        // Expose completeGame for games to call
+        window.completeGame = completeGame;
+    </script>
+</body>
+</html>

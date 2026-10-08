@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "vite/client",
+      "node"
+    ],
+    "noUnusedLocals": false
+  },
+  "include": [
+    "unit",
+    "e2e",
+    "../playwright.config.ts",
+    "../src"
+  ]
+}

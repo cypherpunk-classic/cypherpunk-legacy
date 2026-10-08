@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(open http://localhost:8080/src/html/taproot-explorer.html)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

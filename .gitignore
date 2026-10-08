@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dist-single/
+test-results/
+playwright-report/
+scratch/
+.DS_Store
+*.log
+
+.DS_Store
