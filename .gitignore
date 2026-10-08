@@ -6,5 +6,5 @@ playwright-report/
 scratch/
 .DS_Store
 *.log
-
-.DS_Store
+package-lock.json
+Claude outputs/

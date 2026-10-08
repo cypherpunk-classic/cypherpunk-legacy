@@ -46,13 +46,17 @@ const logWall: Painter = (g, x, y) => {
 
 const logWallWindow: Painter = (g, x, y) => {
   logWall(g, x, y);
+  // bright overcast daylight outside: sky, distant pines, soft rain
   fill(g, x + 2, y + 2, 12, 11, C.k!);
-  fill(g, x + 3, y + 3, 10, 9, '#16203a');
+  fill(g, x + 3, y + 3, 10, 9, '#bcd4e6'); // bright sky
+  fill(g, x + 3, y + 3, 10, 3, '#d6e6f0'); // lighter near the top
+  fill(g, x + 3, y + 8, 10, 4, '#5f8f5a'); // tree line
   const r = prng(3);
-  for (let i = 0; i < 9; i++) px(g, x + 3 + Math.floor(r() * 10), y + 3 + Math.floor(r() * 9), r() < 0.5 ? '#3a5a8a' : '#2a3f66');
-  fill(g, x + 7, y + 3, 1, 9, C.k!);
-  fill(g, x + 3, y + 7, 10, 1, C.k!);
-  fill(g, x + 1, y + 13, 14, 2, C.n!);
+  for (let i = 0; i < 6; i++) px(g, x + 3 + Math.floor(r() * 10), y + 8 + Math.floor(r() * 4), r() < 0.5 ? '#4a7a48' : '#72a86a');
+  for (let i = 0; i < 5; i++) px(g, x + 4 + Math.floor(r() * 9), y + 3 + Math.floor(r() * 8), '#e8f2f8'); // rain glints
+  fill(g, x + 7, y + 3, 1, 9, '#6b4a2a'); // muntin
+  fill(g, x + 3, y + 7, 10, 1, '#6b4a2a');
+  fill(g, x + 1, y + 13, 14, 2, C.n!); // sill
   fill(g, x + 1, y + 14, 14, 1, C.m!);
 };
 

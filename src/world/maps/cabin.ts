@@ -77,7 +77,7 @@ export const cabinMap: MapDef = {
     computer: { x: t(15.5), y: t(5), facing: 'up' },
   },
   music: 'cabin',
-  tint: 0x7a7090,
+  tint: 0xf0e6d2,
   ambient: 'dust',
   catMode: 'wander',
   catArea: { x: t(6), y: t(5), w: t(7), h: t(4) },

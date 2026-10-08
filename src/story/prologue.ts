@@ -60,8 +60,9 @@ export const prologueHandlers: Record<string, Handler> = {
       await say(
         ['narrator', 'A beige CRT, older than you. A yellow sticky note clings to the bezel.'],
         ['narrator', 'You press the power button. The screen hums: ENTER RECOVERY PHRASE (12 WORDS).'],
-        ['you', "Twelve words. I don't have twelve words. Grandpa would have hidden them somewhere sensible. For him."],
+        ['you', "Twelve words. I don't have twelve words. He'd have written them down somewhere close by — the drawers, maybe. I should search the room first."],
       );
+      objective('Search the cabin for the twelve words (try the chest of drawers).');
       return;
     }
     if (!flag('pro.note')) {

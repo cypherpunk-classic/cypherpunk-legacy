@@ -54,7 +54,6 @@ export class SeedRecovery implements Puzzle {
     this.checkBox = h('div', { class: 'note' });
     this.funnelBox = h('div', { class: 'funnel' });
     this.sweepBtn = btn('Run the recovery sweep', () => void this.sweep(), '', 'seed-sweep');
-    this.sweepBtn.disabled = true;
 
     this.input.addEventListener('input', () => this.preview());
     this.input.addEventListener('keydown', (e) => {
@@ -96,7 +95,7 @@ export class SeedRecovery implements Puzzle {
         ),
       ),
     );
-    host.status('Type a candidate for the missing word.', 'info');
+    host.status('Type a candidate word, or just press “Run the recovery sweep” to let the machine find it.', 'info');
     this.preview();
   }
 
