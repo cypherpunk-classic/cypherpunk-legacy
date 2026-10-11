@@ -1,0 +1,9 @@
+[package]
+name = "cpl-audio"
+description = "Synthesised sound effects and music for Cypherpunk Legacy (no audio files)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]

@@ -1,137 +1,152 @@
 # The cryptography, module by module
 
-Everything in `src/crypto/` is pure TypeScript: no DOM, no Phaser, no randomness
-except where a function explicitly takes a PRNG or asks for OS entropy. That
-keeps it testable in Node and readable as reference material. Primitives
-(hashes, curve arithmetic, AEAD ciphers, BIP-39/32, ML-KEM) come from the
-audited `@noble/*` and `@scure/*` libraries; the protocol logic around them is
-original.
+Everything in `crates/crypto` is plain Rust with no engine or UI dependency
+and no randomness except where a function takes a `Drbg` or asks the operating
+system for entropy. Primitives (hashes, curve arithmetic, Schnorr, AES, GCM,
+ML-KEM, ML-DSA) come from the audited RustCrypto crates; the protocol logic
+around them is original, written to be read as reference material.
 
-Each module below names the puzzle(s) that use it and the test file that pins it
-to published vectors.
+Each module below names the puzzle(s) that use it. `crates/crypto/tests/vectors.rs`
+pins the protocol code to published test vectors (shipped in
+`crates/crypto/tests/vectors`), and every module has unit tests of its own.
 
-## `bytes.ts` — foundations
+## `bytes` · foundations
 
-Hex/UTF-8/bit conversions, `bigint ↔ bytes`, and modular arithmetic on `bigint`:
-`mod`, `floorDiv`, `roundDiv` (exact nearest-integer division, which LLL needs),
-`egcd`, `modInv`, `modPow`, `gcd`, Miller–Rabin `isProbablePrime`, and
-`log2Big` for basis profiles. Used everywhere.
+Hex and bit conversions, `BigInt ↔ bytes`, and modular arithmetic on big
+integers: `modulo`, `floor_div`, `round_div` (exact nearest-integer division,
+which LLL needs), extended Euclid, `mod_inv`, `mod_pow`, Miller–Rabin
+`is_probable_prime`, and `log2_big` for basis profiles. Small `u64` helpers
+(`mul_mod_u64`, `pow_mod_u64`) keep the toy Diffie–Hellman groups fast.
 
-## `drbg.ts` — deterministic content
+## `drbg` · deterministic content
 
-`Drbg(seed, label)` is a SHA-256-based stream used to generate *puzzle content*
-(keys, pads, shares) deterministically from the save's 32-byte seed, with a
-per-puzzle label for domain separation. It is **not** a key generator — the only
-real secret the game creates (your epilogue signature key) uses
-`crypto.getRandomValues`. Rejection-samples uniform `bigint`s below a bound.
+`Drbg::new(seed, label)` is a SHA-256 stream that generates *puzzle content*
+(keys, pads, shares) from the save's 32-byte seed, with a label per use for
+domain separation, and rejection-samples uniform integers below a bound. It is
+not a key generator for anything real: the epilogue's signature and the
+ML-KEM demonstration use OS entropy (`getrandom`, which is
+`crypto.getRandomValues` in the browser).
 
-## `secp.ts` — secp256k1
+## `secp` · secp256k1
 
-A readable layer over `@noble/curves`: `G`, the group order `N`, field prime,
-`mul`/`add`/`sub`, `xOnly`/`compressed` encodings, BIP-340 `liftX`, and
-`taggedHash`. Everything the signature and ZK chapters stand on.
+A readable layer over `k256`: `G`, the group order `N`, the field prime,
+scalar multiplication, x-only and compressed encodings, BIP-340 `lift_x`, and
+`tagged_hash`. Everything the signature and zero-knowledge chapters stand on.
 
-## `bip39.ts` — seeds *(Prologue · `bip39.test.ts`)*
+## `bip39`, `bip32` · seeds *(Prologue)*
 
-- `checksumReport` exposes the 132 bits of a 12-word mnemonic: 128 entropy + the
-  4-bit SHA-256 checksum, so the puzzle can show exactly which bits a word sets.
-- `checksumCandidates` / `recoveryFunnel`: the ~1/16 of the wordlist that makes a
-  hole's checksum valid, then narrowed by a visible first letter.
-- `masterFingerprint` (HASH160 of the BIP-32 master pubkey), `deriveKey`
-  (BIP-86 path `m/86'/0'/0'/0/0`), `descriptor`.
-- `generateGrandpaSeed` builds a puzzle whose funnel needs the fingerprint to
-  resolve to a unique word.
+- `checksum_report` exposes the 132 bits of a 12-word mnemonic, 128 of entropy
+  and 4 of SHA-256 checksum, so the puzzle can show exactly which bits a word
+  sets.
+- `checksum_candidates` and `recovery_funnel`: the roughly 1/16 of the wordlist
+  that makes a missing word's checksum valid, then narrowed by a visible first
+  letter.
+- `seed_from_mnemonic` (PBKDF2-HMAC-SHA512, 2048 rounds), BIP-32 extended keys
+  and `master_fingerprint` (HASH160 of the master public key), BIP-86
+  derivation `m/86'/0'/0'/0/0`, and the `tr(...)` descriptor on Grandpa's
+  sticky note.
+- `generate_grandpa_seed` builds a puzzle whose funnel needs the fingerprint to
+  resolve to a single word.
 
-Verified against the Trezor BIP-39 vectors and the BIP-86 test vector
-(`73c5da0a`, `bc1p5cyxnux…`).
+Verified against the Trezor BIP-39 vectors (including the extended private
+keys) and the BIP-86 test vector.
 
-## `bip340.ts` — Schnorr signatures *(Prologue, Ch. 4 · `bip340.test.ts`)*
+## `bip340` · Schnorr signatures *(Prologue, Chapter 4)*
 
-BIP-340 sign/verify (through noble) plus two teaching extras:
-`signWithNonce` (sign with a chosen `k`, for the broken-device museum) and
-`recoverFromNonceReuse` → `d = (s₁−s₂)/(e₁−e₂) mod n`. `explainVerify` returns
+BIP-340 sign and verify (through `k256`), plus two teaching extras:
+`sign_with_nonce` (sign with a chosen `k`, which is how Warden's broken signer
+behaves) and `recover_from_nonce_reuse`, which computes
+`d = (s₁ − s₂)/(e₁ − e₂) mod n` and shows each step. `explain_verify` returns
 both sides of `s·G = R + e·P` for display. Passes the full BIP-340 CSV vectors.
 
-## `musig.ts` — key aggregation *(Ch. 4 · `musig.test.ts`)*
+## `musig` · key aggregation *(Chapter 4)*
 
-`naiveAggregate` (the broken `P₁+P₂`), `rogueKey` (`T − ΣPᵢ`), and BIP-327
-`keyAgg` with the real coefficient `aᵢ = H(L‖Pᵢ)` and the second-key
-optimisation. `rogueAttemptAgainstKeyAgg` shows the rogue trick failing to
-converge under KeyAgg. Matches the official BIP-327 KeyAgg vectors.
+`naive_aggregate` (the broken `P₁ + P₂`), `rogue_key` (`T − ΣPᵢ`), and BIP-327
+`key_agg` with the real coefficients `aᵢ = H(L ‖ Pᵢ)` and the second-key
+optimisation. `rogue_attempt_against_key_agg` shows the rogue trick failing
+under KeyAgg. Matches the official BIP-327 KeyAgg vectors.
 
-## `taproot.ts` — Taproot *(Ch. 4 · `taproot.test.ts`)*
+## `taproot`, `bech32` · Taproot *(Chapter 4)*
 
-TapLeaf/TapBranch hashing, `tweakKey` (`Q = P + H_TapTweak(P‖root)·G`),
-bech32m `taprootAddress`, script builders (single-sig, 2-of-2, timelocked), and
-`pairAddresses` to enumerate leaf pairs. Matches every BIP-341 `scriptPubKey`
-test vector, including addresses.
+TapLeaf and TapBranch hashing, `tweak_key` (`Q = P + H_TapTweak(P ‖ root)·G`),
+bech32m addresses, script builders (single signature, 2-of-2, time-locked), and
+`pair_addresses` to enumerate the leaf pairs a player might try. Matches every
+BIP-341 `scriptPubKey` test vector, addresses included.
 
-## `otp.ts` / `aead.ts` — pads and AEAD *(Ch. 1 · `symmetric.test.ts`)*
+## `otp`, `aead` · pads and authenticated encryption *(Chapter 1)*
 
-`makeTwoTimePad` and `cribDrag` (the `C₁⊕C₂ = P₁⊕P₂` attack with a plausibility
-score); `ctr*`/`gcm*` wrappers, `flipBit`, and `forgeCtr` (`C' = C ⊕ (P⊕P')`) to
-show CTR malleability and GCM rejecting the same edit. `kdf` is HKDF-SHA256.
+`make_two_time_pad` and `crib_drag` (the `C₁ ⊕ C₂ = P₁ ⊕ P₂` attack, with a
+plausibility score for each guess); AES-256-CTR and AES-256-GCM wrappers,
+`flip_bit` and `forge_ctr` (`C' = C ⊕ (P ⊕ P')`) to show CTR's malleability and
+GCM rejecting the same edit. `kdf` is HKDF-SHA256.
 
-## `dh.ts` — Diffie–Hellman *(Ch. 2 · `dh.test.ts`)*
+## `dh` · Diffie–Hellman *(Chapter 2)*
 
-Safe-prime groups `p = 2q+1`, generator `g = 4` of order `q`, at three sizes
-(10-bit toy, 31-bit "export grade", 64-bit). `shared`, `sessionKey`, and
-baby-step giant-step (`bsgs`, plus an `async` variant that yields to the event
-loop for a progress bar). The MITM is pure group arithmetic in the puzzle. Tests
-confirm the groups are genuine safe primes and BSGS recovers a 31-bit exponent.
+Safe-prime groups `p = 2q + 1` with a generator of order `q`, at three sizes (a
+10-bit toy, a 31-bit "export grade" group, and a 64-bit one), `shared` and
+`session_key`, and baby-step giant-step as a resumable state machine
+(`Bsgs::step(budget)`) so the attack can run a slice per frame with a progress
+bar. The man-in-the-middle is plain group arithmetic in the puzzle. Tests
+confirm the groups are genuine safe primes and that BSGS recovers a 31-bit
+exponent.
 
-## `shamir.ts` — secret sharing *(Ch. 3 · `shamir.test.ts`)*
+## `shamir` · secret sharing *(Chapter 3)*
 
-`deal`/`reconstruct` over any prime field (GF(31) for the visual puzzle, the
-secp256k1 order for the real key), `lagrangeAtZero` exposing the fraction and its
-reduction mod *p*, Feldman `feldmanCheck` (`y·G = Σ xʲ·Cⱼ`), and `quadraticThrough`
-/ `curveForGuess` for the "two shares reveal nothing" animation. Tests confirm
-any 3-of-5 rebuild the secret, a forged share is caught, and two shares are
-consistent with *every* secret.
+`deal` and `reconstruct` over any prime field (GF(31) for the visible puzzle,
+the secp256k1 order for the real key), `lagrange_at_zero` exposing each
+coefficient as a fraction and reduced mod *p*, Feldman's `feldman_check`
+(`y·G = Σ xʲ·Cⱼ`), and `quadratic_through` / `curve_for_guess` for the "two
+shares reveal nothing" plot. Tests confirm any three of five shares rebuild the
+secret, a forged share is caught, and two shares are consistent with *every*
+secret.
 
-## `sigma.ts` — zero knowledge *(Ch. 5 · `sigma.test.ts`)*
+## `sigma` · zero knowledge *(Chapter 5)*
 
-The Schnorr identification Σ-protocol: `commit`/`respond`/`verifyTranscript`,
-`simulate` (the HVZK simulator, `R = s·G − c·X`), `extract` (special soundness,
-= nonce reuse), one-bit `cheaterCommit`, and Fiat–Shamir (`fsChallenge`,
-`fsProve`, `fsVerify`) with an option to omit the context so the replay bug is
-demonstrable. Tests cover completeness, simulation, extraction, the cheater's
-exact win condition, and the weak-FS replay.
+The Schnorr identification Σ-protocol: `commit`, `respond`,
+`verify_transcript`, `simulate` (the honest-verifier simulator,
+`R = s·G − c·X`), `extract` (special soundness, which is nonce reuse again), a
+one-bit `cheater_commit`, and Fiat–Shamir (`fs_challenge`, `fs_prove`,
+`fs_verify`) with an option to leave the context out of the hash so the replay
+bug can be demonstrated. Tests cover completeness, simulation, extraction, the
+cheater's exact win condition, and the weak Fiat–Shamir replay.
 
-## `lattice.ts` — reduction *(Ch. 6 · `lattice.test.ts`)*
+## `lattice` · reduction *(Chapter 6)*
 
-**Integral LLL** (Cohen Alg. 2.6.7 / de Weger): instead of rational Gram–Schmidt
-coefficients it keeps the integer determinants `dᵢ` and `λ_{i,j}`, so every
-division is exact — no floating point anywhere in the reduction. `isLllReduced`
-checks the two conditions exactly; `gramDeterminants`/`profile` give the GSO
-profile the puzzle animates. Plus 2-D Lagrange–Gauss (`gaussReduce`) for the
-hand-played version. Tests confirm the output is LLL-reduced and spans the same
-lattice (same covolume), and that Gauss reduction finds the true shortest vector
-(checked by brute force).
+**Integral LLL** (Cohen, Algorithm 2.6.7, after de Weger): instead of rational
+Gram–Schmidt coefficients it keeps the integer determinants `dᵢ` and `λᵢⱼ`, so
+every division is exact and there is no floating point anywhere in the
+reduction. `is_lll_reduced` checks both conditions exactly;
+`gram_determinants` and `profile` give the Gram–Schmidt profile the puzzle
+plots. `Gauss2` is two-dimensional Lagrange–Gauss reduction, one move at a time,
+for the hand-played version. Tests confirm the output is LLL-reduced and spans
+the same lattice (same covolume), and that Gauss reduction finds the true
+shortest vector (checked by brute force).
 
-## `knapsack.ts` — Merkle–Hellman *(Ch. 6 · `lattice.test.ts`)*
+## `knapsack` · Merkle–Hellman *(Chapter 6)*
 
-Superincreasing keygen, encrypt/decrypt, `density`, the CJLOSS lattice
-(`cjBasis`), and `attackBlock` (LLL + read off the `±1` short vector), with a
-retry that reorders the basis on an unlucky block. `makeKnapsackPuzzle`
-guarantees an instance every block of which LLL breaks. Tested end-to-end:
-private-key decryption and lattice recovery agree on the plaintext.
+Superincreasing key generation, encryption and decryption, `density`, the
+CJLOSS lattice (`cj_basis`) and `attack_block` (LLL, then read the `±1` short
+vector off the reduced basis, retrying with a reordered basis on an unlucky
+block). `make_knapsack_puzzle` guarantees an instance that LLL breaks block by
+block. Tested end to end: private-key decryption and the lattice attack agree on
+the plaintext.
 
-## `lwe.ts` / `pq.ts` — post-quantum *(Ch. 6 · `lwe_pq.test.ts`)*
+## `lwe`, `pq` · post-quantum *(Chapter 6)*
 
-A toy LWE (`n=4, q=97`) with Regev bit encryption, the phase computation the
-puzzle plots, and `gaussianSolve` (recovers `s` with no noise, garbage with
-noise). `pq.ts` wraps `@noble/post-quantum` ML-KEM-768 (FIPS 203) and ML-DSA-65
-(FIPS 204). Tests confirm LWE decrypts under the noise budget, Gaussian
-elimination only works noise-free, and ML-KEM/ML-DSA round-trip.
+A toy LWE (`n = 4, q = 97`) with Regev-style bit encryption, the phase the
+puzzle plots, and `gaussian_solve` (recovers `s` without noise, garbage with
+it). `pq` wraps RustCrypto's ML-KEM-768 (FIPS 203) and ML-DSA-65 (FIPS 204).
+Tests confirm LWE decrypts within its noise budget, Gaussian elimination only
+works without noise, ML-KEM rejects a tampered ciphertext implicitly, and
+ML-DSA round-trips.
 
 ---
 
 ### A note on honesty
 
-Where the game says "this verifies", the on-screen value is the actual output of
-the verification equation, not a scripted success. Where it says an attack
+Where the game says "this verifies", the value on screen is the output of the
+verification equation, not a scripted success. Where it says an attack
 "works", the recovered key or plaintext is recomputed and checked against the
-real one before the puzzle unlocks. The toy field sizes (GF(31), 31/64-bit DH
-groups, `n=4` LWE) are chosen so the mathematics is *visible*, and the text is
-explicit each time about how the real-world parameter sizes differ.
+real one before the puzzle unlocks. The toy sizes (GF(31), 10- and 31-bit DH
+groups, `n = 4` LWE) are chosen so the mathematics is *visible*, and the text
+says each time how real-world parameters differ.

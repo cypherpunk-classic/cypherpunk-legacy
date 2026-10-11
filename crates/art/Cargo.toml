@@ -1,0 +1,12 @@
+[package]
+name = "cpl-art"
+description = "Code-defined pixel art for Cypherpunk Legacy: palettes, tiles, characters, props and buildings, rendered to RGBA sheets."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+
+[dev-dependencies]
+png = "0.18"

@@ -2,50 +2,76 @@ name: CI
 
 on:
   push:
-    branches: [main, 'v2**']
+    branches: [main, 'v3**']
   pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
   test:
+    name: Cryptography, story and headless playthroughs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm install
-      - name: Typecheck
-        run: npm run typecheck
-      - name: Unit tests (against official vectors)
-        run: npm test
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
-      - name: End-to-end playthrough
-        run: npm run e2e
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Unit tests (official vectors) and headless playthroughs
+        run: cargo test --release -p cpl-crypto -p cpl-art -p cpl-audio -p cpl-logic
+
+  native:
+    name: Native build and autopilot playthrough
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: System libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libasound2-dev libudev-dev libx11-dev libxcursor-dev libxrandr-dev libxi-dev libxkbcommon-x11-0 mesa-vulkan-drivers xvfb
       - name: Build
-        run: npm run build
+        run: cargo build --release
+      - name: Play the whole game through the real world (software Vulkan under Xvfb)
+        run: |
+          mkdir -p shots
+          xvfb-run -s "-screen 0 1280x720x24" env WGPU_BACKEND=vulkan CPL_AUTOPLAY=1 CPL_SPEED=3 CPL_EXIT_AT_END=1 \
+            CPL_SHOTS=shots CPL_DATA_DIR="$RUNNER_TEMP/cpl" CPL_SEED=ci timeout 1800 ./target/release/cypherpunk-legacy
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: autopilot-screenshots
+          path: shots
+
+  web:
+    name: Web build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - name: wasm-bindgen CLI (same version as Cargo.lock)
+        run: |
+          v=$(awk '/^name = "wasm-bindgen"$/{getline; gsub(/version = |"/, ""); print}' Cargo.lock)
+          cargo install wasm-bindgen-cli --version "$v" --locked
+      - name: Build
+        run: ./scripts/build-web.sh
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
 
   deploy:
-    needs: test
+    needs: [test, web]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       pages: write
       id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm install
-      - run: npm run build
-      - uses: actions/configure-pages@v4
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
       - id: deployment
         uses: actions/deploy-pages@v4

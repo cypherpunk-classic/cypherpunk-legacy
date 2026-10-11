@@ -1,10 +1,14 @@
-node_modules/
-dist/
-dist-single/
-test-results/
-playwright-report/
-scratch/
+/target
+/target-*
+/dist
+/scratch
+/shots
 .DS_Store
 *.log
+# left over from the v2 (TypeScript) checkout
+/node_modules
+/dist-single
+/test-results
+/playwright-report
 package-lock.json
 Claude outputs/

@@ -1,61 +1,88 @@
 # Design notes
 
-## Goals of the rewrite
+## Why Bevy, and what changed from v2
 
-The original prototype had the right *story* — a grandfather's cabin, a seed
-phrase, a portal to a crypto city — but three problems made it worth starting
-over rather than patching:
+v2 (TypeScript, Phaser 3, a DOM overlay) proved the game: real cryptography,
+one through-line story, tests that play it to the end. v3 keeps all of that
+and moves it to Rust and Bevy 0.20 so that one codebase gives a native desktop
+game and a WebAssembly build, with the cryptography on audited RustCrypto
+crates and the whole game checkable by `cargo test`.
 
-1. **The cryptography was fake.** Signatures were `SHA256(key‖msg)`; "elliptic
-   curve points" were string hashes; `modInverse` returned a hash; the knapsack
-   attack was a `setTimeout` that printed a hard-coded answer.
-2. **Seven disconnected pages.** Each level was its own HTML file with its own
-   state, style and save, no shared engine, no through-line.
-3. **No build, tests or types.** Dependencies loaded from CDNs at runtime.
-
-v2 fixes all three. The guiding rule: **every "break" the player performs is
-computed live in the browser from real cryptography, and could be verified by
-anyone.** The story is the delivery mechanism for that, not a substitute.
+The rule from v2 stands: **every "break" the player performs is computed live
+from real cryptography and could be verified by anyone.** The story is the
+delivery mechanism for that, not a substitute.
 
 ## Architecture
 
-The clean split is the thing to preserve:
+The split that matters is between what knows about the engine and what does
+not:
 
-- **`src/crypto/` knows nothing about the game.** Pure functions, `bigint` and
-  `Uint8Array` in and out. This is what the unit tests import. If you can't test
-  a cryptographic claim in Node without a browser, it's in the wrong place.
-- **The canvas only ever shows pixels; every word is DOM.** Phaser renders the
-  world (`src/world/WorldScene.ts` drives all maps). Text — dialogue, HUD,
-  puzzle terminals, menus — lives in an overlay (`src/ui/`) that sits above the
-  canvas. This keeps text crisp at every integer zoom, selectable, accessible,
-  and reachable by Playwright with ordinary selectors.
-- **Content is generated, not stored.** All art is drawn in code
-  (`src/art/`) and rasterised to textures at boot (`src/world/textures.ts`);
-  all audio is synthesised (`src/core/audio.ts`). The repo has no binary assets,
-  which is why the whole game fits in one 1.7 MB HTML file.
-- **Puzzles are self-contained terminals.** Each implements the `Puzzle`
-  interface (`src/ui/terminal.ts`): a `mount(host)` that builds its DOM and an
-  `autoplay()` that drives its own controls to the solution. Story code just
-  calls `runPuzzle()` and reacts to success.
+- **`crates/crypto` knows nothing about the game.** `BigInt`s and byte arrays
+  in and out, tested against published vectors.
+- **`crates/art` and `crates/audio` generate content.** Pixel art is painted
+  into RGBA buffers by code; sound effects and the five music loops are
+  synthesised sample by sample and wrapped as WAV. No binary assets anywhere.
+- **`crates/logic` is the whole game except the world renderer.** Save state,
+  maps (as data), the story, the codex, and every puzzle with its egui
+  interface. It depends on `egui` but not on Bevy, and it can run headless.
+- **The root crate is the Bevy app.** It turns map data into entities,
+  moves people around with collisions, runs the camera, lights and particles,
+  plays sound, stores saves, and executes what the story asks of the world.
+
+### The story runtime
+
+Story scripts are ordinary `async fn`s taking a `Ctx`. They change game state
+directly (`c.set("ch1.done")`, `c.give("share1")`) and ask for everything else
+by sending a command and awaiting its reply:
+
+```rust
+say!(c, (Mara, "Here. My radio log. Have a look.")).await;
+if !c.puzzle(Box::new(TwoTimePad::new(c.world()))).await { return; }
+c.goto(MapId::City, Some("gateway")).await;
+```
+
+A tiny executor polls the scripts with a no-op waker every frame. Commands that
+only concern the interface (dialogue, choices, puzzle terminals, waits, sound)
+are handled inside `Game`; world commands (change map, pan the camera, flash,
+burst, set an object's frame, save the position) become `EngineReq`s for the
+Bevy side. A headless director answers those instantly, which is how the tests
+play the whole game without a window.
+
+### Rendering
+
+- One baked image per map holds the tiles (two when there is water, swapped
+  every 650 ms). Props, people and the cat are sprites, y-sorted by giving each
+  a z derived from its feet.
+- The night is a colour multiplied into every world sprite; lights are
+  additive sprites on top: `ColorMaterial` extended with a pipeline
+  specialisation that sets the blend state to `src·α + dst`. Flicker and pulse
+  switch between a handful of pre-made strengths.
+- The camera uses an integer zoom (`floor(min(w/300, h/190))`, clamped to
+  2..6), made whole in device pixels, and snaps to the device-pixel grid with a
+  half-pixel correction on odd window sizes, so every texel is a crisp block.
+- egui draws all text on top: crisp at any zoom, and the same code serves
+  dialogue, terminals, menus and the HUD. Fades, flashes and CRT scanlines are
+  painted on egui's background layer, under the windows.
 
 ## Determinism and the per-save world
 
-`src/story/world.ts` derives the entire cryptographic state of a playthrough —
-Grandpa's mnemonic, the Vault key and its five shares, Warden's two
-nonce-reusing signatures, the Taproot tree, the checkpoint key — from the save's
-single 32-byte `seed`, memoised per session. Two consequences:
+`World` (in `crates/logic/src/world.rs`) derives the entire cryptographic state
+of a playthrough from the save's single 32-byte `seed`: Grandpa's mnemonic, the
+Vault key and its five shares (and the forged one), Warden's two nonce-reusing
+signatures, the Taproot tree, the checkpoint key. Values are computed on first
+use and cached. Consequences:
 
 - No two players get the same puzzles, but every player's puzzles are solvable
   by the same honest method.
-- Tests and the autoplay path are reproducible: `?seed=...` fixes everything.
+- Tests and the autopilot are reproducible: `CPL_SEED` or `?seed=` fixes it all.
 
 ## Narrative wiring
 
-`src/story/` maps world events to scripts. `WorldScene` reports *that* an
-interaction or zone happened; `story/index.ts` routes it to a handler. Handlers
-are plain async functions using a tiny API (`say`, `choose`, `puzzle`, `give`,
-`codex`, `objective`, `set`/`flag`). Chapter gating is just flags
-(`ch1.done` opens the next district's barrier via a `showIf` on the map object).
+`crates/logic/src/story` maps interaction ids (`"mara.talk"`, `"plaza.vault"`)
+to scripts. The world only reports *that* the player pressed E in front of
+something. Chapter gating is flags: `ch1.done` hides the barrier on the west
+avenue through the object's `show_if`, and the world re-evaluates those
+conditions every frame.
 
 Each of the six friends teaches one idea and hands over one piece (a Shamir
 share, a key, access), so the mechanics and the plot advance together: you learn
@@ -63,32 +90,36 @@ MuSig2 *because* the Directorate offered you a rigged joint-custody contract.
 
 ## Testing strategy
 
-Two layers, both real:
+Three layers, all real:
 
-- **Unit (`tests/unit`, Vitest).** Every cryptographic module against published
-  vectors (BIP-340/341/327/86, Trezor BIP-39, FIPS) and structural properties
-  (LLL output is reduced and covolume-preserving; any 3-of-5 shares reconstruct;
-  a forged share fails Feldman; the cheater wins exactly when its bet matches).
-- **End-to-end (`tests/e2e`, Playwright).** One test starts a new game and plays
-  to the credits, solving every puzzle through its `autoplay()` — i.e. through
-  the same DOM controls a player uses — and asserts zero page errors. A puzzle
-  that isn't actually solvable fails the build. The `?debug` bridge only
-  triggers interactions and advances dialogue; it never sets a flag to skip a
-  puzzle.
+- **Unit** (`cargo test -p cpl-crypto`): every cryptographic module against
+  published vectors (BIP-39/340/341/327/86) and structural properties (LLL
+  output is reduced and covolume-preserving, any 3-of-5 shares reconstruct, a
+  forged share fails Feldman, the cheater wins exactly when its bet matches).
+- **Headless playthroughs** (`cargo test -p cpl-logic`): new game to credits
+  through the real scripts, dialogue and egui terminals, every puzzle solved by
+  its `autoplay` (which works the puzzle's own controls), once in autoplay mode
+  and once by simulated key presses. A separate test draws every puzzle's UI
+  before and after solving it.
+- **Autopilot** (`CPL_AUTOPLAY=1 CPL_EXIT_AT_END=1`): the Bevy app plays itself.
+  A* over an 8-pixel grid takes the player to each person or prop on the route,
+  through the real collision code, gates and map changes, and screenshots are
+  written at every milestone. CI runs it under Xvfb with software Vulkan.
 
-## Accessibility & platforms
+## Accessibility and platforms
 
-- Keyboard and touch (an on-screen stick + button appear on coarse pointers).
-- Respects `prefers-reduced-motion`; a settings toggle also forces it.
-- Responsive down to phone width; the DOM overlay reflows, the camera zoom
-  adapts to the viewport.
-- Storage is best-effort: the save falls back to in-memory if `localStorage`
-  throws (private windows, blocked site data), and the menu offers copy/paste
-  export so progress is never trapped.
+- Keyboard and touch (an on-screen stick and action button appear after the
+  first touch).
+- Settings for text speed, music and effects volume, UI scale, CRT scanlines,
+  and reduced motion (no camera shake, fewer particles).
+- Saves are JSON: in the platform data folder natively, in `localStorage` on the
+  web, and the menu can copy a save to the clipboard or import one, so progress
+  is never trapped.
 
 ## Extending it
 
-A new puzzle is one file implementing `Puzzle` plus a few lines of story wiring
-and (if it needs per-save data) an entry in `world.ts`. A new district is a
-region in `city.ts` with a gated barrier and an NPC. Keep the cryptography in
-`src/crypto/` with a test, and keep the text in the DOM.
+A new puzzle is one file in `crates/logic/src/puzzles` implementing `Puzzle`
+(including `autoplay`), registered in `puzzles::make`, plus a few lines of
+story. If it needs per-save data, derive it in `World`. A new district is a
+region in the city map with a gated barrier and an NPC. Keep the cryptography
+in `crates/crypto` with a test, and keep words in egui.

@@ -1,0 +1,90 @@
+[package]
+name = "cypherpunk-legacy"
+description = "An educational pixel-art adventure through real cryptography and the crypto wars, built with Bevy."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+default-run = "cypherpunk-legacy"
+
+[workspace]
+members = ["crates/*"]
+resolver = "3"
+
+[workspace.package]
+version = "3.0.0"
+edition = "2024"
+license = "CC0-1.0"
+rust-version = "1.97.1"
+
+[workspace.dependencies]
+cpl-crypto = { path = "crates/crypto" }
+cpl-art = { path = "crates/art" }
+cpl-audio = { path = "crates/audio" }
+cpl-logic = { path = "crates/logic" }
+
+egui = { version = "0.36", default-features = false, features = ["default_fonts"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dependencies]
+cpl-crypto.workspace = true
+cpl-art.workspace = true
+cpl-audio.workspace = true
+cpl-logic.workspace = true
+egui.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+bevy = { version = "0.20.0", default-features = false, features = [
+  "default_app",
+  "std",
+  "multi_threaded",
+  "bevy_winit",
+  "x11",
+  "webgl2",
+  "keyboard",
+  "mouse",
+  "touch",
+  "bevy_window",
+  "bevy_render",
+  "bevy_core_pipeline",
+  "bevy_camera",
+  "bevy_color",
+  "bevy_image",
+  "bevy_mesh",
+  "bevy_shader",
+  "bevy_sprite",
+  "bevy_sprite_render",
+  "bevy_audio",
+  "wav",
+] }
+bevy_egui = { version = "0.43.1", default-features = false, features = ["render", "default_fonts", "manage_clipboard", "open_url"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+bevy = { version = "0.20.0", default-features = false, features = ["web"] }
+web-sys = { version = "0.3", features = ["Window", "Storage", "Location", "Document", "HtmlElement", "HtmlAnchorElement", "Element", "Node", "UrlSearchParams", "Blob", "BlobPropertyBag", "Url"] }
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+
+# Fast enough to play in debug builds: optimise dependencies, keep our own code quick to compile.
+[profile.dev]
+opt-level = 1
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+opt-level = 3
+debug = false
+
+[profile.release]
+lto = "thin"
+codegen-units = 16
+
+# `cargo build --profile web-release --target wasm32-unknown-unknown`
+[profile.web-release]
+inherits = "release"
+opt-level = "s"
+lto = "fat"
+codegen-units = 1
+strip = "debuginfo"
+panic = "abort"
