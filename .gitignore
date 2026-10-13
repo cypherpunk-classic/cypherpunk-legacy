@@ -12,3 +12,4 @@
 /playwright-report
 package-lock.json
 Claude outputs/
+.claude/
