@@ -1,0 +1,30 @@
+[package]
+name = "cpl-crypto"
+description = "The real cryptography behind Cypherpunk Legacy: BIP-39/32/340/327/341, pads, AEAD, DH, Shamir/Feldman, Sigma protocols, LLL, LWE and ML-KEM/ML-DSA."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+k256 = { version = "0.14", default-features = false, features = ["arithmetic", "schnorr", "alloc"] }
+sha2 = "0.11"
+hmac = "0.13"
+pbkdf2 = { version = "0.13", default-features = false, features = ["hmac"] }
+ripemd = "0.2"
+hkdf = "0.13"
+aes = "0.9"
+ctr = "0.10"
+aes-gcm = { version = "0.11", default-features = false, features = ["aes", "alloc"] }
+ml-kem = { version = "0.3.2", default-features = false, features = ["alloc"] }
+ml-dsa = { version = "0.1.1", default-features = false, features = ["alloc"] }
+num-bigint = "0.5"
+num-integer = "0.1"
+num-traits = "0.2"
+getrandom = "0.4"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.4", features = ["wasm_js"] }
+
+[dev-dependencies]
+serde_json.workspace = true

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0d16" />
+    <meta name="description" content="Cypherpunk Legacy: a pixel-art adventure through real cryptography and the crypto wars." />
+    <title>Cypherpunk Legacy</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #07080e; overflow: hidden; }
+      body { touch-action: none; -webkit-user-select: none; user-select: none; }
+      #game { display: block; width: 100vw; height: 100vh; height: 100dvh; outline: none; }
+      #boot {
+        position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 14px; background: #07080e; color: #8a96b0; font: 15px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        transition: opacity .4s ease;
+      }
+      #boot .t { color: #fff; font-size: clamp(28px, 6vw, 56px); letter-spacing: .08em; text-shadow: 3px 0 #ff3e9a99, -3px 0 #3ef0ff99; }
+      #boot .bar { width: min(320px, 70vw); height: 6px; background: #111830; border-radius: 3px; overflow: hidden; }
+      #boot .bar i { display: block; height: 100%; width: 0; background: #3ef0ff; transition: width .15s; }
+      #boot.done { opacity: 0; pointer-events: none; }
+      #boot .err { color: #ff5566; max-width: 80vw; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <canvas id="game" tabindex="0"></canvas>
+    <div id="boot">
+      <div class="t">CYPHERPUNK LEGACY</div>
+      <div class="bar"><i></i></div>
+      <div class="s">loading the city…</div>
+    </div>
+    <noscript>Cypherpunk Legacy needs JavaScript and WebAssembly. Cypherpunks write code; so does this game.</noscript>
+    <script>
+      // Browsers only let audio start after a gesture: keep every AudioContext
+      // the game creates and resume them on the first key, click or touch.
+      (function () {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        var all = [];
+        function Patched(opts) { var c = new AC(opts); all.push(c); return c; }
+        Patched.prototype = AC.prototype;
+        window.AudioContext = Patched;
+        window.webkitAudioContext = Patched;
+        function resume() { all.forEach(function (c) { if (c.state !== 'running') c.resume(); }); }
+        ['pointerdown', 'keydown', 'touchstart'].forEach(function (e) { window.addEventListener(e, resume, { capture: true }); });
+      })();
+    </script>
+    <script type="module">
+      import init from './cypherpunk-legacy.js';
+      const boot = document.getElementById('boot');
+      const bar = boot.querySelector('.bar i');
+      const canvas = document.getElementById('game');
+      const focus = () => canvas.focus({ preventScroll: true });
+      canvas.addEventListener('pointerdown', focus);
+
+      // fetch the wasm with a progress bar (it is a few megabytes)
+      async function fetchWithProgress(url) {
+        const res = await fetch(url);
+        const total = Number(res.headers.get('content-length')) || 0;
+        if (!res.body || !total) return res;
+        let seen = 0;
+        const body = res.body.pipeThrough(new TransformStream({
+          transform(chunk, ctl) { seen += chunk.byteLength; bar.style.width = Math.min(100, (100 * seen) / total) + '%'; ctl.enqueue(chunk); },
+        }));
+        return new Response(body, { headers: { 'content-type': 'application/wasm' } });
+      }
+
+      const started = () => { bar.style.width = '100%'; setTimeout(() => { boot.classList.add('done'); focus(); setTimeout(() => boot.remove(), 600); }, 300); };
+      try {
+        await init({ module_or_path: fetchWithProgress(new URL('./cypherpunk-legacy_bg.wasm', import.meta.url)) });
+        started();
+      } catch (e) {
+        // winit leaves the start function by throwing; that means the game is running
+        if (String(e).includes('Using exceptions for control flow')) started();
+        else {
+          console.error(e);
+          boot.querySelector('.s').innerHTML = '<span class="err">The game could not start: ' + String(e).replace(/</g, '&lt;') + '<br>It needs a browser with WebAssembly and WebGL2.</span>';
+        }
+      }
+    </script>
+  </body>
+</html>

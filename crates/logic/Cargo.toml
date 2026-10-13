@@ -1,0 +1,15 @@
+[package]
+name = "cpl-logic"
+description = "Game state, story scripts, maps and puzzles for Cypherpunk Legacy (engine-independent; UI drawn with egui)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+cpl-crypto.workspace = true
+cpl-art.workspace = true
+egui.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+web-time = "1"

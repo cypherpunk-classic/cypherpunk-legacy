@@ -1,195 +1,157 @@
-# 🔐 Cypherpunk Legacy
+# Cypherpunk Legacy
 
-> *An educational game journey through cryptography, the crypto wars, and the fight for digital privacy*
+> A pixel-art adventure through real cryptography and the crypto wars.
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-Prototype-yellow.svg)]()
+Your grandfather left you a cabin, a cat, and twelve words. Behind them waits
+Cryptopolis, a city he helped build in the 1990s so people could talk without
+being overheard, and an argument about privacy that never ended. Every key,
+signature and attack in this game is **real cryptography, computed on your
+machine**: no server, no tracking, no accounts.
 
-## 🎮 Overview
-
-**Cypherpunk Legacy** is an interactive educational game that teaches cryptography through gameplay. Inspired by the cypherpunk movement and the ongoing crypto wars, this project combines:
-
-- 🎓 **Cryptographic Education** - Learn real encryption algorithms
-- 🕹️ **Engaging Gameplay** - Interactive challenges and puzzles
-- 📚 **Historical Context** - Understand the crypto wars and why encryption matters
-- 🔬 **Hands-on Implementation** - See algorithms in action
-
-### Current Features
-
-✅ **Grandpa's Cabin** - Explore a pixel-art cabin and discover a cryptographic legacy
-✅ **BIP39 Authentication** - Learn mnemonic phrases and key derivation (6-word game mode)
-✅ **Encryption Demo** - Interactive symmetric/asymmetric cryptography workshop
-✅ **8-Direction Movement** - Smooth character controls with diagonal movement
-✅ **Z-Ordering System** - Depth-based rendering for object occlusion
-
-## 🚀 Quick Start
-
-### Play Online
-Simply open `index.html` in a modern web browser to access the game selection menu.
-
-### Local Development
-```bash
-# Clone the repository
-git clone https://github.com/cypherpunk-classic/cypherpunk-legacy.git
-cd cypherpunk-legacy
-
-# Serve locally (choose one)
-python -m http.server 8000
-# or
-npx http-server .
-
-# Open browser to http://localhost:8000
-```
-
-## 📁 Project Structure
-
-```
-/cypherpunk-legacy/
-├── index.html              # 🎯 Main game menu
-├── docs/                   # 📚 Documentation
-│   ├── README.md
-│   ├── STRUCTURE.md        # Detailed structure guide
-│   └── crypto-modules/     # Crypto algorithm docs
-├── src/
-│   ├── html/              # 🎮 Game files
-│   │   ├── grandpa-room.html
-│   │   ├── bip39-game.html
-│   │   └── encryption-demo.html
-│   ├── css/               # 🎨 Stylesheets
-│   │   └── grandpa-room.css
-│   └── js/                # 💻 JavaScript modules (future)
-├── assets/                # 🖼️ Game assets
-│   ├── sprites/
-│   └── images/
-└── lib/                   # 📦 External libraries
-```
-
-See [docs/STRUCTURE.md](docs/STRUCTURE.md) for detailed documentation.
-
-## 🎯 Roadmap
-
-### Phase 1: Core Gameplay ✅ (Current)
-- [x] Pixel art cabin environment
-- [x] Character movement and animations (8 directions)
-- [x] BIP39 mnemonic authentication system
-- [x] Basic encryption demonstrations
-- [x] Scene transitions (Cabin → BIP39 → Cryptopolis)
-
-### Phase 2: Algorithm Capture System 🚧 (Next)
-- [ ] Collectible encryption algorithm system
-- [ ] Algorithm combination mechanics (UC Model)
-- [ ] Visual protocol composition
-- [ ] Cryptographic puzzle challenges
-
-### Phase 3: Advanced Cryptography 📋 (Planned)
-- [ ] **Lattice Cryptography** - LLL algorithm, post-quantum crypto
-- [ ] **Cryptanalysis Challenges** - Break weak encryption
-- [ ] **Zero-Knowledge Proofs** - Interactive ZK demonstrations
-- [ ] **Multi-Party Computation** - Collaborative crypto puzzles
-
-### Phase 4: Library Integration 📋 (Planned)
-- [ ] [Rust Crypto WASM](https://github.com/buttercup/rust-crypto-wasm) integration
-- [ ] [SageMath](https://www.sagemath.org/) for lattice cryptanalysis
-- [ ] Advanced ZK libraries from [PCS ZKPunk](https://pcs.zkpunk.pro/)
-- [ ] Educational content from [Lacom Wiki](https://wiki.lacom.io/)
-
-## 🧩 Game Modules
-
-### 🏠 Grandpa's Cabin
-Your grandfather, a cypherpunk pioneer, has left you his cabin. Inside, you'll find:
-- An old CRT computer requiring BIP39 authentication
-- A mysterious letter with mnemonic clues
-- A portal to Cryptopolis, the digital city he helped build
-
-**Learning Objectives**: Introduction to cryptographic legacy, BIP39 mnemonics
-
-### 🔑 BIP39 Authentication
-Master the art of mnemonic phrases:
-- Select from 3 pre-generated phrases or enter your own
-- Understand key derivation (PBKDF2)
-- See how 6 words can secure digital identity
-- Challenge-response authentication flow
-
-**Learning Objectives**: BIP39 standard, key derivation, authentication protocols
-
-### 🔐 Encryption Workshop
-Hands-on cryptography:
-- Symmetric encryption (AES)
-- Asymmetric encryption (RSA)
-- Key generation and management
-- Encrypt/decrypt messages interactively
-
-**Learning Objectives**: Symmetric vs asymmetric crypto, practical encryption use
-
-## 🎓 Educational Philosophy
-
-### The Crypto Wars
-This game teaches cryptography through the lens of the **crypto wars** - the historical and ongoing battle for:
-- Strong encryption without backdoors
-- Individual privacy rights
-- Freedom from mass surveillance
-- Open-source cryptographic tools
-
-### Learn by Doing
-Instead of passive reading, players:
-1. **Explore** cryptographic environments
-2. **Experiment** with real algorithms
-3. **Solve** puzzles requiring crypto knowledge
-4. **Build** complex systems from simple components
-5. **Understand** why cryptography matters for freedom
-
-## 🔬 Technical Details
-
-### Technologies
-- **Frontend**: Pure HTML5, CSS3, JavaScript (no framework dependencies)
-- **Graphics**: Canvas API with pixel-perfect rendering
-- **Crypto**: Native Web Crypto API + BIP39 library
-- **Future**: Rust-WASM for performance-critical crypto
-
-### Architecture Principles
-- **Modular Design**: Separation of HTML, CSS, JS
-- **Progressive Enhancement**: Works without modern features
-- **Educational Focus**: Code readability over optimization
-- **Open Source**: All algorithms are transparent and auditable
-
-## 🤝 Contributing
-
-We welcome contributions! Areas where you can help:
-
-- 🎮 **Game Design** - New puzzles, mechanics, storylines
-- 🔐 **Cryptography** - Implementing new algorithms, educational content
-- 🎨 **Art** - Pixel art sprites, backgrounds, UI elements
-- 📚 **Documentation** - Tutorials, algorithm explanations
-- 🐛 **Bug Reports** - Testing and issue reporting
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines (coming soon).
-
-## 📚 Resources
-
-### Learning Materials
-- [Crypto Module Documentation](docs/crypto-modules/README.md)
-- [PCS ZKPunk](https://pcs.zkpunk.pro/) - ZK proof systems
-- [Lacom Wiki](https://wiki.lacom.io/) - Comprehensive cryptography wiki
-- [Crypto 101](https://www.crypto101.io/) - Introductory cryptography book
-
-### Historical Context
-- [A Cypherpunk's Manifesto](https://www.activism.net/cypherpunk/manifesto.html) (1993)
-- [Cypherpunks Mailing List Archive](https://www.activism.net/cypherpunk/)
-- [Crypto Wars](https://en.wikipedia.org/wiki/Crypto_Wars) (Wikipedia)
-
-## 📜 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- The cypherpunk movement and pioneers who fought for encryption
-- The open-source cryptography community
-- Everyone building tools for digital privacy and freedom
+This is v3, a rewrite of the whole game in **Rust** on the **[Bevy](https://bevy.org)
+0.20** engine, running natively on desktop and in the browser (WebAssembly +
+WebGL2). The TypeScript/Phaser v2 lives on the `v2` branch; the original
+single-file prototype is preserved under [`legacy/`](legacy/).
 
 ---
 
-*"Privacy is necessary for an open society in the electronic age."*
-— Eric Hughes, A Cypherpunk's Manifesto (1993)
+## Play
 
-**Built with ❤️ for education, privacy, and freedom**
+Native (macOS, Linux, Windows), with a recent stable Rust:
+
+```bash
+cargo run --release
+```
+
+In the browser (builds a static site into `dist/`):
+
+```bash
+rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli --version 0.2.129   # must match Cargo.lock
+./scripts/build-web.sh
+python3 -m http.server -d dist 8080                # then open http://localhost:8080
+```
+
+**Controls:** WASD / arrow keys to move · Shift to walk faster · E / Space /
+Enter to interact · C for the codex · Esc for the menu. On a touch screen, drag
+on the left half to walk and tap the E button to interact.
+
+**Watch it play itself:** `CPL_AUTOPLAY=1 cargo run --release` natively, or
+`?autoplay=demo` on the web build. The autopilot walks the city, talks to
+everyone and solves every puzzle with the honest method.
+
+---
+
+## What you actually do
+
+Seven acts, each built on a working implementation you drive yourself:
+
+| Act | Place | Cryptography |
+|----|-------|--------------|
+| **Prologue** | The Cabin | BIP-39 seed recovery (checksum + master fingerprint), BIP-340 Schnorr challenge–response login |
+| **1 · One time only** | The Wharf | One-time pad reuse (crib dragging), AES-CTR malleability vs AES-GCM authentication |
+| **2 · Strangers agree** | The Exchange | Diffie–Hellman, man-in-the-middle on an unauthenticated exchange, baby-step giant-step on a weak group |
+| **3 · Threshold** | The Commons | Shamir secret sharing over GF(31) and secp256k1, Feldman verifiable secret sharing (catch a forged share) |
+| **4 · Signatures** | The Mint | Nonce-reuse key recovery, rogue-key attack vs BIP-327 MuSig2, BIP-341 Taproot script trees |
+| **5 · Knowledge** | The Masquerade | Schnorr Σ-protocol, the real-or-simulated game, the rewinding extractor, Fiat–Shamir (and its weak form) |
+| **6 · After the quantum** | The Observatory | Lagrange–Gauss & LLL lattice reduction, breaking a Merkle–Hellman knapsack, LWE, and a real ML-KEM-768 encapsulation |
+| **Epilogue** | Legacy Plaza | Sign and broadcast the manifesto; the Archive goes public for good |
+
+A **Codex** of 37 entries unlocks as you play, covering both the mathematics
+and the history: the Crypto Wars, PGP, Clipper, Bernstein v. US, Venona,
+Dual_EC_DRBG, the NIST post-quantum standards, and more.
+
+---
+
+## The cryptography is real
+
+Nothing is faked. Each puzzle calls the same code the tests pin to official
+vectors.
+
+- **Primitives** come from the audited [RustCrypto](https://github.com/RustCrypto)
+  crates: `k256` (secp256k1, BIP-340 Schnorr), `sha2`, `hmac`, `pbkdf2`,
+  `ripemd`, `hkdf`, `aes`, `ctr`, `aes-gcm`, `ml-kem` (FIPS 203) and `ml-dsa`
+  (FIPS 204).
+- **Protocol code** (`crates/crypto`) is original and engine-free: BIP-39
+  checksum funnels, BIP-32/86 derivation, BIP-340 nonce-reuse recovery, BIP-327
+  KeyAgg, BIP-341 tweaking and bech32m addresses, Shamir + Feldman over the
+  curve order, the Schnorr Σ-protocol (simulator, extractor, Fiat–Shamir),
+  **integral LLL** with exact big-integer arithmetic, the CJLOSS knapsack
+  attack, and a toy LWE.
+- **Verified** against the official BIP-39 (Trezor), BIP-340, BIP-341, BIP-327
+  and BIP-86 test vectors (`crates/crypto/tests`).
+
+Your save carries a random 32-byte seed; every key, pad, share and address in
+your playthrough is derived from it, so no two players see the same puzzles,
+and the solutions are always the honest cryptographic ones.
+
+---
+
+## How it's built
+
+```
+crates/
+  crypto/   pure, tested cryptography (no engine, no UI)
+  art/      code-defined pixel art: tiles, people, props, buildings, signs, lights
+  audio/    synthesised sound effects and music loops (written out as WAV)
+  logic/    game state, story scripts, maps, codex, puzzles and their egui UI,
+            plus a headless driver that plays the whole game in tests
+src/        the Bevy app: world, actors, camera, lights, particles, sound,
+            saving, autopilot, web/native platform glue
+web/        the HTML shell for the browser build
+```
+
+- **Bevy 0.20** renders the world: baked tile layers, y-sorted sprites, a
+  multiplied night tint, additive light sprites (a two-line material extension),
+  particles, an integer-zoom pixel-perfect camera.
+- **egui** (via `bevy_egui`) draws every word: dialogue with a typewriter,
+  puzzle terminals, HUD, menus, codex, title and credits. Fonts are embedded
+  (VT323 and IBM Plex Mono, both OFL).
+- **Story scripts are plain `async fn`s** over a small context (`say`,
+  `choose`, `puzzle`, `goto`, `pan_to`…), polled each frame by a tiny executor,
+  so the same story runs in the game, in the headless tests, natively and on
+  the web.
+- **All art is drawn in code and all sound is synthesised**: the repository
+  ships no image or audio files.
+- Every puzzle implements `autoplay`, which works its own controls to the
+  solution. The tests play the entire game with it; the autopilot uses it too.
+
+See [`docs/DESIGN.md`](docs/DESIGN.md) and [`docs/CRYPTO.md`](docs/CRYPTO.md).
+
+---
+
+## Develop
+
+```bash
+cargo test -p cpl-crypto -p cpl-art -p cpl-audio -p cpl-logic   # unit tests + headless playthroughs
+cargo run                                                        # dev build (dependencies optimised)
+CPL_AUTOPLAY=1 CPL_SPEED=2 CPL_SHOTS=shots CPL_EXIT_AT_END=1 cargo run --release   # end-to-end, with screenshots
+cargo run -p cpl-art --example preview                           # write every sprite sheet as PNG to scratch/art
+```
+
+The headless playthroughs (`crates/logic/tests/playthrough.rs`) start a new
+game and play to the credits through the real scripts, dialogue and egui
+terminals, once in autoplay mode and once by simulated key presses. The
+autopilot run does the same through the real Bevy world: walking, collisions,
+interactions, map changes, camera pans and all.
+
+Environment variables for native runs: `CPL_AUTOPLAY`, `CPL_SPEED` (walking
+speed multiplier), `CPL_PACE` (seconds per line while autoplaying), `CPL_SEED`
+(reproducible new game), `CPL_SHOTS` (screenshot folder), `CPL_EXIT_AT_END`,
+`CPL_DATA_DIR` (where saves go). On the web: `?autoplay`, `?autoplay=demo`,
+`?seed=…`, `?speed=…`.
+
+---
+
+## License
+
+The game is dedicated to the public domain under CC0 1.0 (see [LICENSE](LICENSE)).
+The bundled fonts keep their own licences: VT323 and IBM Plex Mono under the SIL
+Open Font License, and a subset of DejaVu Sans Mono under the Bitstream Vera
+licence (see `crates/logic/assets/fonts`). Characters and organisations in
+Cryptopolis are fiction. The history in the Codex is not.
+
+> *"Privacy is necessary for an open society in the electronic age."*
+> Eric Hughes, *A Cypherpunk's Manifesto*, 1993
+
+> *"Cypherpunks write code."*
