@@ -4,6 +4,11 @@
 //! presses E; dialogue and puzzles play themselves (`Game::auto`). Used for
 //! the attract-mode demo (`?autoplay=demo`) and as an end-to-end test of the
 //! engine side (`CPL_AUTOPLAY=1 CPL_SHOTS=dir CPL_EXIT_AT_END=1`).
+//!
+//! Walking has to work at any frame rate: CI renders on a software Vulkan
+//! driver at a dozen frames a second, where one frame's stride is longer than
+//! a grid cell. So paths are cut down to their corners and every step is
+//! scaled to land on the next corner exactly, never past it.
 
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
@@ -13,13 +18,19 @@ use bevy::render::view::screenshot::{Screenshot, save_to_disk};
 use cpl_logic::game::Mode;
 use cpl_logic::walkthrough::{Step, next_step};
 
-use crate::actors::Target;
+use crate::actors::{Pace, Target, player_stride};
 use crate::director::{Director, GameRes};
 use crate::input::Control;
 use crate::platform::Launch;
 use crate::world::{Aabb, Level, Npc, Player, Pos, Walker, facing_towards, facing_vec};
 
 const CELL: f32 = 8.0;
+
+/// With `CPL_EXIT_AT_END` (the CI run), a step of the route still unfinished
+/// after this many seconds of game time ends the run with an error, a
+/// screenshot and a report of where things stand, instead of leaving the job
+/// to walk in circles until its timeout.
+const STEP_LIMIT: f64 = 300.0;
 
 #[derive(Resource, Default)]
 pub struct Autopilot {
@@ -42,8 +53,19 @@ pub struct Autopilot {
     avoid: Vec<usize>,
     debug_t: f64,
     reach_t: f32,
+    /// How long A* has found no way to the target (a gate the story just
+    /// opened only lets people through from the next frame on).
+    no_path_t: f32,
     every: Option<f32>,
     next_every: f64,
+    /// Frames drawn so far, and (frames, wall-clock seconds, game seconds)
+    /// when the game and the current step began, for the fps report and the
+    /// watchdog.
+    frames: u64,
+    run_start: (u64, f64),
+    step_start: (u64, f64, f64),
+    /// Set once the run has failed: the app exits after the last screenshot.
+    fail_at: Option<f64>,
 }
 
 impl Autopilot {
@@ -56,6 +78,34 @@ impl Autopilot {
             self.shot_at.push((now + delay, name.to_string()));
         }
     }
+
+    /// Average frames per second since (frames, wall-clock seconds).
+    fn fps_since(&self, (frames, wall): (u64, f64), wall_now: f64) -> f64 {
+        (self.frames - frames) as f64 / (wall_now - wall).max(1e-3)
+    }
+}
+
+/// Keep only the corners of a grid path (and its first and last points).
+/// Between two corners the path runs straight along a row, a column or a
+/// diagonal, so walking straight from corner to corner crosses exactly the
+/// cells A* chose.
+fn corners(path: Vec<Vec2>) -> Vec<Vec2> {
+    let dir = |a: Vec2, b: Vec2| ((b - a) / CELL).round().as_ivec2();
+    let mut out = Vec::with_capacity(path.len());
+    for (i, &p) in path.iter().enumerate() {
+        if i == 0 || i + 1 == path.len() || dir(path[i - 1], p) != dir(p, path[i + 1]) {
+            out.push(p);
+        }
+    }
+    out
+}
+
+/// The grid cell under a point, if it is on the map.
+fn cell_of(level: &Level, p: Vec2) -> Option<usize> {
+    let size = level.size();
+    let (gw, gh) = ((size.x / CELL) as i32, (size.y / CELL) as i32);
+    let (x, y) = ((p.x / CELL).floor() as i32, (p.y / CELL).floor() as i32);
+    (x >= 0 && y >= 0 && x < gw && y < gh).then(|| (y * gw + x) as usize)
 }
 
 #[derive(Copy, Clone, PartialEq)]
@@ -173,6 +223,8 @@ fn locate(step: &Step, level: &Level, npcs: &Query<(&Pos, &Npc)>) -> Option<(Vec
 pub fn drive(
     mut commands: Commands,
     time: Res<Time>,
+    real: Res<Time<Real>>,
+    pace: Res<Pace>,
     mut ap: ResMut<Autopilot>,
     mut game: NonSendMut<GameRes>,
     director: Res<Director>,
@@ -187,7 +239,9 @@ pub fn drive(
         return;
     }
     let now = time.elapsed_secs_f64();
+    let wall = real.elapsed_secs_f64();
     let dt = time.delta_secs();
+    ap.frames += 1;
     control.override_axis = Some(Vec2::ZERO);
     // screenshots that are due
     if let Some(every) = ap.every
@@ -206,6 +260,13 @@ pub fn drive(
             commands.spawn(Screenshot::primary_window()).observe(save_to_disk(path));
         }
     }
+    // a failed run ends once its last screenshot has had time to be saved
+    if let Some(t) = ap.fail_at {
+        if now >= t {
+            exit.write(AppExit::error());
+        }
+        return;
+    }
     match game.mode {
         Mode::Title => {
             if !ap.started && now > 1.5 && ap.shot_n == 0 && ap.shot_at.is_empty() {
@@ -216,13 +277,15 @@ pub fn drive(
                 let seed = ap.seed.clone().unwrap_or_else(|| "autopilot".into());
                 info!("[autopilot] new game, seed {seed:?}");
                 game.new_game("nightjar", 0, Some(seed.as_str()));
+                ap.run_start = (ap.frames, wall);
+                ap.step_start = (ap.frames, wall, now);
             }
             return;
         }
         Mode::Credits => {
             if ap.finished_at.is_none() {
                 ap.finished_at = Some(now);
-                info!("[autopilot] the end, after {:.0} s", now);
+                info!("[autopilot] the end, after {:.0} s ({:.0} fps on average)", now, ap.fps_since(ap.run_start, wall));
                 ap.shot_later(now, 4.0, "credits");
             }
             if ap.exit_at_end && ap.finished_at.is_some_and(|t| now - t > 6.0) {
@@ -231,6 +294,21 @@ pub fn drive(
             return;
         }
         Mode::World => {}
+    }
+    // the watchdog (CI only): a step that never finishes is a failure, not a hang
+    if ap.exit_at_end && now - ap.step_start.2 > STEP_LIMIT {
+        let doing = if game.busy() { game.busy_reason() } else { format!("walking, {} waypoints to go", ap.path.len()) };
+        let at = player.single().map(|(_, p, _)| p.p).ok();
+        error!(
+            "[autopilot] giving up: {} still not done after {:.0} s ({doing}; map {:?}, player at {at:?}, {:.0} fps)",
+            ap.last_step.unwrap_or("the first step"),
+            now - ap.step_start.2,
+            level.id().map(|m| m.name()),
+            ap.fps_since((ap.step_start.0, ap.step_start.1), wall),
+        );
+        ap.shot_later(now, 0.0, "stuck");
+        ap.fail_at = Some(now + 1.0);
+        return;
     }
     if director.transition.is_some() {
         return;
@@ -255,9 +333,10 @@ pub fn drive(
     let Some(step) = state_step else { return };
     if ap.last_step != Some(step.until) {
         if let Some(prev) = ap.last_step {
-            info!("[autopilot] {prev} done at {now:.0} s");
+            info!("[autopilot] {prev} done at {now:.0} s ({:.0} fps)", ap.fps_since((ap.step_start.0, ap.step_start.1), wall));
             ap.shot_later(now, 0.6, prev);
         }
+        ap.step_start = (ap.frames, wall, now);
         ap.last_step = Some(step.until);
         ap.path.clear();
         ap.goal = None;
@@ -297,27 +376,30 @@ pub fn drive(
     if ap.path.is_empty() || moved_goal {
         match find_path(&level, me, pos.p, ip, radius, &ap.avoid) {
             Some(p) => {
-                ap.path = p;
+                ap.path = corners(p);
                 ap.goal = Some((step.target.to_string(), ip));
+                ap.no_path_t = 0.0;
             }
             None => {
-                warn!("[autopilot] no path to {}", step.target);
+                ap.no_path_t += dt;
+                if ap.no_path_t > 1.0 {
+                    ap.no_path_t = 0.0;
+                    warn!("[autopilot] no path to {} from {:?}", step.target, pos.p);
+                }
                 ap.goal = None;
                 return;
             }
         }
     }
-    // follow the path
-    let speed_hint = 4.0;
-    while let Some(next) = ap.path.first().copied() {
-        if next.distance(pos.p) < speed_hint {
-            ap.path.remove(0);
-        } else {
-            break;
-        }
+    // Follow the path, landing exactly on each corner. Aiming at a corner that
+    // is closer than one frame's stride would carry the player past it, then
+    // back past it, for ever: at a low frame rate that is every corner.
+    while ap.path.first().is_some_and(|w| w.distance(pos.p) < 2.0) {
+        ap.path.remove(0);
     }
-    if let Some(next) = ap.path.first() {
-        control.override_axis = Some((*next - pos.p).normalize_or_zero());
+    if let Some(&next) = ap.path.first() {
+        let stride = player_stride(dt, true, pace.0).max(1e-3);
+        control.override_axis = Some((next - pos.p).clamp_length_max(stride) / stride);
     }
     if now - ap.debug_t > 3.0 {
         ap.debug_t = now;
@@ -332,11 +414,10 @@ pub fn drive(
         if ap.stuck_t > 0.8 {
             ap.stuck_t = 0.0;
             ap.replans += 1;
-            // steer around whatever is in the way next time
-            let size = level.size();
-            let gw = (size.x / CELL) as i32;
-            if let Some(next) = ap.path.first() {
-                let c = ((next.y / CELL) as i32 * gw + (next.x / CELL) as i32) as usize;
+            // steer around whatever is just ahead next time
+            if let Some(&next) = ap.path.first()
+                && let Some(c) = cell_of(&level, pos.p + (next - pos.p).normalize_or_zero() * CELL)
+            {
                 ap.avoid.push(c);
             }
             info!("[autopilot] stuck at {:?} heading for {} (next {:?}), re-planning", pos.p, step.target, ap.path.first());

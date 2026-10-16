@@ -17,6 +17,16 @@ const WALK: f32 = 74.0;
 const RUN: f32 = 112.0;
 const WALK_FRAMES: [usize; 4] = [1, 0, 2, 0];
 
+/// The longest frame that movement integrates in one go: when frames are
+/// slower than this the world slows down rather than letting everyone jump.
+pub const MAX_DT: f32 = 0.05;
+
+/// How far the player gets this frame with the stick held all the way. The
+/// autopilot uses it to land exactly on its waypoints instead of past them.
+pub fn player_stride(dt: f32, run: bool, pace: f32) -> f32 {
+    (if run { RUN } else { WALK }) * pace * dt.min(MAX_DT)
+}
+
 /// Autopilot speed multiplier (1 = a person's pace).
 #[derive(Resource)]
 pub struct Pace(pub f32);
@@ -40,24 +50,28 @@ pub fn gather_bodies(mut level: ResMut<Level>, q: Query<(Entity, &Pos, &Walker, 
 
 pub fn move_player(time: Res<Time>, control: Res<Control>, pace: Res<Pace>, game: NonSend<GameRes>, director: Res<Director>, level: Res<Level>, mut sfx: ResMut<SfxQueue>, mut q: Query<(Entity, &mut Pos, &mut Walker), With<Player>>, mut step: Local<f32>) {
     let Ok((e, mut pos, mut w)) = q.single_mut() else { return };
-    let dt = time.delta_secs().min(0.05);
+    let dt = time.delta_secs().min(MAX_DT);
     let frozen = game.mode != Mode::World || game.busy() || director.transition.is_some();
     let mut axis = if frozen { Vec2::ZERO } else { control.axis };
     if axis.length() > 1.0 {
         axis = axis.normalize();
     }
-    let speed = if control.run { RUN } else { WALK } * if control.override_axis.is_some() { pace.0 } else { 1.0 };
+    let auto = control.override_axis.is_some();
+    let stride = player_stride(dt, control.run, if auto { pace.0 } else { 1.0 });
     w.running = control.run;
-    if axis.length() > 0.1 {
-        if axis.x.abs() > axis.y.abs() + 0.05 {
-            w.facing = if axis.x < 0.0 { Facing::Left } else { Facing::Right };
-        } else if axis.y.abs() > 0.05 {
-            w.facing = if axis.y < 0.0 { Facing::Up } else { Facing::Down };
+    // a dead zone for sticks and touch; the autopilot may ask for a short, exact step
+    let dead = if auto { 1e-3 } else { 0.1 };
+    if axis.length() > dead {
+        let dir = axis.normalize();
+        if dir.x.abs() > dir.y.abs() + 0.05 {
+            w.facing = if dir.x < 0.0 { Facing::Left } else { Facing::Right };
+        } else if dir.y.abs() > 0.05 {
+            w.facing = if dir.y < 0.0 { Facing::Up } else { Facing::Down };
         }
-        let (np, _, _) = level.slide(Some(e), pos.p, w.hw, w.h, axis * speed * dt, false);
+        let (np, _, _) = level.slide(Some(e), pos.p, w.hw, w.h, axis * stride, false);
         let moved = np.distance(pos.p) > 0.01;
         pos.p = np;
-        w.moving = moved || axis.length() > 0.1;
+        w.moving = moved || axis.length() > dead;
         *step += dt;
         if *step > if control.run { 0.22 } else { 0.3 } {
             *step = 0.0;
@@ -70,7 +84,7 @@ pub fn move_player(time: Res<Time>, control: Res<Control>, pace: Res<Pace>, game
 
 pub fn npc_ai(time: Res<Time>, game: NonSend<GameRes>, level: Res<Level>, mut q: Query<(Entity, &mut Pos, &mut Walker, &mut Npc)>) {
     let Some(map) = level.map.clone() else { return };
-    let dt = time.delta_secs().min(0.05);
+    let dt = time.delta_secs().min(MAX_DT);
     let busy = game.busy();
     for (e, mut pos, mut w, mut npc) in q.iter_mut() {
         if !npc.visible {
@@ -125,7 +139,7 @@ fn rand01(e: Entity, t: f32) -> f32 {
 pub fn cat_ai(time: Res<Time>, game: NonSend<GameRes>, level: Res<Level>, player: Query<(&Pos, &Walker), (With<Player>, Without<Cat>)>, mut q: Query<(Entity, &mut Pos, &mut Cat, &mut Sprite), Without<Player>>) {
     let Some(map) = level.map.clone() else { return };
     let Ok((ppos, pw)) = player.single() else { return };
-    let dt = time.delta_secs().min(0.05);
+    let dt = time.delta_secs().min(MAX_DT);
     for (e, mut pos, mut cat, mut sprite) in q.iter_mut() {
         let mut goal: Option<(Vec2, f32)> = None;
         match map.cat_mode {

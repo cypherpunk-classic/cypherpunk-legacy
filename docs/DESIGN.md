@@ -104,7 +104,11 @@ Three layers, all real:
 - **Autopilot** (`CPL_AUTOPLAY=1 CPL_EXIT_AT_END=1`): the Bevy app plays itself.
   A* over an 8-pixel grid takes the player to each person or prop on the route,
   through the real collision code, gates and map changes, and screenshots are
-  written at every milestone. CI runs it under Xvfb with software Vulkan.
+  written at every milestone. Paths are cut down to their corners and every
+  frame's step is scaled to land exactly on the next one, so the walk is the
+  same at a dozen frames a second as at a hundred. CI runs it under Xvfb with
+  software Vulkan; there a step that stalls for five minutes fails the run with
+  a report and a screenshot instead of hanging until the job's timeout.
 
 ## Accessibility and platforms
 

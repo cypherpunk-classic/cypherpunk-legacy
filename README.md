@@ -137,9 +137,10 @@ interactions, map changes, camera pans and all.
 
 Environment variables for native runs: `CPL_AUTOPLAY`, `CPL_SPEED` (walking
 speed multiplier), `CPL_PACE` (seconds per line while autoplaying), `CPL_SEED`
-(reproducible new game), `CPL_SHOTS` (screenshot folder), `CPL_EXIT_AT_END`,
-`CPL_DATA_DIR` (where saves go). On the web: `?autoplay`, `?autoplay=demo`,
-`?seed=…`, `?speed=…`.
+(reproducible new game), `CPL_SHOTS` (screenshot folder), `CPL_EXIT_AT_END`
+(quit after the credits with status 0, or with status 1 and a report if any
+step of the route stalls for five minutes), `CPL_DATA_DIR` (where saves go). On
+the web: `?autoplay`, `?autoplay=demo`, `?seed=…`, `?speed=…`.
 
 ---
 

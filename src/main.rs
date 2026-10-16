@@ -27,7 +27,7 @@ enum Phase {
     Present,
 }
 
-fn main() {
+fn main() -> AppExit {
     let launch = platform::launch();
     let game = director::build_game(&launch);
     App::new()
@@ -58,7 +58,7 @@ fn main() {
         .add_systems(Update, (world::refresh_system, actors::gather_bodies, actors::move_player, actors::npc_ai, actors::cat_ai).chain().in_set(Phase::Move))
         .add_systems(Update, (actors::interact, actors::zones, actors::animate_walkers, actors::sync_positions).chain().in_set(Phase::React))
         .add_systems(Update, (view::update_camera, fx::particles, fx::loop_anims, fx::lights, fx::water, title::animate, sound::play).in_set(Phase::Present))
-        .run();
+        .run()
 }
 
 fn start_title(mut commands: Commands, mut gfx: ResMut<gfx::Gfx>, mut images: ResMut<Assets<Image>>, mut materials: ResMut<Assets<gfx::GlowMaterial>>) {
