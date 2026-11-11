@@ -20,6 +20,12 @@ pub struct Drbg {
     prefix: Vec<u8>,
 }
 
+impl std::fmt::Debug for Drbg {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Drbg(counter {})", self.counter)
+    }
+}
+
 impl Drbg {
     pub fn new(seed: &[u8], label: &str) -> Self {
         let mut prefix = seed.to_vec();

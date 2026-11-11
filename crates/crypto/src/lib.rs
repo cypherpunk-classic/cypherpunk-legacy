@@ -7,7 +7,8 @@
 //! and `aes-gcm`, and the post-quantum schemes from `ml-kem` and `ml-dsa`. The
 //! protocol logic on top (BIP-39 recovery funnels, BIP-340 nonce reuse,
 //! BIP-327 KeyAgg, BIP-341 tweaks, Shamir/Feldman, Sigma protocols, LLL,
-//! knapsacks, LWE) is written out in full here, because that logic *is* the
+//! knapsacks, LWE, Chaumian e-cash, onion routing, Hashcash, the Clipper LEAF,
+//! the web of trust) is written out in full here, because that logic *is* the
 //! lesson.
 
 pub mod aead;
@@ -16,18 +17,26 @@ pub mod bip32;
 pub mod bip340;
 pub mod bip39;
 pub mod bytes;
+pub mod clipper;
 pub mod dh;
+pub mod dots;
 pub mod drbg;
+pub mod ecash;
+pub mod hashcash;
+pub mod hashchain;
 pub mod knapsack;
 pub mod lattice;
 pub mod lwe;
 pub mod musig;
+pub mod ocr;
+pub mod onion;
 pub mod otp;
 pub mod pq;
 pub mod secp;
 pub mod shamir;
 pub mod sigma;
 pub mod taproot;
+pub mod wot;
 
 pub use bytes::{Big, big};
 pub use drbg::Drbg;
