@@ -290,6 +290,8 @@ const CREDITS: &[(&str, &str)] = &[
 #[derive(Default)]
 pub struct CreditsState {
     pub scroll: f32,
+    /// the ending's title and the tally behind it
+    pub ending: Option<(String, Vec<String>)>,
 }
 
 /// Rolls the credits; returns true when the player returns to the title.
@@ -305,6 +307,15 @@ pub fn credits(ctx: &egui::Context, c: &mut CreditsState, dt: f32) -> bool {
     egui::Area::new(egui::Id::new("credits")).fixed_pos(egui::pos2(screen.center().x - 300.0, top)).show(ctx, |ui| {
         ui.set_width(600.0);
         ui.vertical_centered(|ui| {
+            if let Some((title, lines)) = &c.ending {
+                ui.label(RichText::new("ENDING").font(retro(20.0)).color(DIM));
+                ui.label(RichText::new(title).font(retro(44.0)).color(theme::GOLD));
+                ui.add_space(8.0);
+                for l in lines {
+                    ui.label(RichText::new(l).font(mono(13.0)).color(theme::rgb(0xc9d4e8)));
+                }
+                ui.add_space(40.0);
+            }
             for (kind, text) in CREDITS {
                 match *kind {
                     "h1" => {

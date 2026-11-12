@@ -86,7 +86,7 @@ Supporters responded creatively. The PGP source code was published as a printed 
         body: r#"In April 1993 the US government proposed the Clipper Chip, a hardware encryptor for phones whose keys would be held in escrow by government agencies. Each chip attached a Law Enforcement Access Field (LEAF) to its traffic so that authorised wiretaps could recover the session key.
 
 In 1994 Matt Blaze showed that the LEAF was protected by only a 16-bit checksum, so a user could forge a valid-looking LEAF and defeat the escrow while still using the chip. Between technical flaws, industry resistance and public opposition, Clipper was effectively dead by 1996."#,
-        ingame: Some(r#"Escrow schemes appear in Cryptopolis as the Directorate's "joint custody" contracts."#),
+        ingame: Some(r#"The Directorate's "Lawful Access" phones carry a LEAF too. Ibrahim's has one, and you can do to it what Blaze did."#),
     },
     CodexEntry {
         id: "bernstein",
@@ -406,6 +406,118 @@ Defences: require each participant to prove knowledge of their secret key, or, a
         body: r#"If the Fiat–Shamir challenge leaves out part of the statement or context, a prover may be able to adapt the statement after seeing the challenge, or reuse a proof somewhere it was not meant for. In 2022 Trail of Bits disclosed a family of such bugs, nicknamed *Frozen Heart*, in several open-source proof-system implementations.
 
 The rule of thumb: hash the full transcript, including the public statement, the parameters and a session identifier."#,
+        ingame: None,
+    },
+    CodexEntry {
+        id: "metadata",
+        title: r#"Metadata and the dragnet"#,
+        group: CodexGroup::History,
+        era: r#"2013 – today"#,
+        body: r#"Metadata is everything about a message except its content: who, to whom, when, from where, how long. In 2013 the Snowden documents showed the NSA collecting the call records of millions of Americans in bulk, on the argument that metadata is not content.
+
+It does not need to be. A former director of the NSA and CIA, Michael Hayden, put it plainly in 2014: "We kill people based on metadata." Who you call and where your phone sleeps reveal your friends, your doctor and your politics. Encryption hides content; hiding metadata takes more: mixing, padding, and not carrying a beacon."#,
+        ingame: Some(r#"The Directorate's masts log every device that pings them, and its cameras sweep the avenues. Your TRACE bar is your metadata piling up."#),
+    },
+    CodexEntry {
+        id: "web-of-trust",
+        title: r#"The web of trust"#,
+        group: CodexGroup::Protocols,
+        era: r#"PGP 2.0, 1992"#,
+        body: r#"How do you know a public key belongs to who it claims? Certificate authorities answer: because a company says so. PGP answered: because people you trust say so.
+
+You sign the keys of people whose identity you have checked, typically face to face at a **key-signing party**, comparing printed fingerprints and IDs. You also decide how much you trust each person to check others properly. GnuPG then calls a key valid if you signed it, or if it carries a signature from one key you trust fully, or from three you trust marginally, along a chain of at most five.
+
+Validity (is this key theirs?) and trust (do I rely on their judgement?) are different questions. Mixing them up is the most common mistake."#,
+        ingame: Some(r#"Felix's party starts your web. The NETWORK tab in the menu draws it."#),
+    },
+    CodexEntry {
+        id: "short-key-ids",
+        title: r#"Short key IDs and Evil32"#,
+        group: CodexGroup::Attacks,
+        era: r#"2014 – 2016"#,
+        body: r#"PGP keys were often referred to by a *short key ID*, the last 8 hex digits (32 bits) of the fingerprint. 32 bits is about four billion possibilities, which a GPU searches in seconds.
+
+In 2014 the Evil32 project generated a key with a colliding short ID for every key in the PGP strong set, to make the point. In 2016 cloned keys for Linux kernel developers turned up on public keyservers. Anyone who checked "the ID matches" instead of the full fingerprint could be fooled. Compare the whole fingerprint, or nothing."#,
+        ingame: Some(r#"Cryptopolis's keyserver shows 4-digit short IDs, which the Directorate collides in about 65,000 tries."#),
+    },
+    CodexEntry {
+        id: "ecash",
+        title: r#"Chaum's eCash"#,
+        group: CodexGroup::History,
+        era: r#"1982 – 1998, and again today"#,
+        body: r#"David Chaum's 1982 paper *Blind signatures for untraceable payments* described cash for computers: a bank signs a coin without seeing it, so it can verify the coin later without knowing whose it was. His company DigiCash ran a real eCash trial with a US bank in the mid-1990s and went bankrupt in 1998, before e-commerce was ready for it.
+
+The idea did not die. In 1996 David Wagner posted a Diffie–Hellman variant of the blinding to the Cypherpunks list. That variant is what today's Cashu and Fedimint mints use. The bank, or mint, still keeps a list of spent coins, so a copy cannot be spent twice."#,
+        ingame: Some(r#"The Commons Mint uses Wagner's blind Diffie–Hellman on secp256k1. Every payment you make in the game runs it for real."#),
+    },
+    CodexEntry {
+        id: "blind-signatures",
+        title: r#"Blind signatures"#,
+        group: CodexGroup::BuildingBlocks,
+        era: r#"Chaum, 1982"#,
+        body: r#"A blind signature lets someone sign a message they cannot see. You blind it with a random factor, they sign the blinded version, you remove the factor, and you are left with an ordinary signature on your message.
+
+In blind Diffie–Hellman: Y = hash_to_curve(secret), you send **B_ = Y + r·G**, the signer returns **C_ = k·B_**, and you compute **C = C_ − r·K = k·Y**. The signer saw only B_, which is a uniformly random point: for any coin it later sees, some r would connect the two. A DLEQ proof shows the signer used its published key K, so it cannot tag your coin with a key of its own."#,
+        ingame: None,
+    },
+    CodexEntry {
+        id: "remailers",
+        title: r#"Anonymous remailers"#,
+        group: CodexGroup::History,
+        era: r#"1992 – 2000s"#,
+        body: r#"A remailer receives an email, strips the headers, and forwards it. Eric Hughes and Hal Finney wrote the first Cypherpunk ("Type I") remailers in 1992; you chained several and encrypted the message for each in turn, so each knew only the next hop. Lance Cottrell's Mixmaster ("Type II", 1995) added fixed-size packets and batching against traffic analysis.
+
+The best known was anon.penet.fi, run by Johan Helsingius in Finland from 1993. It gave users pseudonyms and kept the table mapping them to real addresses, so that replies worked. In 1995 a court order forced him to reveal one user's address. In 1996 he shut the service down rather than face more. A table that exists can be subpoenaed."#,
+        ingame: Some(r#"Lin's remailer node offers both designs. Choose carefully."#),
+    },
+    CodexEntry {
+        id: "mixing",
+        title: r#"Mixes and traffic analysis"#,
+        group: CodexGroup::Protocols,
+        era: r#"Chaum, 1981"#,
+        body: r#"Encryption hides what a message says, not who sent it to whom. An observer watching the wires around a relay that forwards each message as soon as it arrives can match inputs to outputs by timing and size.
+
+David Chaum's 1981 *mix* fixes that: collect a batch of messages, pad them to one size, and send them out in random order. Within a batch, every input looks like every output. Attacks remain: flood the mix with your own messages so the one real message stands out (the **n − 1 attack**), or watch long enough to correlate. Low-latency systems like Tor do not batch, which is why they are fast and why a global observer can still correlate their traffic."#,
+        ingame: None,
+    },
+    CodexEntry {
+        id: "hashcash",
+        title: r#"Hashcash"#,
+        group: CodexGroup::BuildingBlocks,
+        era: r#"Adam Back, 1997"#,
+        body: r#"Adam Back announced Hashcash on the Cypherpunks list in 1997, to make spam and remailer abuse expensive. A stamp is a short string whose hash begins with k zero bits; finding one takes about 2^k tries, checking it takes one. Dwork and Naor had proposed "pricing via processing" in 1992.
+
+It never stopped spam on its own: a botnet has a lot of processors. But it put a price on volume, and its puzzle became the heart of Bitcoin's proof of work in 2008."#,
+        ingame: Some(r#"The remailers ask for stamps, and so does the final broadcast."#),
+    },
+    CodexEntry {
+        id: "printer-dots",
+        title: r#"Printer tracking dots"#,
+        group: CodexGroup::Attacks,
+        era: r#"decoded 2005"#,
+        body: r#"Many colour laser printers print a faint grid of yellow dots on every page: a machine identification code holding the printer's serial number and the date and time. In 2005 the EFF decoded the pattern used by Xerox DocuColor printers.
+
+In 2017 a news site published a leaked NSA report as a colour scan, dots included. They carried a printer serial number and the minute of printing. Paper is metadata too."#,
+        ingame: None,
+    },
+    CodexEntry {
+        id: "timestamping",
+        title: r#"Hash chains and timestamps"#,
+        group: CodexGroup::Protocols,
+        era: r#"Haber & Stornetta, 1991"#,
+        body: r#"Chain records so that each entry's hash includes the previous hash, and any change to the past changes every hash after it. A forger can recompute the whole chain, though, unless some of its hashes are somewhere they cannot reach.
+
+Stuart Haber and W. Scott Stornetta proposed exactly this in 1991. From 1995 their company Surety printed its chain's latest hash every week in *The New York Times*, the hardest-to-rewrite place they could think of. Their paper is cited in the Bitcoin white paper, whose block chain works the same way."#,
+        ingame: None,
+    },
+    CodexEntry {
+        id: "gcm-nonce",
+        title: r#"GCM and the forbidden attack"#,
+        group: CodexGroup::Attacks,
+        era: r#"Joux, 2006"#,
+        body: r#"AES-GCM needs a nonce that never repeats under the same key. Repeat one and the keystream repeats, so the XOR of the two plaintexts leaks, exactly like a two-time pad. Worse, Antoine Joux showed that two messages under one nonce reveal GCM's authentication key, and with it the power to forge tags for any message (the "forbidden attack").
+
+In 2016 researchers scanned the internet and found TLS servers repeating GCM nonces. When two parties share a key, each direction needs its own nonce space."#,
         ingame: None,
     },
 ];

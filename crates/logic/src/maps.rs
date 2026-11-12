@@ -212,6 +212,64 @@ pub struct Spawn {
     pub facing: Facing,
 }
 
+/// What a Directorate sensor covers.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum SensorKind {
+    /// logs every device within `radius` pixels
+    Mast { radius: f32 },
+    /// a cone `range` long and `half_angle` wide (radians), sweeping `sweep`
+    /// radians either side of `center` (0 = east, π/2 = south) every `period` s
+    Camera { range: f32, half_angle: f32, center: f32, sweep: f32, period: f32 },
+}
+
+/// A Dragnet sensor: masts pulse, cameras sweep, both raise your trace.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Sensor {
+    pub id: &'static str,
+    pub kind: SensorKind,
+    pub x: f32,
+    pub y: f32,
+    /// trace per second while you are inside it (before opsec)
+    pub gain: f32,
+    /// active while this condition holds
+    pub show_if: Option<&'static str>,
+}
+
+impl Sensor {
+    /// Does the sensor see a point at time `t` (seconds)?
+    pub fn sees(&self, px: f32, py: f32, t: f32) -> bool {
+        let (dx, dy) = (px - self.x, py - self.y);
+        let d = (dx * dx + dy * dy).sqrt();
+        match self.kind {
+            SensorKind::Mast { radius } => d <= radius,
+            SensorKind::Camera { range, half_angle, .. } => {
+                if d > range || d < 1.0 {
+                    return d < 1.0;
+                }
+                let a = dy.atan2(dx);
+                let diff = (a - self.facing(t) + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU) - std::f32::consts::PI;
+                diff.abs() <= half_angle
+            }
+        }
+    }
+
+    /// Where a camera points at time `t`.
+    pub fn facing(&self, t: f32) -> f32 {
+        match self.kind {
+            SensorKind::Camera { center, sweep, period, .. } => center + sweep * (t * std::f32::consts::TAU / period).sin(),
+            SensorKind::Mast { .. } => 0.0,
+        }
+    }
+
+    /// The disc a sensor could ever cover (for path planning).
+    pub fn reach(&self) -> f32 {
+        match self.kind {
+            SensorKind::Mast { radius } => radius,
+            SensorKind::Camera { range, .. } => range,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct MapDef {
     pub id: MapId,
@@ -230,6 +288,7 @@ pub struct MapDef {
     pub ambient: Option<Ambient>,
     pub cat_mode: Option<CatMode>,
     pub cat_area: Option<Rect>,
+    pub sensors: Vec<Sensor>,
 }
 
 impl MapDef {
@@ -330,6 +389,7 @@ fn cabin() -> MapDef {
         ambient: Some(Ambient::Dust),
         cat_mode: Some(CatMode::Wander),
         cat_area: Some(Rect { x: t(6.0), y: t(5.0), w: t(7.0), h: t(4.0) }),
+        sensors: Vec::new(),
     }
 }
 
@@ -566,8 +626,8 @@ fn city() -> MapDef {
         MapObject::new("server4", "obj-server", t(44.0) + 2.0, t(9.0) + 8.0).anim().body(16.0, 6.0),
         MapObject::new("vending-m", "obj-vending", t(53.0) + 8.0, t(9.0) + 8.0).anim().body(16.0, 6.0).interact("mint.vending", "Use the vending machine"),
         kiosk("kiosk-mint", t(46.0) + 8.0, t(10.0), "mint.kiosk"),
-        barrier('h', "gate-mint-1", "gate.mint", t(48.0) + 8.0, t(12.0), "!vault.opened"),
-        barrier('h', "gate-mint-2", "gate.mint", t(49.0) + 8.0, t(12.0), "!vault.opened"),
+        barrier('h', "gate-mint-1", "gate.mint", t(48.0) + 8.0, t(12.0), "!party.done"),
+        barrier('h', "gate-mint-2", "gate.mint", t(49.0) + 8.0, t(12.0), "!party.done"),
         pylon("pylon-mi-1", t(47.0) + 8.0, t(12.0)),
         pylon("pylon-mi-2", t(50.0) + 8.0, t(12.0)),
         // --- The Masquerade (chapter 5) ------------------------------------------
@@ -602,6 +662,26 @@ fn city() -> MapDef {
         lamp("lamp-a2", t(41.0), t(16.0) + 6.0, "glow-green"),
         MapObject::new("vending-a", "obj-vending", t(23.0) + 8.0, t(30.0) + 14.0).anim().body(16.0, 6.0).interact("street.vending", "Use the vending machine"),
         MapObject::new("stall", "obj-stall", t(35.0), t(30.0) + 14.0).body(30.0, 8.0).interact("street.stall", "Browse the stall"),
+        // --- v3.1: missions, side quests, floppies, the Dragnet -------------------
+        MapObject::new("press", "obj-press", t(10.0), t(25.0) + 8.0).anim().body(28.0, 8.0).interact("exchange.press", "Use Felix's press"),
+        MapObject::new("booth", "obj-booth", t(54.0), t(24.0) + 8.0).anim().body(22.0, 8.0).interact("commons.mint", "Visit the Commons Mint").light(Light::new("glow-green", 0.6, 0.4, -22.0)),
+        MapObject::new("payphone", "obj-payphone", t(57.0), t(6.0)).anim().body(12.0, 6.0).interact("mint.phone", "Use the payphone").light(Light::new("glow-red", 0.4, 0.35, -20.0)),
+        MapObject::new("remailer", "obj-server", t(16.0), t(10.0)).anim().body(16.0, 6.0).interact("masks.remailer", "Use Lin's remailer rack").light(Light::new("glow-violet", 0.45, 0.4, -20.0)),
+        MapObject::new("board", "obj-board", t(2.0) + 8.0, t(7.0)).body(24.0, 6.0).interact("masks.board", "Read the notice board"),
+        floppy(1, t(20.0), t(36.0) + 8.0),
+        floppy(2, t(2.0) + 8.0, t(17.0) + 8.0),
+        floppy(3, t(47.0), t(17.0) + 4.0),
+        floppy(4, t(36.0), t(20.0)),
+        floppy(5, t(42.0) + 8.0, t(2.0) + 8.0),
+        floppy(6, t(24.0), t(2.0) + 8.0),
+        sensor_sprite("mast-plaza", "obj-mast", t(25.0), t(22.0) + 8.0, "vault.opened,!end.done"),
+        sensor_sprite("mast-wharf", "obj-mast", t(37.0) + 8.0, t(31.0) + 4.0, "!end.done"),
+        sensor_sprite("tap-avenue", "obj-mast", t(18.0), t(15.0) + 2.0, "!ch4.clipper,!end.done"),
+        sensor_sprite("tap-masks", "obj-mast", t(12.0), t(15.0) + 2.0, "!ch4.clipper,!end.done"),
+        sensor_sprite("cam-exchange", "obj-camera", t(18.0) + 4.0, t(17.0), "!end.done"),
+        sensor_sprite("cam-commons", "obj-camera", t(41.0) + 8.0, t(17.0) + 8.0, "!end.done"),
+        sensor_sprite("cam-mint", "obj-camera", t(52.0), t(11.0) + 12.0, "!end.done"),
+        sensor_sprite("cam-obs", "obj-camera", t(34.0), t(11.0) + 12.0, "!end.done"),
     ];
 
     let wander = |x: f32, y: f32, w: f32, h: f32| Some(Rect { x, y, w, h });
@@ -614,6 +694,10 @@ fn city() -> MapDef {
         NpcDef { show_if: Some("!ch5.passed"), ..npc("agent", "agent", t(6.0) + 8.0, t(9.0), Facing::Right, "masks.agent", Some("Talk to the agent")) },
         npc("ada", "ada", t(32.0), t(9.0) + 8.0, Facing::Down, "ada.talk", Some("Talk to Ada")),
         NpcDef { hologram: true, show_if: Some("warden.on"), ..npc("warden", "warden", t(26.0), t(18.0) + 2.0, Facing::Down, "warden.holo", Some("Watch the broadcast")) },
+        npc("rosa", "rosa", t(28.0), t(34.0), Facing::Down, "rosa.talk", Some("Talk to Rosa")),
+        npc("theo", "theo", t(6.0), t(24.0), Facing::Right, "theo.talk", Some("Talk to Theo")),
+        npc("wen", "wen", t(44.0), t(24.0) + 8.0, Facing::Right, "wen.talk", Some("Talk to Wen")),
+        npc("sol", "sol", t(55.0) + 8.0, t(24.0) + 12.0, Facing::Left, "sol.talk", Some("Talk to Sol")),
     ];
     let citizens = [
         ("c1", "citizen1", t(20.0), t(34.0), Facing::Down, "citizen.1", (t(16.0), t(32.0), t(18.0), t(4.0))),
@@ -641,6 +725,9 @@ fn city() -> MapDef {
     spawns.insert("start", Spawn { x: t(30.0), y: t(35.0) + 12.0, facing: Facing::Down });
     spawns.insert("gateway", Spawn { x: t(30.0), y: t(35.0) + 12.0, facing: Facing::Down });
     spawns.insert("vault", Spawn { x: t(30.0), y: t(25.0) + 4.0, facing: Facing::Up });
+    for (name, x, y) in crate::story::dragnet::SAFE_HOUSES.iter().map(|(n, _, x, y)| (*n, *x, *y)) {
+        spawns.insert(name, Spawn { x, y, facing: Facing::Down });
+    }
 
     MapDef {
         id: MapId::City,
@@ -657,7 +744,36 @@ fn city() -> MapDef {
         ambient: Some(Ambient::Motes),
         cat_mode: Some(CatMode::Follow),
         cat_area: None,
+        sensors: city_sensors(),
     }
+}
+
+fn floppy(n: usize, x: f32, y: f32) -> MapObject {
+    const IDS: [&str; 6] = ["floppy1", "floppy2", "floppy3", "floppy4", "floppy5", "floppy6"];
+    const ACTS: [&str; 6] = ["floppy.1", "floppy.2", "floppy.3", "floppy.4", "floppy.5", "floppy.6"];
+    const SHOW: [&str; 6] = ["!floppy.1", "!floppy.2", "!floppy.3", "!floppy.4", "!floppy.5", "!floppy.6"];
+    MapObject::new(IDS[n - 1], "obj-floppy", x, y).anim().floor().show_if(SHOW[n - 1]).interact(ACTS[n - 1], "Pick up the floppy disk").radius(16.0).light(Light::new("glow-cyan", 0.25, 0.3, -5.0).pulse())
+}
+
+fn sensor_sprite(id: &'static str, tex: &'static str, x: f32, y: f32, cond: &'static str) -> MapObject {
+    MapObject::new(id, tex, x, y).anim().body(6.0, 4.0).show_if(cond).light(Light::new("glow-red", 0.3, 0.45, if tex == "obj-mast" { -42.0 } else { -26.0 }).pulse())
+}
+
+/// The Directorate's sensors. Positions match the sprites above.
+fn city_sensors() -> Vec<Sensor> {
+    use std::f32::consts::{FRAC_PI_2, FRAC_PI_4, PI};
+    let mast = |id, x, y, radius, cond| Sensor { id, kind: SensorKind::Mast { radius }, x, y, gain: 22.0, show_if: Some(cond) };
+    let cam = |id, x, y, center: f32, sweep: f32, period: f32, cond| Sensor { id, kind: SensorKind::Camera { range: 100.0, half_angle: 0.42, center, sweep, period }, x, y: y - 20.0, gain: 34.0, show_if: Some(cond) };
+    vec![
+        mast("mast-plaza", t(25.0), t(22.0) + 8.0, 50.0, "vault.opened,!end.done"),
+        mast("mast-wharf", t(37.0) + 8.0, t(31.0) + 4.0, 46.0, "!end.done"),
+        mast("tap-avenue", t(18.0), t(15.0) + 2.0, 44.0, "!ch4.clipper,!end.done"),
+        mast("tap-masks", t(12.0), t(15.0) + 2.0, 44.0, "!ch4.clipper,!end.done"),
+        cam("cam-exchange", t(18.0) + 4.0, t(17.0), FRAC_PI_2, 0.8, 6.0, "!end.done"),
+        cam("cam-commons", t(41.0) + 8.0, t(17.0) + 8.0, 0.0, 0.7, 5.0, "!end.done"),
+        cam("cam-mint", t(52.0), t(11.0) + 12.0, 3.0 * FRAC_PI_4, 0.7, 7.0, "!end.done"),
+        cam("cam-obs", t(34.0), t(11.0) + 12.0, PI - FRAC_PI_4, 0.7, 6.0, "!end.done"),
+    ]
 }
 
 /// Fixed points in the city used by cutscenes.

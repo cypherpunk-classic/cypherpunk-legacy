@@ -7,12 +7,12 @@ use crate::state::MapId;
 
 /// Safe houses: (spawn name, the flag that opens it, x, y in pixels).
 pub const SAFE_HOUSES: &[(&str, &str, f32, f32)] = &[
-    ("safe-wharf", "city.arrived", 13.0 * 16.0, 36.0 * 16.0),
-    ("safe-exchange", "ch1.done", 12.0 * 16.0, 25.0 * 16.0),
-    ("safe-commons", "ch2.done", 50.0 * 16.0, 22.0 * 16.0),
-    ("safe-mint", "party.done", 50.0 * 16.0, 10.0 * 16.0),
-    ("safe-masks", "ch4.done", 12.0 * 16.0, 10.0 * 16.0),
-    ("safe-obs", "ch5.done", 30.0 * 16.0, 10.0 * 16.0),
+    ("safe-wharf", "city.arrived", 232.0, 560.0),
+    ("safe-exchange", "ch1.done", 192.0, 400.0),
+    ("safe-commons", "ch2.done", 800.0, 352.0),
+    ("safe-mint", "party.done", 800.0, 168.0),
+    ("safe-masks", "ch4.done", 192.0, 168.0),
+    ("safe-obs", "ch5.done", 480.0, 172.0),
 ];
 
 /// The nearest open safe house to (x, y).

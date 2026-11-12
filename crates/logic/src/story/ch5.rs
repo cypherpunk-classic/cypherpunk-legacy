@@ -89,6 +89,13 @@ pub async fn lin(c: Ctx) {
             (Lin, "You prove you hold the key, without showing it. The checkpoint ends up certain, and empty-handed. Watch. Then you try."),
         )
         .await;
+        if c.state_ref().get("choice.key").map(|v| v == &crate::state::FlagValue::from("publish")).unwrap_or(false) {
+            say!(
+                c,
+                (Lin, "By the way: somebody posted Warden's private key on every board in the city. Since then the checkpoints accept anyone's \"orders\", including forged arrest orders from the Directorate's own thugs, signed as Warden. Chaos cuts both ways."),
+            )
+            .await;
+        }
         run_sigma(&c).await;
         return;
     }
@@ -100,6 +107,20 @@ pub async fn lin(c: Ctx) {
     }
     if !c.flag("ch5.extract") {
         return run_extract(&c).await;
+    }
+    if !c.flag("ch5.remail") {
+        say!(
+            c,
+            (Lin, "Proofs get you through checkpoints. They don't hide who you talk to. For that you need my other hobby: the remailers, in the rack by the east fence."),
+        )
+        .await;
+        c.objective("Use Lin's remailer rack (east side of the Masquerade).");
+        return;
+    }
+    if !c.flag("ch5.stamps") {
+        c.say1(Sp::Lin, "The notice board, west side. They're flooding us; we need postage.").await;
+        c.objective("Price the remailers' postage (the notice board at the Masquerade).");
+        return;
     }
     if !c.flag("ch5.done") {
         c.set("ch5.done");
@@ -114,6 +135,7 @@ pub async fn lin(c: Ctx) {
             (Lin, "One person left you should meet. Ada, at the Observatory. She does not worry about today's Directorate. She worries about the computer that breaks all of this at once. The gate is open."),
         )
         .await;
+        super::missions::sign_each_other(&c, Sp::Lin, "lin", "Oh, and sign my key before you go. I'll sign yours. Remailer operators need friends with good judgement.").await;
         c.objective("Find Ada at the Observatory (north of the plaza).");
         return;
     }

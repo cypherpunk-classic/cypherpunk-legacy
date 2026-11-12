@@ -81,6 +81,7 @@ pub async fn ada(c: Ctx) {
             (Nonce, "He means the Vault. The real one. Go home, {{handle}}. Finish it."),
         )
         .await;
+        super::missions::sign_each_other(&c, Sp::Ada, "ada", "And sign my key, would you? Old-fashioned of me. The keys will change after the quantum computers come; the people checking them won't.").await;
         c.objective("Return to the Vault on Legacy Plaza to finish what Grandpa started.");
         c.set("end.ready");
         return;

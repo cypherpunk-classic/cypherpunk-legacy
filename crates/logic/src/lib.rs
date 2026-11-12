@@ -5,6 +5,7 @@
 pub mod allies;
 pub mod codex;
 pub mod economy;
+pub mod ending;
 pub mod game;
 pub mod items;
 pub mod maps;

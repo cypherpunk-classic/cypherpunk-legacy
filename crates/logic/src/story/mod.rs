@@ -10,7 +10,9 @@ pub mod ch6;
 pub mod city;
 pub mod dragnet;
 pub mod epilogue;
+pub mod missions;
 pub mod prologue;
+pub mod side;
 
 use crate::script::{BoxFut, Ctx};
 use crate::speakers::Sp;
@@ -72,6 +74,21 @@ pub const INTERACTIONS: &[&str] = &[
     "obs.telescope",
     "obs.whiteboard",
     "obs.kiosk",
+    "rosa.talk",
+    "theo.talk",
+    "wen.talk",
+    "sol.talk",
+    "exchange.press",
+    "commons.mint",
+    "mint.phone",
+    "masks.remailer",
+    "masks.board",
+    "floppy.1",
+    "floppy.2",
+    "floppy.3",
+    "floppy.4",
+    "floppy.5",
+    "floppy.6",
 ];
 
 /// The script for an interaction id.
@@ -93,14 +110,38 @@ pub fn interaction(c: Ctx, id: &str) -> BoxFut {
             if c.current_map() == MapId::Cabin {
                 Box::pin(prologue::pet_nonce_cabin(c))
             } else {
-                Box::pin(city::pet_nonce_city(c))
+                Box::pin(async move {
+                    if !side::feed_nonce(&c).await {
+                        city::pet_nonce_city(c).await;
+                    }
+                })
             }
         }
-        "citizen.1" => Box::pin(city::citizen(c, 1)),
-        "citizen.2" => Box::pin(city::citizen(c, 2)),
-        "citizen.3" => Box::pin(city::citizen(c, 3)),
-        "citizen.4" => Box::pin(city::citizen(c, 4)),
-        "citizen.5" => Box::pin(city::citizen(c, 5)),
+        "citizen.1" => Box::pin(async move {
+            if !side::citizen(&c, 1).await {
+                city::citizen(c, 1).await;
+            }
+        }),
+        "citizen.2" => Box::pin(async move {
+            if !side::citizen(&c, 2).await {
+                city::citizen(c, 2).await;
+            }
+        }),
+        "citizen.3" => Box::pin(async move {
+            if !side::citizen(&c, 3).await {
+                city::citizen(c, 3).await;
+            }
+        }),
+        "citizen.4" => Box::pin(async move {
+            if !side::citizen(&c, 4).await {
+                city::citizen(c, 4).await;
+            }
+        }),
+        "citizen.5" => Box::pin(async move {
+            if !side::citizen(&c, 5).await {
+                city::citizen(c, 5).await;
+            }
+        }),
         "gate.exchange" => Box::pin(city::gate(c, "exchange")),
         "gate.commons" => Box::pin(city::gate(c, "commons")),
         "gate.mint" => Box::pin(city::gate(c, "mint")),
@@ -114,9 +155,9 @@ pub fn interaction(c: Ctx, id: &str) -> BoxFut {
         "plaza.bench" => Box::pin(city::bench(c)),
         "plaza.statue" => Box::pin(city::statue(c)),
         "plaza.vault" => Box::pin(epilogue::vault(c)),
-        "street.vending" => Box::pin(city::street_vending(c)),
-        "street.stall" => Box::pin(city::stall(c)),
-        "mint.vending" => Box::pin(ch4::vending(c)),
+        "street.vending" => Box::pin(side::vending(c)),
+        "street.stall" => Box::pin(side::stall(c)),
+        "mint.vending" => Box::pin(side::vending(c)),
         "mint.archive" => Box::pin(ch4::archive(c)),
         "mint.kiosk" => Box::pin(ch4::kiosk(c)),
         "warden.holo" => Box::pin(city::warden_holo(c)),
@@ -137,6 +178,18 @@ pub fn interaction(c: Ctx, id: &str) -> BoxFut {
         "obs.telescope" => Box::pin(ch6::telescope(c)),
         "obs.whiteboard" => Box::pin(ch6::whiteboard(c)),
         "obs.kiosk" => Box::pin(ch6::kiosk(c)),
+        "rosa.talk" => Box::pin(side::rosa(c)),
+        "theo.talk" => Box::pin(side::theo(c)),
+        "wen.talk" => Box::pin(side::wen(c)),
+        "sol.talk" | "commons.mint" => Box::pin(missions::sol(c)),
+        "exchange.press" => Box::pin(missions::press(c)),
+        "mint.phone" => Box::pin(missions::phone(c)),
+        "masks.remailer" => Box::pin(missions::remailer(c)),
+        "masks.board" => Box::pin(missions::board(c)),
+        f if f.starts_with("floppy.") => {
+            let n: usize = f[7..].parse().unwrap_or(1);
+            Box::pin(side::floppy(c, n))
+        }
         _ => Box::pin(async move { c.say1(Sp::Narrator, "Nothing happens.").await }),
     }
 }

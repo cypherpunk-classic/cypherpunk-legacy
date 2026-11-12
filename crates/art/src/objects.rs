@@ -943,6 +943,99 @@ fn whiteboard(g: &mut Canvas, _f: i32) {
 // ---------------------------------------------------------------------------
 
 /// Props (`obj-<key>`), including the larger set pieces.
+
+// ---------------------------------------------------------------------------
+// v3.1: the Dragnet's sensors, floppies, the press, the mint booth, the phone,
+// the remailers' notice board
+// ---------------------------------------------------------------------------
+
+fn mast(g: &mut Canvas, f: i32) {
+    g.rect(5, 6, 2, 40, "#3d4554");
+    g.rect(4, 44, 4, 2, "#262a36");
+    g.rect(2, 8, 8, 2, "#5f6b7d");
+    g.rect(1, 14, 10, 2, "#5f6b7d");
+    g.rect(3, 2, 6, 5, "#262a36");
+    g.rect(4, 3, 4, 3, if f != 0 { "#ff5566" } else { "#7a2638" });
+    g.px(0, 13, "#5f6b7d");
+    g.px(11, 13, "#5f6b7d");
+}
+
+fn camera(g: &mut Canvas, f: i32) {
+    g.rect(6, 10, 2, 22, "#3d4554");
+    g.rect(5, 30, 4, 2, "#262a36");
+    g.rect(1, 3, 12, 7, "#c7d3dc");
+    g.rect(1, 3, 12, 2, "#e6eef4");
+    g.rect(0, 5, 3, 3, "#262a36");
+    g.px(1, 6, if f != 0 { "#ff5566" } else { "#3d4554" });
+    g.rect(10, 9, 3, 2, "#3d4554");
+}
+
+fn floppy(g: &mut Canvas, f: i32) {
+    g.rect(0, 0, 10, 10, "#29366f");
+    g.rect(2, 0, 6, 4, "#c7d3dc");
+    g.rect(6, 1, 1, 2, "#29366f");
+    g.rect(2, 6, 6, 4, "#e6e2c3");
+    g.rect(3, 7, 4, 1, "#94b0c2");
+    if f != 0 {
+        g.px(1, 1, "#ffffff");
+    }
+}
+
+fn press(g: &mut Canvas, f: i32) {
+    g.rect(0, 10, 32, 18, "#3d4554");
+    g.rect(1, 11, 30, 3, "#5f6b7d");
+    g.rect(4, 2, 4, 10, "#262a36");
+    g.rect(24, 2, 4, 10, "#262a36");
+    g.rect(2, 0, 28, 4, "#1f2330");
+    let roll = if f != 0 { "#94b0c2" } else { "#c7d3dc" };
+    g.rect(8, 15, 16, 4, roll);
+    g.rect(6, 20, 20, 6, "#e6e2c3");
+    for y in [21, 23] {
+        g.rect(8, y, 14, 1, "#56627d");
+    }
+    g.px(29, 18, if f != 0 { "#5dff9a" } else { "#257179" });
+}
+
+fn booth(g: &mut Canvas, f: i32) {
+    g.rect(0, 8, 24, 24, "#257179");
+    g.rect(0, 8, 24, 3, "#38b764");
+    g.rect(0, 0, 24, 8, "#1a1c2c");
+    g.rect(2, 1, 20, 6, if f != 0 { "#0f3b2a" } else { "#0b2a20" });
+    // a coin with a blindfold: the Commons Mint
+    g.rect(9, 2, 6, 4, "#ffcd75");
+    g.rect(9, 3, 6, 1, "#1a1c2c");
+    g.rect(4, 14, 16, 8, "#0e0b16");
+    g.rect(6, 16, 12, 1, "#5dff9a");
+    g.rect(6, 19, 8, 1, "#3aa8b8");
+    g.rect(8, 25, 8, 3, "#1a1c2c");
+}
+
+fn payphone(g: &mut Canvas, f: i32) {
+    g.rect(1, 0, 12, 30, "#3d4554");
+    g.rect(1, 0, 12, 3, "#ff5566");
+    g.rect(3, 5, 8, 6, "#0b2a31");
+    g.rect(4, 6, 6, 1, if f != 0 { "#73eff7" } else { "#2b6b78" });
+    g.rect(3, 13, 2, 9, "#1a1c2c");
+    for y in 0..3 {
+        for x in 0..3 {
+            g.px(6 + x * 2, 13 + y * 2, "#c7d3dc");
+        }
+    }
+    g.rect(5, 25, 4, 2, "#262a36");
+}
+
+fn board(g: &mut Canvas, _f: i32) {
+    g.rect(1, 16, 2, 10, "#4a2c1a");
+    g.rect(25, 16, 2, 10, "#4a2c1a");
+    g.rect(0, 0, 28, 18, "#8b5a2b");
+    g.rect(1, 1, 26, 16, "#c9a26b");
+    let notes = [("#e6e2c3", 2, 2), ("#ffcd75", 10, 3), ("#73eff7", 18, 2), ("#e6e2c3", 4, 10), ("#ff9f6b", 13, 10), ("#e6e2c3", 20, 9)];
+    for (col, x, y) in notes {
+        g.rect(x, y, 6, 5, col);
+        g.rect(x + 1, y + 2, 4, 1, "#56627d");
+    }
+}
+
 pub fn objects() -> Vec<(&'static str, ObjectArt)> {
     vec![
         ("bed", art(28, 34, 1, true, bed)),
@@ -994,6 +1087,13 @@ pub fn objects() -> Vec<(&'static str, ObjectArt)> {
         ("shard", art(12, 16, 2, true, shard)),
         ("radio", art(26, 20, 2, true, radio)),
         ("whiteboard", art(40, 30, 1, true, whiteboard)),
+        ("mast", art(12, 46, 2, true, mast)),
+        ("camera", art(14, 32, 2, true, camera)),
+        ("floppy", art(10, 10, 2, true, floppy)),
+        ("press", art(32, 28, 2, true, press)),
+        ("booth", art(24, 32, 2, true, booth)),
+        ("payphone", art(14, 30, 2, true, payphone)),
+        ("board", art(28, 26, 1, true, board)),
     ]
 }
 
@@ -1027,6 +1127,12 @@ pub fn anim_rate(key: &str) -> Option<f32> {
         "drone" => 12.0,
         "server" => 2.0,
         "coin" => 2.0,
+        "mast" => 1.5,
+        "camera" => 2.0,
+        "floppy" => 0.8,
+        "press" => 3.0,
+        "booth" => 1.2,
+        "payphone" => 1.0,
         "projector" => 2.0,
         "pylon" => 2.0,
         "gatepad" => 4.0,

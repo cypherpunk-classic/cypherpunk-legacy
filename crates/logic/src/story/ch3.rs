@@ -66,6 +66,16 @@ pub async fn juno(c: Ctx) {
         c.say1(Sp::Juno, "Four shares, then. Two from friends, two from the ground. One of the ground ones lies. Let's find out which, without ever exposing the secret.").await;
         return run_feldman(&c).await;
     }
+    if !c.flag("ch3.cash") {
+        say!(
+            c,
+            (Juno, "One more stop before the Vault. You'll need money that doesn't carry your name, and so will everyone who helps you."),
+            (Juno, "Sol runs the Commons Mint, the green booth by the pavilion. Tell Sol I sent you."),
+        )
+        .await;
+        c.objective("Visit the Commons Mint (the green booth in the Commons).");
+        return;
+    }
     if !c.flag("ch3.done") {
         c.set("ch3.done");
         c.chapter(3);
@@ -185,10 +195,11 @@ async fn open_vault(c: &Ctx) {
         c,
         (Warden, "*(every screen in the plaza turns red)* Unauthorised Vault access detected. Legacy Plaza is now a restricted zone."),
         (Warden, "Whoever you are: the Archive you are looking for is already ours. Order 0417. It is sealed at the Mint, under a Directorate key. You will never open it."),
-        (Nonce, "He sounds nervous. Good. Ibrahim is at the Mint. He has been studying Warden's signatures for months. The gate is open."),
+        (Nonce, "He sounds nervous. Good. Ibrahim is at the Mint; he has been studying Warden's signatures for months."),
+        (Nonce, "But first: you have a key of your own now. Felix is throwing a key-signing party at the Exchange tonight. Go and get it signed; the Mint gate opens after."),
     )
     .await;
-    c.objective("Find Ibrahim at the Mint (north-east). The Archive is sealed there.");
+    c.objective("Go to Felix's key-signing party at the Exchange.");
 }
 
 async fn read_vault_letter(c: &Ctx) {

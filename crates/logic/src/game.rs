@@ -295,6 +295,9 @@ impl Game {
             Cmd::Credits => {
                 self.mode = Mode::Credits;
                 self.credits = CreditsState::default();
+                if self.ctx.state_ref().flag("end.done") {
+                    self.credits.ending = Some(crate::ending::summary(&self.ctx.state_ref()));
+                }
                 self.audio.push(AudioReq::Music(Some("finale")));
             }
             cmd => self.engine.push(EngineReq::World { id, cmd }),

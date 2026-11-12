@@ -126,13 +126,14 @@ impl Minter {
             return true;
         }
         let base = Sha256::new().chain_update(self.header.as_bytes());
+        let mut buf = [0u8; 16];
         for _ in 0..budget {
-            let c = format!("{:x}", self.counter);
-            let h: [u8; 32] = base.clone().chain_update(c.as_bytes()).finalize().into();
+            let c = hex_u64(self.counter, &mut buf);
+            let h: [u8; 32] = base.clone().chain_update(c).finalize().into();
             let z = leading_zero_bits(&h);
             self.best = self.best.max(z);
             if z >= self.bits {
-                self.found = Some(format!("{}{c}", self.header));
+                self.found = Some(format!("{}{:x}", self.header, self.counter));
                 return true;
             }
             self.counter += 1;
@@ -143,6 +144,22 @@ impl Minter {
     pub fn tries(&self) -> u64 {
         self.counter + u64::from(self.found.is_some())
     }
+}
+
+/// Lower-case hex of `v` without leading zeros, written into `buf`.
+fn hex_u64(v: u64, buf: &mut [u8; 16]) -> &[u8] {
+    const DIGITS: &[u8; 16] = b"0123456789abcdef";
+    let mut i = 16;
+    let mut x = v;
+    loop {
+        i -= 1;
+        buf[i] = DIGITS[(x & 15) as usize];
+        x >>= 4;
+        if x == 0 {
+            break;
+        }
+    }
+    &buf[i..]
 }
 
 /// Expected number of hashes to find a k-bit stamp.

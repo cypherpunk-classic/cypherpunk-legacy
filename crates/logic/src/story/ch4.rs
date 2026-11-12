@@ -17,9 +17,10 @@ async fn run_nonce(c: &Ctx) {
         c,
         (Ibrahim, "There it is. One reused nonce and his whole key falls out. You could sign the Directorate's surrender if you wanted."),
         (Ibrahim, "This is not hypothetical. Sony signed every PlayStation 3 with a constant nonce and lost the console in 2010. Android wallets repeated nonces in 2013 and people lost real money. Warden should have used deterministic nonces, RFC 6979, BIP-340. He bought the cheap signer."),
-        (Ibrahim, "Use his key. Sign an order that unseals the Archive. The door at the back of the Mint is waiting for Warden's signature; it does not care that it is you holding the pen."),
     )
     .await;
+    super::missions::warden_key_choice(c).await;
+    c.say1(Sp::Ibrahim, "Either way, the Archive first. The door at the back of the Mint is waiting for Warden's signature; it does not care that it is you holding the pen.").await;
     c.set("ch4.archive");
     c.objective("Unseal the Archive door at the Mint with the forged order.");
 }
@@ -83,6 +84,13 @@ async fn run_taproot(c: &Ctx) {
     }
     c.set("ch4.taproot");
     c.codex(&["taproot"]);
+    say!(
+        c,
+        (Ibrahim, "A recovery path and an inheritance path. He set it up years ago so that if anything happened to him, it would come to you, cooperatively if possible, and alone if it had to be. The Directorate's escrow leaf? Never committed. He drafted it and threw it out."),
+        (Ibrahim, "Which brings me to escrow. The payphone by the Mint's east wall: the Directorate's \"Lawful Access\" model. Come and see what it hands the escrow office on every call."),
+    )
+    .await;
+    c.objective("Look at the escrowed payphone by the Mint's east wall.");
 }
 
 pub async fn ibrahim(c: Ctx) {
@@ -111,17 +119,21 @@ pub async fn ibrahim(c: Ctx) {
     if !c.flag("ch4.taproot") {
         return run_taproot(&c).await;
     }
+    if !c.flag("ch4.clipper") {
+        c.say1(Sp::Ibrahim, "The payphone, by the east wall. Every call it makes carries a gift for the escrow office.").await;
+        return;
+    }
     if !c.flag("ch4.done") {
         c.set("ch4.done");
         c.chapter(5);
         c.sfx("unlock");
         say!(
             c,
-            (Ibrahim, "A recovery path and an inheritance path. He set it up years ago so that if anything happened to him, it would come to you, cooperatively if possible, and alone if it had to be. The Directorate's escrow leaf? Never committed. He drafted it and threw it out."),
-            (Ibrahim, "He trusted the math to carry his intent across his own death. That is the whole cypherpunk bet, really."),
+            (Ibrahim, "Your grandfather trusted the math to carry his intent across his own death, and he refused every escrow they offered him. That is the whole cypherpunk bet, really."),
             (Ibrahim, "You have the Archive. Now you need to move through the city without the Directorate cataloguing your every step. Lin, at the Masquerade, proves things without revealing them. Go learn how. The gate is open."),
         )
         .await;
+        super::missions::sign_each_other(&c, Sp::Ibrahim, "ibrahim", "Before you go: sign my key? Felix printed both our fingerprints; I'd like to be on your web.").await;
         c.objective("Find Lin at the Masquerade (north-west).");
         return;
     }

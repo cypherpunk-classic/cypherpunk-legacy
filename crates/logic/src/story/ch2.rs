@@ -47,6 +47,12 @@ async fn run_logjam(c: &Ctx) {
     }
     c.set("ch2.logjam");
     c.codex(&["going-dark"]);
+    say!(
+        c,
+        (Felix, "One last job before I hand over my share. Your grandfather's pad program is sitting in my drawer, and the Directorate calls it a munition. Come to the press, by the window."),
+    )
+    .await;
+    c.objective("Use Felix's press at the Exchange.");
 }
 
 pub async fn felix(c: Ctx) {
@@ -72,6 +78,13 @@ pub async fn felix(c: Ctx) {
     if !c.flag("ch2.logjam") {
         return run_logjam(&c).await;
     }
+    if !c.flag("ch2.book") {
+        c.say1(Sp::Felix, "The press, by the window. The scan came back from across the water with mistakes in it.").await;
+        return;
+    }
+    if c.flag("vault.opened") && !c.flag("party.done") {
+        return super::missions::party(&c).await;
+    }
     if !c.flag("ch2.done") {
         c.set("ch2.done");
         c.chapter(3);
@@ -81,7 +94,7 @@ pub async fn felix(c: Ctx) {
             c,
             (Felix, "Thirty-one bits. Seconds. \"Export-grade\" is just a polite word for \"we can read it\". In the nineties they made everyone use weak crypto on purpose, for export. People are still being bitten by that today."),
             (Felix, "You earned this. Share two of five."),
-            (Felix, "Three things you now know: strangers can agree on a secret in the open; an unsigned exchange has no defence against a relay; and a weak group is no group at all."),
+            (Felix, "Four things you now know: strangers can agree on a secret in the open; an unsigned exchange has no defence against a relay; a weak group is no group at all; and a book is harder to ban than a disk."),
             (Felix, "Go see Juno in the Commons. She splits secrets for a living. Tell her the switchboard says hello. I've opened the gate, east side."),
         )
         .await;

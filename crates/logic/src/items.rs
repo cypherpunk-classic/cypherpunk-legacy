@@ -28,6 +28,11 @@ pub const ITEMS: &[ItemDef] = &[
     ItemDef { id: "archive", name: "The Archive", desc: "Decades of cypherpunk writing and code, released from the Mint." },
     ItemDef { id: "checkpoint-key", name: "Checkpoint master key", desc: "Extracted by rewinding a careless prover." },
     ItemDef { id: "pq-keys", name: "ML-KEM keypair", desc: "A post-quantum key for the Legacy capsule." },
+    ItemDef { id: "sealed-messenger", name: "Sealed messenger", desc: "Grandpa's messaging app: AES-GCM with a fresh nonce for every message, tags checked before anything is shown. Masts log less of you." },
+    ItemDef { id: "keyring", name: "Signed keyring", desc: "Your key, signed by friends who checked it in person, and theirs, signed by you." },
+    ItemDef { id: "faraday", name: "Faraday pouch", desc: "Copper-lined. Your phone stays quiet in it, and a mast cannot log a device it cannot hear." },
+    ItemDef { id: "mesh-radio", name: "Mesh radio", desc: "Relays for its neighbours, and its neighbours relay for you." },
+    ItemDef { id: "onion-route", name: "Onion route", desc: "Three remailers that each know one hop. Your traffic stops having a return address." },
 ];
 
 pub fn item_def(id: &str) -> Option<&'static ItemDef> {

@@ -117,7 +117,20 @@ impl GameState {
         self.data.certs.insert(id.to_string(), sig.hex());
         self.data.allies.push(id.to_string());
         self.data.trust.entry(id.to_string()).or_insert(2);
+        self.set(&format!("ally.{id}"), true);
         self.events.push(StateEvent::Ally(id.to_string()));
+        true
+    }
+
+    /// Someone leaves the city (or the web): their certification goes with them.
+    pub fn lose_ally(&mut self, id: &str) -> bool {
+        if !self.is_ally(id) {
+            return false;
+        }
+        self.data.allies.retain(|a| a != id);
+        self.data.certs.remove(id);
+        self.data.trust.remove(id);
+        self.set(&format!("ally.{id}"), false);
         true
     }
 

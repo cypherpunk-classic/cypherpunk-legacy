@@ -19,6 +19,28 @@ async fn run_pads(c: &Ctx) {
         (Mara, format!("\"{CH1_P2}\"")),
         (Mara, "Hah. We sent those the week the Directorate moved in. Same pad page, both ways. Tired eyes, cold hands, one mistake."),
         (Mara, "The Soviets made that exact mistake in the forties, and it took the Americans forty years of patience to read what they had. You did it in ten minutes. Patience is cheaper now."),
+    )
+    .await;
+    let pick = c
+        .choose(
+            Sp::Mara,
+            "The Directorate's intercept log has the whole week. The fishing co-op's traffic went through the same lazy relay, on the same reused pages. Want to read theirs too, while we're at it?",
+            &["Only ours, and the Directorate's. The rest is nobody's business.", "Read everything. You never know what's useful."],
+        )
+        .await;
+    if pick == 1 {
+        c.set("choice.snoop");
+        say!(
+            c,
+            (Mara, "…That's how it starts, you know. Just this once. Just the useful parts. Warden says the same thing on every screen in the city."),
+            (Mara, "Read them if you like. I won't help, and the co-op will hear about it."),
+        )
+        .await;
+    } else {
+        c.say1(Sp::Mara, "Good answer. Privacy for the weak, transparency for the powerful. That one went round the list in the nineties, and it's still the whole job.").await;
+    }
+    say!(
+        c,
         (Mara, "Split five ways. Yes. My share of the Vault key is in the lockbox at the boathouse. East end of the Wharf. The Directorate bolted one of their ticket gates onto the door."),
         (Mara, "Your ticket says \"guest\". See what you can do about that."),
     )
@@ -81,9 +103,11 @@ pub async fn mara(c: Ctx) {
             (You, "It didn't even read my forgery. The tag didn't match, so it refused."),
             (Mara, "That's the second lesson. Encryption hides things. It does not stop people from changing them. For that you need authentication, and these days you get both at once, AEAD, or you get nothing."),
             (Mara, "Keep that share safe. It's number one of five; three open the Vault."),
+            (Mara, "And take this. Your grandfather's messenger: AES-GCM, a fresh nonce for every message, and it checks the tag before it shows you a word. The Directorate's masts log less of anyone who uses it."),
             (Mara, "Next you need Felix, at the Exchange. He thinks every problem is a protocol problem. He's usually right. I've opened the gate for you: west avenue."),
         )
         .await;
+        c.give("sealed-messenger");
         c.sfx("unlock");
         c.objective("Find Felix at the Exchange (west avenue, through the gate).");
         return;

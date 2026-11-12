@@ -6,6 +6,10 @@
 //! and all) against a stand-in engine that answers world commands at once,
 //! with every puzzle solved by its own `autoplay`. The in-game autoplay mode
 //! walks the same route through the real world.
+//!
+//! Steps marked `side` are the optional ones (side quests, floppies, shops,
+//! citizens who join you). They sit right after the step that unlocks them,
+//! and are skipped unless asked for (`CPL_SIDE=1` for the in-game autoplay).
 
 use crate::game::{EngineReq, Game, Mode};
 use crate::maps::map;
@@ -19,35 +23,80 @@ pub struct Step {
     pub until: &'static str,
     /// The map the target is on.
     pub map: MapId,
+    /// An optional step (side quest, floppy, shop, citizen).
+    pub side: bool,
 }
 
 const fn step(target: &'static str, until: &'static str, map: MapId) -> Step {
-    Step { target, until, map }
+    Step { target, until, map, side: false }
+}
+
+const fn side(target: &'static str, until: &'static str) -> Step {
+    Step { target, until, map: MapId::City, side: true }
 }
 
 pub const ROUTE: &[Step] = &[
     step("cabin.dresser", "pro.letter", MapId::Cabin),
     step("cabin.computer", "pro.done", MapId::Cabin),
     step("mara.talk", "ch1.otp", MapId::City),
+    side("rosa.talk", "q.source.done"),
+    side("floppy.1", "floppy.1"),
+    side("floppy.4", "floppy.4"),
     step("wharf.boathouse", "ch1.ctr", MapId::City),
     step("mara.talk", "ch1.done", MapId::City),
+    side("theo.talk", "q.dots.done"),
+    side("floppy.2", "floppy.2"),
+    step("felix.talk", "ch2.logjam", MapId::City),
+    step("exchange.press", "ch2.book", MapId::City),
     step("felix.talk", "ch2.done", MapId::City),
+    side("wen.talk", "q.ledger.done"),
+    side("floppy.3", "floppy.3"),
     step("juno.talk", "ch3.shamir", MapId::City),
     step("commons.dropA", "ch3.dropA", MapId::City),
     step("commons.dropB", "ch3.dropB", MapId::City),
+    step("juno.talk", "ch3.feldman", MapId::City),
+    step("commons.mint", "ch3.cash", MapId::City),
+    side("street.stall", "bought.faraday"),
+    side("street.stall", "bought.mesh-radio"),
+    side("street.vending", "bought.coffee"),
     step("juno.talk", "ch3.done", MapId::City),
     step("plaza.vault", "vault.opened", MapId::City),
+    side("rosa.talk", "ally.rosa"),
+    side("citizen.1", "ally.c1"),
+    side("citizen.3", "ally.c3"),
+    side("theo.talk", "ally.theo"),
+    side("wen.talk", "ally.wen"),
+    step("felix.talk", "party.done", MapId::City),
+    side("citizen.5", "ally.c5"),
+    side("floppy.5", "floppy.5"),
     step("ibrahim.talk", "ch4.nonce", MapId::City),
     step("mint.archive", "ch4.rogue", MapId::City),
+    step("ibrahim.talk", "ch4.taproot", MapId::City),
+    step("mint.phone", "ch4.clipper", MapId::City),
     step("ibrahim.talk", "ch4.done", MapId::City),
+    step("lin.talk", "ch5.extract", MapId::City),
+    step("masks.remailer", "ch5.remail", MapId::City),
+    step("masks.board", "ch5.stamps", MapId::City),
+    side("citizen.4", "ally.c4"),
     step("lin.talk", "ch5.done", MapId::City),
+    side("floppy.6", "floppy.6"),
     step("ada.talk", "ch6.done", MapId::City),
     step("plaza.vault", "end.done", MapId::City),
 ];
 
+/// The main story's steps, without the optional ones.
+pub fn main_route() -> impl Iterator<Item = Step> {
+    ROUTE.iter().copied().filter(|s| !s.side)
+}
+
 /// The next step of the route for the current state, if any.
 pub fn next_step(state: &GameState) -> Option<Step> {
-    ROUTE.iter().copied().find(|s| !state.flag(s.until))
+    next_step_with(state, false)
+}
+
+/// Like [`next_step`], optionally taking in the side quests along the way.
+pub fn next_step_with(state: &GameState, side: bool) -> Option<Step> {
+    ROUTE.iter().copied().find(|s| (side || !s.side) && !state.flag(s.until))
 }
 
 /// What happened during a headless run.
@@ -70,6 +119,8 @@ pub struct Headless {
     /// Drive dialogue with simulated key presses instead of auto mode
     /// (puzzles still solve themselves).
     pub manual: bool,
+    /// Take the optional steps too.
+    pub side: bool,
     seen_terminal: Option<String>,
     key_down: bool,
 }
@@ -79,7 +130,7 @@ impl Headless {
         let mut game = Game::new(GameState::new(), None);
         game.auto = true;
         game.new_game(handle, 0, Some(seed_phrase));
-        let mut h = Self { game, egui: egui::Context::default(), report: Report::default(), dt: 1.0 / 30.0, manual: false, seen_terminal: None, key_down: false };
+        let mut h = Self { game, egui: egui::Context::default(), report: Report::default(), dt: 1.0 / 30.0, manual: false, side: false, seen_terminal: None, key_down: false };
         h.service();
         h
     }
@@ -222,7 +273,8 @@ impl Headless {
         if !self.settle(5_000) {
             return Err("the opening never settled".into());
         }
-        for s in ROUTE {
+        let side = self.side;
+        for s in ROUTE.iter().filter(|s| side || !s.side) {
             let mut tries = 0;
             while !self.game.ctx.state_ref().flag(s.until) {
                 if self.game.mode == Mode::Credits {
