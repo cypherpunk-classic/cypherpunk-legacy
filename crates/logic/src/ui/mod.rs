@@ -5,6 +5,7 @@ pub mod dialogue;
 pub mod hud;
 pub mod markup;
 pub mod menu;
+pub mod panels;
 pub mod portraits;
 pub mod terminal;
 pub mod theme;

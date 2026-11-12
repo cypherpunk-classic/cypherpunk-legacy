@@ -2,12 +2,15 @@
 //! the story (as async scripts), maps, the codex, and the puzzles with their
 //! egui interfaces. The Bevy app renders the world and runs this.
 
+pub mod allies;
 pub mod codex;
+pub mod economy;
 pub mod game;
 pub mod items;
 pub mod maps;
 pub mod puzzle;
 pub mod puzzles;
+pub mod quests;
 pub mod script;
 pub mod speakers;
 pub mod state;

@@ -8,6 +8,7 @@ pub mod ch4;
 pub mod ch5;
 pub mod ch6;
 pub mod city;
+pub mod dragnet;
 pub mod epilogue;
 pub mod prologue;
 
@@ -138,6 +139,11 @@ pub fn interaction(c: Ctx, id: &str) -> BoxFut {
         "obs.kiosk" => Box::pin(ch6::kiosk(c)),
         _ => Box::pin(async move { c.say1(Sp::Narrator, "Nothing happens.").await }),
     }
+}
+
+/// The Dragnet flagged the player at (x, y).
+pub fn flagged(c: Ctx, x: f32, y: f32) -> BoxFut {
+    Box::pin(dragnet::flagged(c, x, y))
 }
 
 /// The player entered a zone.

@@ -120,6 +120,40 @@ impl HudState {
                 }
             });
         });
+        // wallet, stamps, allies, trace
+        let (credits, ious, stamps, allies, trace) = (state.credits(), state.data.ious, state.data.stamps.len(), state.ally_count(), state.trace);
+        if credits + ious > 0 || stamps > 0 || allies > 0 || trace > 0.5 {
+            egui::Area::new(egui::Id::new("hud-status")).anchor(Align2::RIGHT_TOP, egui::vec2(-12.0, 44.0)).interactable(false).show(ctx, |ui| {
+                egui::Frame::NONE.fill(theme::PANEL).stroke(Stroke::new(1.0, LINE2)).corner_radius(CornerRadius::same(4)).inner_margin(Margin::symmetric(10, 5)).show(ui, |ui| {
+                    ui.set_min_width(170.0);
+                    ui.horizontal(|ui| {
+                        if state.wallet_open() || credits > 0 {
+                            ui.label(RichText::new(format!("{credits} cr")).font(mono(13.0)).color(GREEN)).on_hover_text("eCash in your wallet");
+                        }
+                        if ious > 0 {
+                            ui.label(RichText::new(format!("{ious} IOU")).font(mono(13.0)).color(AMBER)).on_hover_text("credit notes with your name on them");
+                        }
+                        if stamps > 0 {
+                            ui.label(RichText::new(format!("{stamps} ✉")).font(mono(13.0)).color(CYAN)).on_hover_text("Hashcash stamps");
+                        }
+                        if allies > 0 {
+                            ui.label(RichText::new(format!("{allies} ⚿")).font(mono(13.0)).color(theme::VIOLET)).on_hover_text("allies on your web of trust");
+                        }
+                    });
+                    if trace > 0.5 {
+                        let c = if trace > 75.0 { RED } else if trace > 40.0 { AMBER } else { CYAN };
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new("TRACE").font(retro(14.0)).color(c));
+                            let (rect, _) = ui.allocate_exact_size(egui::vec2(110.0, 7.0), egui::Sense::hover());
+                            ui.painter().rect_filled(rect, 2.0, theme::rgb(0x111830));
+                            let mut fill = rect;
+                            fill.set_width(rect.width() * (trace / 100.0).clamp(0.0, 1.0));
+                            ui.painter().rect_filled(fill, 2.0, c);
+                        });
+                    }
+                });
+            });
+        }
         // key hint
         if let Some((key, label)) = &self.hint {
             egui::Area::new(egui::Id::new("hud-hint")).anchor(Align2::CENTER_BOTTOM, egui::vec2(0.0, -22.0)).interactable(false).show(ctx, |ui| {
@@ -147,7 +181,7 @@ impl HudState {
                 });
             });
         }
-        egui::Area::new(egui::Id::new("hud-toasts")).anchor(Align2::RIGHT_TOP, egui::vec2(-12.0, 52.0)).order(egui::Order::Tooltip).interactable(false).show(ctx, |ui| {
+        egui::Area::new(egui::Id::new("hud-toasts")).anchor(Align2::RIGHT_TOP, egui::vec2(-12.0, 104.0)).order(egui::Order::Tooltip).interactable(false).show(ctx, |ui| {
             for t in &self.toasts {
                 let a = if t.age < 0.25 { t.age / 0.25 } else if t.age > 3.6 { (3.9 - t.age) / 0.3 } else { 1.0 }.clamp(0.0, 1.0);
                 let c = t.kind.color();

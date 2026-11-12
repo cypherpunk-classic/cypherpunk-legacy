@@ -1,4 +1,4 @@
-//! Pause menu: Codex, Keyring, Settings, Game.
+//! Pause menu: Codex, Keyring, Wallet, Network, Quests, Settings, Game.
 
 use egui::{Align, CornerRadius, Key, Layout, Margin, RichText, Stroke};
 
@@ -13,6 +13,9 @@ use crate::state::{GameState, Settings};
 pub enum Tab {
     Codex,
     Keyring,
+    Wallet,
+    Network,
+    Quests,
     Settings,
     Game,
 }
@@ -44,6 +47,8 @@ pub enum MenuAction {
     Import(String),
     QuitToTitle,
     Settings(Settings),
+    /// owner trust for a key on your web (0 unknown, 1 never, 2 marginal, 3 full)
+    SetTrust(String, u8),
 }
 
 fn format_time(ms: f64) -> String {
@@ -124,7 +129,7 @@ pub fn show(ctx: &egui::Context, m: &mut MenuState, state: &GameState, sfx: &mut
         });
         egui::Frame::NONE.inner_margin(Margin::symmetric(14, 6)).show(ui, |ui| {
             ui.horizontal(|ui| {
-                for (t, label) in [(Tab::Codex, "CODEX"), (Tab::Keyring, "KEYRING"), (Tab::Settings, "SETTINGS"), (Tab::Game, "GAME")] {
+                for (t, label) in [(Tab::Codex, "CODEX"), (Tab::Keyring, "KEYRING"), (Tab::Wallet, "WALLET"), (Tab::Network, "NETWORK"), (Tab::Quests, "QUESTS"), (Tab::Settings, "SETTINGS"), (Tab::Game, "GAME")] {
                     let on = m.tab == t;
                     let b = egui::Button::new(RichText::new(label).font(retro(18.0)).color(if on { CYAN } else { DIM })).fill(if on { theme::rgb(0x13243a) } else { egui::Color32::TRANSPARENT }).stroke(Stroke::new(1.0, if on { CYAN } else { LINE }));
                     if ui.add(b).clicked() && !on {
@@ -155,6 +160,13 @@ pub fn show(ctx: &egui::Context, m: &mut MenuState, state: &GameState, sfx: &mut
                     }
                 });
             }
+            Tab::Wallet => super::panels::wallet(ui, state, height),
+            Tab::Network => {
+                if let Some((id, t)) = super::panels::network(ui, state, height) {
+                    action = MenuAction::SetTrust(id, t);
+                }
+            }
+            Tab::Quests => super::panels::quests(ui, state, height),
             Tab::Settings => {
                 let mut s = state.settings.clone();
                 let before = s.clone();
@@ -190,6 +202,12 @@ pub fn show(ctx: &egui::Context, m: &mut MenuState, state: &GameState, sfx: &mut
                     ui.end_row();
                     ui.label("Reduce motion");
                     ui.checkbox(&mut s.reduced_motion, "");
+                    ui.end_row();
+                    ui.label("Puzzle hints");
+                    egui::ComboBox::from_id_salt("hints").selected_text(if s.hints { "Guided" } else { "Minimal" }).show_ui(ui, |ui| {
+                        ui.selectable_value(&mut s.hints, true, "Guided (steps and hints)");
+                        ui.selectable_value(&mut s.hints, false, "Minimal (steps only)");
+                    });
                     ui.end_row();
                 });
                 ui.add_space(12.0);

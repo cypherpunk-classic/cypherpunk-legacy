@@ -221,3 +221,222 @@ pub fn pill(ui: &mut Ui, text: &str, fg: Color32, bg: Color32) -> egui::Response
         .show(ui, |ui| ui.label(RichText::new(text).font(mono(13.0)).color(fg)))
         .response
 }
+
+// ---------------------------------------------------------------------------
+// Hands-on building blocks (v3.1): step lists, formulas built from tokens,
+// selectable cards, character diffs, bit toggles, deep-dive sheets.
+// ---------------------------------------------------------------------------
+
+/// The step list beside a puzzle: done steps ticked, the current one lit, its
+/// hint shown in Guided mode.
+pub fn step_list(ui: &mut Ui, steps: &[crate::puzzle::StepView], hints: bool) {
+    let current = steps.iter().position(|s| !s.done);
+    for (i, s) in steps.iter().enumerate() {
+        let (mark, color) = if s.done {
+            ("✓", GREEN)
+        } else if Some(i) == current {
+            ("▸", CYAN)
+        } else {
+            ("·", FAINT)
+        };
+        ui.horizontal_top(|ui| {
+            ui.label(RichText::new(mark).font(mono(13.0)).color(color));
+            ui.add(egui::Label::new(RichText::new(&s.label).font(mono(12.5)).color(if s.done { DIM } else if Some(i) == current { TEXT } else { FAINT })).wrap());
+        });
+        if hints && Some(i) == current && !s.hint.is_empty() {
+            ui.horizontal_top(|ui| {
+                ui.add_space(14.0);
+                ui.add(egui::Label::new(RichText::new(&s.hint).font(mono(11.5)).color(AMBER.gamma_multiply(0.85))).wrap());
+            });
+        }
+        ui.add_space(2.0);
+    }
+}
+
+/// One piece of a formula: fixed text or a slot for a token.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Part {
+    Text(&'static str),
+    Slot,
+}
+
+/// The player's progress on a formula: which token sits in each slot, and
+/// which slot the next token goes into.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Formula {
+    pub slots: Vec<Option<usize>>,
+    pub focus: usize,
+}
+
+impl Formula {
+    pub fn new(parts: &[Part]) -> Self {
+        Self { slots: vec![None; parts.iter().filter(|p| **p == Part::Slot).count()], focus: 0 }
+    }
+
+    pub fn complete(&self) -> bool {
+        self.slots.iter().all(Option::is_some)
+    }
+
+    /// Put tokens into the slots in order (autoplay).
+    pub fn set(&mut self, tokens: &[usize]) {
+        for (s, t) in self.slots.iter_mut().zip(tokens) {
+            *s = Some(*t);
+        }
+        self.focus = self.slots.len();
+    }
+
+    pub fn clear(&mut self) {
+        self.slots.iter_mut().for_each(|s| *s = None);
+        self.focus = 0;
+    }
+
+    pub fn tokens(&self) -> Vec<Option<usize>> {
+        self.slots.clone()
+    }
+
+    /// Does the formula hold exactly these tokens, in order?
+    pub fn is(&self, tokens: &[usize]) -> bool {
+        self.slots.len() == tokens.len() && self.slots.iter().zip(tokens).all(|(s, t)| *s == Some(*t))
+    }
+}
+
+/// Draw a formula with clickable slots and a palette of tokens beneath it.
+/// Click a token to drop it into the focused slot; click a slot to focus it
+/// (or to empty it, if it is already focused). Returns true if it changed.
+pub fn formula(ui: &mut Ui, parts: &[Part], palette: &[&str], f: &mut Formula) -> bool {
+    let mut changed = false;
+    if f.slots.len() != parts.iter().filter(|p| **p == Part::Slot).count() {
+        *f = Formula::new(parts);
+    }
+    egui::Frame::NONE.fill(theme::rgb(0x0a0f1d)).stroke(Stroke::new(1.0, theme::rgb(0x1b2440))).corner_radius(CornerRadius::same(3)).inner_margin(Margin::symmetric(8, 6)).show(ui, |ui| {
+        ui.horizontal_wrapped(|ui| {
+            let mut slot = 0;
+            for p in parts {
+                match p {
+                    Part::Text(t) => {
+                        ui.label(RichText::new(*t).font(mono(15.0)).color(theme::rgb(0xbff8ff)));
+                    }
+                    Part::Slot => {
+                        let i = slot;
+                        slot += 1;
+                        let focused = f.focus == i;
+                        let (label, color) = match f.slots[i] {
+                            Some(t) => (palette.get(t).copied().unwrap_or("?").to_string(), GOLD_TOKEN),
+                            None => ("  □  ".to_string(), FAINT),
+                        };
+                        let b = egui::Button::new(RichText::new(label).font(mono(15.0)).color(color))
+                            .fill(if focused { theme::rgb(0x13243a) } else { theme::rgb(0x0d1424) })
+                            .stroke(Stroke::new(1.0, if focused { CYAN } else { LINE }));
+                        if ui.add(b).clicked() {
+                            if focused && f.slots[i].is_some() {
+                                f.slots[i] = None;
+                                changed = true;
+                            }
+                            f.focus = i;
+                        }
+                    }
+                }
+            }
+        });
+    });
+    ui.horizontal_wrapped(|ui| {
+        ui.label(RichText::new("tokens:").font(mono(12.0)).color(DIM));
+        for (t, label) in palette.iter().enumerate() {
+            let b = egui::Button::new(RichText::new(*label).font(mono(14.0)).color(GOLD_TOKEN)).fill(theme::rgb(0x1a1a2a)).stroke(Stroke::new(1.0, GOLD_TOKEN.gamma_multiply(0.5)));
+            if ui.add(b).clicked() && f.focus < f.slots.len() {
+                f.slots[f.focus] = Some(t);
+                changed = true;
+                // move to the next empty slot
+                f.focus = (0..f.slots.len()).find(|j| f.slots[*j].is_none()).unwrap_or(f.slots.len());
+            }
+        }
+        if ui.small_button("clear").clicked() {
+            f.clear();
+            changed = true;
+        }
+    });
+    changed
+}
+
+const GOLD_TOKEN: Color32 = theme::rgb(0xffcd75);
+
+/// A card the player can select. Returns true when clicked.
+pub fn select_card(ui: &mut Ui, selected: bool, accent: Color32, add: impl FnOnce(&mut Ui)) -> bool {
+    let stroke = if selected { Stroke::new(2.0, accent) } else { Stroke::new(1.0, LINE) };
+    let r = egui::Frame::NONE
+        .fill(if selected { accent.gamma_multiply(0.10) } else { theme::rgb(0x0d1322) })
+        .stroke(stroke)
+        .corner_radius(CornerRadius::same(4))
+        .inner_margin(Margin::symmetric(10, 6))
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            add(ui);
+        });
+    r.response.interact(egui::Sense::click()).clicked()
+}
+
+/// Show `b` with every character that differs from `a` in red (and the rest in green).
+pub fn hex_diff(ui: &mut Ui, a: &str, b: &str) {
+    let mut job = egui::text::LayoutJob::default();
+    job.wrap.max_width = ui.available_width();
+    let ac: Vec<char> = a.chars().collect();
+    for (i, c) in b.chars().enumerate() {
+        let color = if ac.get(i) == Some(&c) { GREEN } else { RED };
+        job.append(&c.to_string(), 0.0, egui::TextFormat { font_id: mono(13.0), color, ..Default::default() });
+    }
+    ui.label(job);
+}
+
+/// Eight clickable bits (most significant first). Returns true if one was toggled.
+pub fn bit_toggles(ui: &mut Ui, value: &mut u8) -> bool {
+    let mut changed = false;
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 3.0;
+        for bit in (0..8).rev() {
+            let on = (*value >> bit) & 1 == 1;
+            let b = egui::Button::new(RichText::new(if on { "1" } else { "0" }).font(mono(14.0)).color(if on { theme::rgb(0x0b0d16) } else { DIM }))
+                .fill(if on { CYAN } else { theme::rgb(0x0d1424) })
+                .stroke(Stroke::new(1.0, if on { CYAN } else { LINE }))
+                .min_size(egui::vec2(22.0, 22.0));
+            if ui.add(b).clicked() {
+                *value ^= 1 << bit;
+                changed = true;
+            }
+        }
+    });
+    changed
+}
+
+/// A countdown bar with the seconds left.
+pub fn countdown(ui: &mut Ui, left: f32, total: f32) {
+    ui.horizontal(|ui| {
+        let c = if left < total * 0.2 { RED } else if left < total * 0.5 { AMBER } else { CYAN };
+        ui.label(RichText::new(format!("{:>3.0} s", left.max(0.0))).font(mono(13.0)).color(c));
+        meter(ui, left / total.max(1.0), c);
+    });
+}
+
+/// Draw a deep-dive sheet: one row per cell, a number to type, a tick when right.
+pub fn hand_sheet(ui: &mut Ui, sheet: &mut crate::puzzle::HandSheet, hints: bool) {
+    lede(ui, &sheet.intro);
+    egui::Grid::new(("hand-sheet", sheet.title.as_str())).num_columns(3).spacing([12.0, 6.0]).show(ui, |ui| {
+        for (i, cell) in sheet.cells.iter_mut().enumerate() {
+            ui.vertical(|ui| {
+                ui.label(RichText::new(&cell.label).font(mono(13.0)).color(TEXT));
+                if hints && !cell.hint.is_empty() {
+                    ui.label(RichText::new(&cell.hint).font(mono(11.0)).color(DIM));
+                }
+            });
+            ui.add(egui::TextEdit::singleline(&mut cell.input).id_salt(("hand", i)).font(mono(14.0)).desired_width(110.0));
+            let (mark, c) = if cell.input.trim().is_empty() {
+                ("", DIM)
+            } else if cell.ok() {
+                ("✓", GREEN)
+            } else {
+                ("✕", RED)
+            };
+            ui.label(RichText::new(mark).font(mono(14.0)).color(c));
+            ui.end_row();
+        }
+    });
+}

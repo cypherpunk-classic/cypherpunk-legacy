@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::Facing;
 use crate::world::World;
 
-pub const SAVE_VERSION: u32 = 3;
+pub const SAVE_VERSION: u32 = 4;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(rename_all = "lowercase")]
@@ -94,6 +94,29 @@ pub struct Solved {
     pub attempts: u32,
 }
 
+/// An eCash token in the wallet (see `cpl_crypto::ecash::Token`).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TokenData {
+    pub amount: u64,
+    pub secret: String,
+    pub c: String,
+}
+
+/// Numbers the credits show at the end.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Stats {
+    /// times the Dragnet flagged you
+    pub flagged: u32,
+    /// credits earned and spent
+    pub earned: u64,
+    pub spent: u64,
+    /// payments the mint accepted without knowing who paid
+    pub payments: u32,
+    pub stamps_minted: u32,
+    pub deep_dives: u32,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SaveData {
@@ -122,6 +145,35 @@ pub struct SaveData {
     pub updated_at: f64,
     #[serde(default)]
     pub solved: BTreeMap<String, Solved>,
+    /// eCash tokens (blind-signed by the Commons Mint).
+    #[serde(default)]
+    pub wallet: Vec<TokenData>,
+    /// Plain credit notes with your name on them, not yet swapped for eCash.
+    #[serde(default)]
+    pub ious: u64,
+    /// The Commons Mint's spent list (hex of each spent token's Y).
+    #[serde(default)]
+    pub mint_spent: Vec<String>,
+    /// Counter that makes every withdrawal's secrets fresh.
+    #[serde(default)]
+    pub wallet_nonce: u64,
+    /// Hashcash stamps in hand.
+    #[serde(default)]
+    pub stamps: Vec<String>,
+    /// Allies, in the order they joined.
+    #[serde(default)]
+    pub allies: Vec<String>,
+    /// Owner trust you assigned (0 unknown, 1 never, 2 marginal, 3 full), by key id.
+    #[serde(default)]
+    pub trust: BTreeMap<String, u8>,
+    /// Your certifications: key id → BIP-340 signature (hex) over its fingerprint.
+    #[serde(default)]
+    pub certs: BTreeMap<String, String>,
+    /// Deep dives completed (puzzle ids).
+    #[serde(default)]
+    pub badges: Vec<String>,
+    #[serde(default)]
+    pub stats: Stats,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -135,11 +187,13 @@ pub struct Settings {
     pub reduced_motion: bool,
     /// UI text scale
     pub ui_scale: f32,
+    /// Guided (steps with hints) or Minimal (steps only).
+    pub hints: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { music: 0.5, sfx: 0.7, text_speed: 60.0, crt: true, reduced_motion: false, ui_scale: 1.0 }
+        Self { music: 0.5, sfx: 0.7, text_speed: 60.0, crt: true, reduced_motion: false, ui_scale: 1.0, hints: true }
     }
 }
 
@@ -151,6 +205,9 @@ pub enum StateEvent {
     Codex(String),
     Objective(String),
     Chapter(u32),
+    /// credits arrived (positive) or left (negative), and why
+    Credits(i64, String),
+    Ally(String),
     Saved,
 }
 
@@ -168,6 +225,8 @@ pub struct GameState {
     /// Set when the save should be written by the engine.
     pub dirty_save: bool,
     pub dirty_settings: bool,
+    /// The Dragnet's trace on you, 0 to 100 (set by the engine, not saved).
+    pub trace: f32,
 }
 
 impl Default for GameState {
@@ -180,7 +239,7 @@ impl GameState {
     pub fn new() -> Self {
         let data = Self::blank("anon", 0, None);
         let world = Rc::new(World::new(&data));
-        Self { data, settings: Settings::default(), events: Vec::new(), world, session_start: now_ms(), dirty_save: false, dirty_settings: false }
+        Self { data, settings: Settings::default(), events: Vec::new(), world, session_start: now_ms(), dirty_save: false, dirty_settings: false, trace: 0.0 }
     }
 
     pub fn blank(handle: &str, look: usize, seed: Option<String>) -> SaveData {
@@ -201,6 +260,16 @@ impl GameState {
             created_at: now,
             updated_at: now,
             solved: BTreeMap::new(),
+            wallet: Vec::new(),
+            ious: 0,
+            mint_spent: Vec::new(),
+            wallet_nonce: 0,
+            stamps: Vec::new(),
+            allies: Vec::new(),
+            trust: BTreeMap::new(),
+            certs: BTreeMap::new(),
+            badges: Vec::new(),
+            stats: Stats::default(),
         }
     }
 
@@ -211,6 +280,7 @@ impl GameState {
         self.world = Rc::new(World::new(&self.data));
         self.session_start = now_ms();
         self.events.clear();
+        self.trace = 0.0;
         self.save();
     }
 

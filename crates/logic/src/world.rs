@@ -14,6 +14,11 @@ use cpl_crypto::secp::{N, Pt, mul, scalar_to_hex, x_only};
 use cpl_crypto::shamir::{Share, deal};
 use cpl_crypto::taproot::{LEAF_VERSION_TAPSCRIPT, Leaf, TweakResult, leaf_single_sig, leaf_timelocked, leaf_two_of_two, tap_branch_hash, tap_leaf_hash, tweak_key};
 
+use cpl_crypto::clipper::Escrow;
+use cpl_crypto::ecash::Mint;
+use cpl_crypto::onion::Remailer;
+use cpl_crypto::wot::{Fingerprint, fingerprint};
+
 use crate::state::SaveData;
 
 pub struct GrandpaKeys {
@@ -63,6 +68,25 @@ pub struct TaprootWorld {
     pub target: TweakResult,
 }
 
+/// Someone's key on the web of trust.
+#[derive(Clone, Debug)]
+pub struct KeyInfo {
+    pub id: String,
+    pub secret: Big,
+    pub xonly: [u8; 32],
+    pub created: u32,
+    pub fp: Fingerprint,
+}
+
+/// The escrowed phone system (the Clipper mission).
+pub struct ClipperWorld {
+    pub escrow: Escrow,
+    /// which chip is in Ibrahim's phone
+    pub chip: usize,
+    pub session_key: [u8; 10],
+    pub iv: [u8; 8],
+}
+
 pub struct CheckpointKey {
     pub x: Big,
     pub p: Pt,
@@ -104,6 +128,9 @@ pub struct World {
     custody: OnceCell<Custody>,
     taproot: OnceCell<TaprootWorld>,
     checkpoint: OnceCell<CheckpointKey>,
+    mint: OnceCell<Mint>,
+    remailers: OnceCell<Vec<Remailer>>,
+    clipper: OnceCell<ClipperWorld>,
 }
 
 /// A scalar as 64 hex digits.
@@ -124,6 +151,9 @@ impl World {
             custody: OnceCell::new(),
             taproot: OnceCell::new(),
             checkpoint: OnceCell::new(),
+            mint: OnceCell::new(),
+            remailers: OnceCell::new(),
+            clipper: OnceCell::new(),
         }
     }
 
@@ -223,6 +253,43 @@ impl World {
             let x = rng.scalar(&N);
             CheckpointKey { p: mul(&x), x, r: rng.scalar(&N) }
         })
+    }
+}
+
+impl World {
+    /// The Commons Mint's keys (a fresh copy; the spent list lives in the save).
+    pub fn mint(&self) -> Mint {
+        self.mint.get_or_init(|| Mint::new(&mut self.rng("commons-mint"))).clone()
+    }
+
+    /// The remailer network (Chapter 5).
+    pub fn remailers(&self) -> &[Remailer] {
+        self.remailers.get_or_init(|| {
+            let mut r = self.rng("remailers");
+            ["penet", "cpunk", "mixmaster", "nym"].iter().map(|n| Remailer::new(n, &mut r)).collect()
+        })
+    }
+
+    pub fn clipper(&self) -> &ClipperWorld {
+        self.clipper.get_or_init(|| {
+            let mut r = self.rng("clipper");
+            let escrow = Escrow::new(&mut r, 6);
+            ClipperWorld { chip: 2, session_key: r.array(), iv: r.array(), escrow }
+        })
+    }
+
+    /// A key on the web of trust, by id ("you" is your identity key).
+    pub fn key_of(&self, id: &str) -> KeyInfo {
+        if id == "you" {
+            let me = self.identity();
+            let created = 1_000_000_000 + (self.rng("identity/created").int(100_000_000) as u32);
+            return KeyInfo { id: id.into(), secret: me.x.clone(), xonly: me.xonly, created, fp: fingerprint(&me.xonly, created) };
+        }
+        let mut r = self.rng(&format!("wot/{id}"));
+        let secret = even_key(&r.scalar(&N));
+        let xonly = x_only(&mul(&secret));
+        let created = 1_100_000_000 + (r.int(600_000_000) as u32);
+        KeyInfo { id: id.into(), secret, xonly, created, fp: fingerprint(&xonly, created) }
     }
 }
 

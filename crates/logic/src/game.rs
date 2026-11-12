@@ -159,6 +159,16 @@ impl Game {
         true
     }
 
+    /// The Dragnet's trace reached 100 with the player at (x, y).
+    pub fn flagged(&mut self, x: f32, y: f32) {
+        if self.busy() {
+            return;
+        }
+        let fut = story::flagged(self.ctx.clone(), x, y);
+        self.runner.spawn("flagged", true, fut);
+        self.pump();
+    }
+
     /// The player walked into a zone.
     pub fn zone(&mut self, id: &str) {
         let fut = story::zone(self.ctx.clone(), id);
@@ -271,8 +281,11 @@ impl Game {
             Cmd::Choose { sp, question, options } => self.dialogue.push_back(DialogueItem::choice(id, sp, question, options)),
             Cmd::Puzzle(p) => {
                 self.audio.push(AudioReq::Sfx("power"));
-                let handle = self.ctx.state_ref().handle().to_string();
-                self.terminal = Some(ActivePuzzle::new(id, p, &handle));
+                let (handle, hints, deep) = {
+                    let s = self.ctx.state_ref();
+                    (s.handle().to_string(), s.settings.hints, !s.data.badges.iter().any(|b| b == p.id()))
+                };
+                self.terminal = Some(ActivePuzzle::new(id, p, &handle, hints, deep));
                 self.auto_term = 0.0;
             }
             Cmd::Wait(s) => self.waits.push((id, s)),
@@ -304,6 +317,16 @@ impl Game {
                     self.audio.push(AudioReq::Sfx("pickup"));
                 }
                 StateEvent::Objective(t) if !t.is_empty() => self.hud.objective_flash = 1.2,
+                StateEvent::Credits(n, why) => {
+                    let (title, body) = if n >= 0 { ("CREDITS", format!("+{n} cr · {why}")) } else { ("PAID", format!("{n} cr · {why}")) };
+                    self.hud.toast(title, &body, if n >= 0 { ToastKind::Item } else { ToastKind::Info });
+                    self.audio.push(AudioReq::Sfx(if n >= 0 { "pickup" } else { "blip" }));
+                }
+                StateEvent::Ally(id) => {
+                    let name = crate::allies::ally_def(&id).map(|a| a.name).unwrap_or(&id).to_string();
+                    self.hud.toast("ALLY", &format!("{name} is on your web of trust"), ToastKind::Codex);
+                    self.audio.push(AudioReq::Sfx("unlock"));
+                }
                 StateEvent::Saved => {
                     self.stored_save = Some(self.ctx.state_ref().data.clone());
                     self.engine.push(EngineReq::PersistSave);
@@ -448,6 +471,15 @@ impl Game {
                 if ok {
                     self.ctx.state().mark_solved(ap.puzzle.id(), ap.host.attempts + 1);
                 }
+                if ap.host.deep_done {
+                    let mut s = self.ctx.state();
+                    let id = ap.puzzle.id().to_string();
+                    if !s.data.badges.contains(&id) {
+                        s.data.badges.push(id);
+                        s.data.stats.deep_dives += 1;
+                        s.earn(4, "a deep dive");
+                    }
+                }
                 self.ctx.shared().reply(ap.reply, Reply::Bool(ok));
                 self.close_modal();
             }
@@ -494,6 +526,9 @@ impl Game {
                 MenuAction::Settings(s) => {
                     self.ctx.state().update_settings(s);
                     self.engine.push(EngineReq::PersistSettings);
+                }
+                MenuAction::SetTrust(id, t) => {
+                    self.ctx.state().set_trust(&id, crate::allies::trust_from(t));
                 }
             }
         }
