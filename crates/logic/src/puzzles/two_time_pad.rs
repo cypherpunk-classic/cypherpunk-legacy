@@ -8,7 +8,7 @@ use cpl_crypto::bytes::to_hex;
 use cpl_crypto::otp::{self, TwoTimePad as Ttp, crib_drag, partner, plausibility};
 use egui::{Color32, Event, EventFilter, Key, RichText, Sense, Stroke};
 
-use crate::puzzle::{Host, Puzzle};
+use crate::puzzle::{HandCell, HandSheet, Host, Puzzle, StepView, steps};
 use crate::ui::theme::{self, AMBER, CYAN, DIM, FAINT, GREEN, LINE, LINE2, RED, mono};
 use crate::ui::widgets::{Kind, Tone, button, card, columns2, hex_box, lede, math, note, pill};
 use crate::world::{CH1_P1, CH1_P2, World};
@@ -28,13 +28,15 @@ pub struct TwoTimePad {
     scan: Vec<(usize, String, f64)>,
     cursor: Option<(u8, usize)>,
     done: bool,
+    /// a crib has been placed where both messages read as text
+    crib_hit: bool,
 }
 
 impl TwoTimePad {
     pub fn new(world: Rc<World>) -> Self {
         let t = otp::make_two_time_pad(CH1_P1, CH1_P2, &mut world.rng("ch1/pad"));
         let n = t.x.len();
-        Self { t, a: vec![None; n], b: vec![None; n], typed: vec![None; n], crib: " THE ".into(), offset: 0, scan: Vec::new(), cursor: None, done: false }
+        Self { t, a: vec![None; n], b: vec![None; n], typed: vec![None; n], crib: " THE ".into(), offset: 0, scan: Vec::new(), cursor: None, done: false, crib_hit: false }
     }
 
     fn set_char(&mut self, i: usize, row: u8, ch: Option<char>) {
@@ -76,6 +78,10 @@ impl TwoTimePad {
         }
         for (k, ch) in crib.iter().enumerate() {
             self.set_char(self.offset + k, row, Some(*ch));
+        }
+        let span = self.offset..self.offset + crib.len();
+        if span.clone().all(|i| self.a[i].is_some_and(plausible) && self.b[i].is_some_and(plausible)) {
+            self.crib_hit = true;
         }
         host.sfx("select");
         self.check(host);
@@ -180,6 +186,11 @@ impl TwoTimePad {
     fn cell(&self, row: u8, i: usize) -> Option<char> {
         if row == 0 { self.a[i] } else { self.b[i] }
     }
+
+    /// Positions that read as text in both messages.
+    fn readable(&self) -> usize {
+        (0..self.a.len()).filter(|&i| matches!((self.a[i], self.b[i]), (Some(x), Some(y)) if plausible(x) && plausible(y))).count()
+    }
 }
 
 impl Puzzle for TwoTimePad {
@@ -270,7 +281,7 @@ impl Puzzle for TwoTimePad {
             note(ui, "Click a cell and type. Whatever you put in A forces the letter in B at the same position, and vice versa. Amber letters are derived; red ones are not plausible text, so a guess nearby is wrong.");
             ui.add_space(4.0);
             self.workbench(ui, host);
-            let good = (0..n).filter(|&i| matches!((self.a[i], self.b[i]), (Some(x), Some(y)) if plausible(x) && plausible(y))).count();
+            let good = self.readable();
             ui.label(RichText::new(format!("{good} / {n} positions read as text in both messages.")).font(mono(12.5)).color(DIM));
             if button(ui, "Clear workbench", Kind::Ghost).clicked() && !self.done {
                 self.a.fill(None);
@@ -286,6 +297,42 @@ impl Puzzle for TwoTimePad {
         for (i, ch) in CH1_P1.chars().enumerate() {
             self.set_char(i, 0, Some(ch));
         }
+        self.crib_hit = true;
         self.check(host);
+    }
+
+    fn steps(&self) -> Vec<StepView> {
+        let n = self.a.len();
+        steps(&[
+            ("Slide a crib until the other message reads as text", "Names make good cribs. Who writes to whom, on a radio log?", self.crib_hit || self.done),
+            ("Grow the words on the workbench", "Finish a half-read word in one row and watch the other row fill in by itself.", self.readable() * 2 >= n || self.done),
+            ("Recover both messages", "Red letters mean a wrong guess somewhere nearby.", self.done),
+        ])
+    }
+
+    fn deep_sheet(&self) -> Option<HandSheet> {
+        // two positions where both messages have letters
+        let p1 = CH1_P1.as_bytes();
+        let p2 = CH1_P2.as_bytes();
+        let letters: Vec<usize> = (0..p1.len()).filter(|&i| p1[i].is_ascii_uppercase() && p2[i].is_ascii_uppercase() && p1[i] != p2[i]).collect();
+        let (i, j) = (letters[2], letters[letters.len() / 2]);
+        let (c1, c2) = (&self.t.c1, &self.t.c2);
+        let x_i = c1[i] ^ c2[i];
+        let x_j = c1[j] ^ c2[j];
+        Some(HandSheet::new(
+            "XOR by hand",
+            &format!(
+                "Position {i}: C₁ = 0x{:02X} ({:08b}), C₂ = 0x{:02X} ({:08b}). Position {j}: C₁ = 0x{:02X}, C₂ = 0x{:02X}. Message A has ‘{}’ (ASCII {}) at {i}; message B has ‘{}’ (ASCII {}) at {j}. Answer in decimal.",
+                c1[i], c1[i], c2[i], c2[i], c1[j], c2[j], p1[i] as char, p1[i], p2[j] as char, p2[j]
+            ),
+            180.0,
+            vec![
+                HandCell::new(format!("C₁ ⊕ C₂ at {i}"), "XOR bit by bit: 1 where the bits differ", x_i as i64),
+                HandCell::new(format!("message B's byte at {i}"), "(C₁ ⊕ C₂) ⊕ A's byte", p2[i] as i64),
+                HandCell::new(format!("the pad byte at {i}"), "C₁ ⊕ A's byte: the key itself", (c1[i] ^ p1[i]) as i64),
+                HandCell::new(format!("C₁ ⊕ C₂ at {j}"), "", x_j as i64),
+                HandCell::new(format!("message A's byte at {j}"), "the same trick from the other side", p1[j] as i64),
+            ],
+        ))
     }
 }

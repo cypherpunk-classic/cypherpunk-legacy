@@ -1,8 +1,8 @@
 //! Chapter 3, part 1. Shamir sharing in the small field GF(31), drawn on a
 //! grid you can see. Two shares leave the secret f(0) completely
 //! undetermined: every candidate secret has its own curve through the two
-//! points. Collect the third share and the parabola, and the secret, snap
-//! into place.
+//! points. Collect the third share, then bend the curve yourself until it
+//! passes through all three: only one secret does.
 
 use std::rc::Rc;
 
@@ -10,7 +10,7 @@ use cpl_crypto::bytes::Big;
 use cpl_crypto::shamir::{TOY_P, curve_for_guess, eval_toy, quadratic_through};
 use egui::{Align2, Color32, Pos2, RichText, Sense, Shape, Stroke};
 
-use crate::puzzle::{Host, Puzzle};
+use crate::puzzle::{HandCell, HandSheet, Host, Puzzle, StepView, steps};
 use crate::ui::theme::{self, AMBER, CYAN, FAINT, GREEN, mono};
 use crate::ui::widgets::{Kind, Tone, button, button_enabled, card, kv, lede, math, note};
 use crate::world::World;
@@ -20,7 +20,9 @@ pub struct ShamirReconstruct {
     shares: Vec<(i64, i64)>,
     guess: i64,
     have_third: bool,
-    rebuilt: Option<i64>,
+    /// secrets tried with only two shares
+    tried: Vec<i64>,
+    locked: bool,
 }
 
 impl ShamirReconstruct {
@@ -32,7 +34,7 @@ impl ShamirReconstruct {
         let b = pick(1, 10);
         let coeffs = [secret, b, a];
         let shares = (1..=4).map(|x| (x, eval_toy(&coeffs, x, TOY_P))).collect();
-        Self { coeffs, shares, guess: 0, have_third: false, rebuilt: None }
+        Self { coeffs, shares, guess: 0, have_third: false, tried: vec![0], locked: false }
     }
 
     fn known(&self) -> [(i64, i64); 2] {
@@ -44,12 +46,13 @@ impl ShamirReconstruct {
             return;
         }
         self.have_third = true;
-        let [p1, p2] = self.known();
-        let rebuilt = quadratic_through(&[p1, p2, self.shares[2]], TOY_P);
-        self.rebuilt = Some(rebuilt[0]);
-        self.guess = rebuilt[0];
         host.sfx("confirm");
-        host.status("Now lock it in.", Tone::Info);
+        host.status("Juno's point is on the board. Slide the secret until the curve passes through it too.", Tone::Info);
+    }
+
+    /// The curve for the current guess, at Juno's x = 3.
+    fn at_third(&self) -> i64 {
+        eval_toy(&curve_for_guess(self.guess, &self.known(), TOY_P), self.shares[2].0, TOY_P)
     }
 
     fn check(&mut self, host: &mut Host) {
@@ -62,10 +65,12 @@ impl ShamirReconstruct {
             return;
         }
         if self.guess != self.coeffs[0] {
-            host.status("That is not the secret. Let the interpolation compute it.", Tone::Bad);
+            host.status(format!("With f(0) = {}, the curve through Mara's and Felix's points reaches f(3) = {} at x = 3. Juno's share says {}.", self.guess, self.at_third(), self.shares[2].1), Tone::Bad);
             host.sfx("error");
             return;
         }
+        debug_assert_eq!(quadratic_through(&[self.shares[0], self.shares[1], self.shares[2]], TOY_P)[0], self.guess);
+        self.locked = true;
         host.sfx("unlock");
         host.solve(format!("Secret recovered: {}. Three of five shares, and not one fewer.", self.coeffs[0]));
     }
@@ -80,14 +85,19 @@ impl ShamirReconstruct {
         card(ui, Some("Guess the secret"), None, |ui| {
             ui.horizontal(|ui| {
                 ui.label(RichText::new("secret f(0) =").font(mono(13.0)));
-                ui.add_enabled(!self.have_third, egui::Slider::new(&mut self.guess, 0..=30));
+                if ui.add_enabled(!self.locked, egui::Slider::new(&mut self.guess, 0..=30)).changed() && !self.have_third && !self.tried.contains(&self.guess) {
+                    self.tried.push(self.guess);
+                }
             });
-            note(ui, "With only two shares, **every** value of f(0) from 0 to 30 gives a valid parabola through both points. Two shares reveal nothing: that is the whole idea.");
+            if !self.have_third {
+                note(ui, "With only two shares, **every** value of f(0) from 0 to 30 gives a valid parabola through both points. Two shares reveal nothing: that is the whole idea.");
+            } else {
+                let (y3, at) = (self.shares[2].1, self.at_third());
+                ui.label(RichText::new(format!("this curve at x = 3: {at}   ·   Juno's share: {y3}")).font(mono(13.0)).color(if at == y3 { GREEN } else { AMBER }));
+                note(ui, "Three points fix one parabola. Bend this one through all three, and its f(0) is the secret.");
+            }
             if button_enabled(ui, !self.have_third, "Add Juno's share (x = 3)", Kind::Normal).clicked() {
                 *third = true;
-            }
-            if let Some(s) = self.rebuilt {
-                note(ui, &format!("Three points fix one parabola. Interpolating at x = 0 gives the secret: **f(0) = {s}**."));
             }
             if button(ui, "Lock in the secret", Kind::Primary).clicked() {
                 *lock = true;
@@ -124,8 +134,11 @@ impl ShamirReconstruct {
                 curve(&curve_for_guess(s, &self.known(), TOY_P), Color32::from_rgba_unmultiplied(90, 110, 150, 64), 1.0);
             }
             curve(&curve_for_guess(self.guess, &self.known(), TOY_P), CYAN, 2.0);
-        } else {
+        } else if self.locked {
             curve(&self.coeffs, GREEN, 2.0);
+        } else {
+            let fits = self.at_third() == self.shares[2].1;
+            curve(&curve_for_guess(self.guess, &self.known(), TOY_P), if fits { GREEN } else { CYAN }, 2.0);
         }
         let dot = |x: f32, y: f32, color: Color32, r: f32, ring: bool| {
             p.circle_filled(Pos2::new(px(x), py(y)), r, color);
@@ -137,11 +150,11 @@ impl ShamirReconstruct {
             dot(x as f32, y as f32, GREEN, 5.0, false);
         }
         if self.have_third {
-            dot(3.0, self.shares[2].1 as f32, GREEN, 5.0, false);
+            dot(3.0, self.shares[2].1 as f32, AMBER, 5.0, true);
         }
-        let secret = if self.have_third { self.coeffs[0] } else { self.guess };
-        let c = if self.have_third { GREEN } else { CYAN };
-        dot(0.0, secret as f32, c, 6.0, !self.have_third);
+        let secret = if self.locked { self.coeffs[0] } else { self.guess };
+        let c = if self.locked { GREEN } else { CYAN };
+        dot(0.0, secret as f32, c, 6.0, !self.locked);
         p.text(Pos2::new(px(0.0) - 14.0, py(secret as f32)), Align2::RIGHT_CENTER, secret.to_string(), mono(13.0), c);
     }
 }
@@ -189,6 +202,49 @@ impl Puzzle for ShamirReconstruct {
 
     fn autoplay(&mut self, host: &mut Host) {
         self.add_third(host);
+        // bend the curve until it meets Juno's point
+        self.guess = (0..TOY_P).find(|&s| eval_toy(&curve_for_guess(s, &self.known(), TOY_P), self.shares[2].0, TOY_P) == self.shares[2].1).unwrap_or(0);
         self.check(host);
+    }
+
+    fn steps(&self) -> Vec<StepView> {
+        steps(&[
+            ("With two shares, try a few secrets", "Every f(0) has its own parabola through both points. Nothing rules any of them out.", self.tried.len() >= 3 || self.have_third),
+            ("Add Juno's share (x = 3)", "", self.have_third),
+            ("Bend the curve through all three shares", "Watch f(3) for your curve against Juno's share.", self.locked || (self.have_third && self.at_third() == self.shares[2].1)),
+            ("Lock in the secret", "", self.locked),
+        ])
+    }
+
+    fn deep_sheet(&self) -> Option<HandSheet> {
+        let p = TOY_P;
+        let inv = |a: i64| (1..p).find(|x| (a.rem_euclid(p) * x) % p == 1).unwrap_or(1);
+        let xs = [1i64, 2, 4];
+        let ys: Vec<i64> = xs.iter().map(|x| self.shares[(*x - 1) as usize].1).collect();
+        // Lagrange basis at 0: L_i(0) = prod_{j≠i} (0 − x_j)/(x_i − x_j)
+        let l = |i: usize| -> i64 {
+            let (mut num, mut den) = (1i64, 1i64);
+            for j in 0..3 {
+                if j != i {
+                    num = num * (-xs[j]) % p;
+                    den = den * (xs[i] - xs[j]) % p;
+                }
+            }
+            (num.rem_euclid(p) * inv(den)).rem_euclid(p)
+        };
+        let (l1, l2, l4) = (l(0), l(1), l(2));
+        let secret = (l1 * ys[0] + l2 * ys[1] + l4 * ys[2]).rem_euclid(p);
+        debug_assert_eq!(secret, self.coeffs[0]);
+        Some(HandSheet::new(
+            "Lagrange at zero, mod 31",
+            &format!("Use Mara's (1, {}), Felix's (2, {}) and the fourth share (4, {}). The secret is f(0) = Σ yᵢ·Lᵢ(0), with Lᵢ(0) = Π (0 − xⱼ)/(xᵢ − xⱼ) over the other two shares. Division mod 31 means multiplying by an inverse.", ys[0], ys[1], ys[2]),
+            240.0,
+            vec![
+                HandCell::new("L₁(0) = (0−2)(0−4) / ((1−2)(1−4))  mod 31", "8/3: find 3⁻¹ mod 31 first", l1),
+                HandCell::new("L₂(0) = (0−1)(0−4) / ((2−1)(2−4))  mod 31", "4/(−2)", l2),
+                HandCell::new("L₄(0) = (0−1)(0−2) / ((4−1)(4−2))  mod 31", "2/6", l4),
+                HandCell::new("f(0) = y₁L₁ + y₂L₂ + y₄L₄  mod 31", "the secret", secret),
+            ],
+        ))
     }
 }

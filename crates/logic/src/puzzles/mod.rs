@@ -137,7 +137,7 @@ pub fn make(id: &str, ctx: &Ctx) -> Option<Box<dyn Puzzle>> {
         "ch6.gauss" => Box::new(GaussReduce::new(world)),
         "ch6.knapsack" => Box::new(KnapsackBreak::new(world)),
         "ch6.pq" => Box::new(LweMlkem::new(world)),
-        "end.broadcast" => Box::new(Broadcast::new(world)),
+        "end.broadcast" => Box::new(Broadcast::new(ctx.clone())),
         _ => return None,
     })
 }

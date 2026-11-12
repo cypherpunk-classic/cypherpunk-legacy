@@ -9,7 +9,7 @@ use cpl_crypto::aead::{CtrTicket, GcmBox, ctr_decrypt, ctr_encrypt, gcm_decrypt_
 use cpl_crypto::bytes::{ascii_to_bytes, to_hex};
 use egui::{Color32, RichText, Sense, Stroke};
 
-use crate::puzzle::{Host, Puzzle};
+use crate::puzzle::{HandCell, HandSheet, Host, Puzzle, StepView, steps};
 use crate::ui::theme::{self, AMBER, CYAN, DIM, GREEN, LINE, RED, VIOLET, mono};
 use crate::ui::widgets::{Kind, Tone, button, card, columns2, lede, math, note};
 use crate::world::World;
@@ -289,5 +289,29 @@ impl Puzzle for BitFlip {
         self.present(host);
         self.pending = None;
         host.solve("Lesson learned: encryption hides, authentication protects. Use AEAD.");
+    }
+
+    fn steps(&self) -> Vec<StepView> {
+        let ctr_done = self.stage == Stage::Gcm;
+        let touched = ctr_done || (5..10).any(|i| self.work.get(i) != self.ticket.ct.get(i));
+        steps(&[
+            ("Find the bytes that spell guest", "Your ticket starts role=guest. Count from zero: the g is byte 5.", touched),
+            ("Flip them until the gate reads admin", "Flipping a ciphertext bit flips the same plaintext bit. Δ = ‘g’ ⊕ ‘a’ turns g into a.", ctr_done),
+            ("Try the same trick against GCM", "Flip any bit and present the ticket again.", self.gcm_rejected),
+        ])
+    }
+
+    fn deep_sheet(&self) -> Option<HandSheet> {
+        let pairs = [('g', 'a'), ('u', 'd'), ('e', 'm'), ('s', 'i'), ('t', 'n')];
+        let cells = pairs
+            .iter()
+            .map(|(a, b)| HandCell::new(format!("Δ for {a} → {b}   (0x{:02x} ⊕ 0x{:02x})", *a as u8, *b as u8), format!("{:08b} ⊕ {:08b}", *a as u8, *b as u8), (*a as u8 ^ *b as u8) as i64))
+            .collect();
+        Some(HandSheet::new(
+            "the five masks, by hand",
+            "Every byte of guest becomes a byte of admin by XOR with a mask Δ = old ⊕ new. Work each one out from the ASCII codes and answer in decimal. (This is all the attacker ever needed: no key, just the known plaintext.)",
+            150.0,
+            cells,
+        ))
     }
 }

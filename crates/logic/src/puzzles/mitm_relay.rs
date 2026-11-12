@@ -13,9 +13,10 @@ use cpl_crypto::dh::{DRONE_GROUP, Keypair};
 use cpl_crypto::drbg::Drbg;
 use egui::{Color32, RichText};
 
-use crate::puzzle::{Host, Puzzle};
+use crate::puzzle::{HandCell, HandSheet, Host, Puzzle, StepView, steps};
 use crate::ui::theme::{self, AMBER, GREEN, RED, mono};
-use crate::ui::widgets::{Kind, Log, Tone, button, card, kv, lede, note, shorten};
+use crate::ui::widgets::{Kind, Log, Tone, button, card, kv, lede, note, select_card, shorten};
+use cpl_crypto::dh::TOY_GROUP;
 use crate::world::World;
 
 const ORIGINAL: &str = "PATROL 7 LOG: UNESCROWED KEYS SEEN AT THE EXCHANGE. FLAG FOR AUDIT.";
@@ -31,6 +32,7 @@ enum Stage {
 }
 
 pub struct MitmRelay {
+    world: Rc<World>,
     stage: Stage,
     patrol: Keypair,
     control: Keypair,
@@ -43,6 +45,9 @@ pub struct MitmRelay {
     log: Log,
     text: String,
     outcome: Option<(String, bool)>,
+    /// how to pass the message on: 0 your key with the patrol, 1 your key with control, 2 untouched
+    reenc: u8,
+    nonce: [u8; 12],
 }
 
 impl MitmRelay {
@@ -52,10 +57,11 @@ impl MitmRelay {
         let patrol = g.keypair(&mut r);
         let control = g.keypair(&mut r);
         let nonce: [u8; 12] = r.array();
+        // a placeholder until the patrol actually has a key (see `control_hello`)
         let message = gcm_encrypt_text(&g.session_key(g.shared(patrol.secret, control.public)), &nonce, ORIGINAL);
         let mut log = Log::default();
         log.line("Line 7 open. Key exchange about to begin.", Tone::Dim);
-        Self { stage: Stage::Keygen, patrol, control, relay: None, to_control: 0, to_patrol: 0, message, k_patrol: None, k_control: None, log, text: String::new(), outcome: None }
+        Self { world, stage: Stage::Keygen, patrol, control, relay: None, to_control: 0, to_patrol: 0, message, k_patrol: None, k_control: None, log, text: String::new(), outcome: None, reenc: 0, nonce }
     }
 
     fn keygen(&mut self, host: &mut Host) {
@@ -68,12 +74,10 @@ impl MitmRelay {
     }
 
     fn patrol_hello(&mut self, swap: bool, host: &mut Host) {
-        let g = DRONE_GROUP;
         let relay = self.relay.unwrap();
         self.to_control = if swap { relay.public } else { self.patrol.public };
         if swap {
-            self.k_patrol = Some(g.shared(relay.secret, self.patrol.public));
-            self.log.line("You sent control your M instead of A. Control will share a key with YOU, not the patrol.", Tone::Warn);
+            self.log.line("You sent control your M instead of A. Control will share its key with YOU, not with the patrol.", Tone::Warn);
         } else {
             self.log.line("You forwarded A unchanged.", Tone::Dim);
         }
@@ -87,17 +91,24 @@ impl MitmRelay {
         let relay = self.relay.unwrap();
         self.to_patrol = if swap { relay.public } else { self.control.public };
         if swap {
-            self.k_control = Some(g.shared(relay.secret, self.control.public));
-            self.log.line("You sent the patrol your M instead of B. The patrol will share a key with YOU.", Tone::Warn);
+            self.log.line("You sent the patrol your M instead of B. The patrol will share its key with YOU.", Tone::Warn);
         } else {
             self.log.line("You forwarded B unchanged.", Tone::Dim);
         }
+        // you have now seen A and B go by: you share a key with whoever got your M
+        self.k_patrol = (self.to_patrol == relay.public).then(|| g.shared(relay.secret, self.patrol.public));
+        self.k_control = (self.to_control == relay.public).then(|| g.shared(relay.secret, self.control.public));
+        // the patrol encrypts its log under the key IT computed, from whatever reached it
+        let kp = g.shared(self.patrol.secret, self.to_patrol);
+        self.message = gcm_encrypt_text(&g.session_key(kp), &self.nonce, ORIGINAL);
         self.stage = Stage::Message;
         host.sfx("blip");
         if self.read().is_some() {
-            self.text = REWRITE.into();
-            host.status("Read it, change it, pass it on.", Tone::Info);
+            self.text = ORIGINAL.into();
+            self.reenc = if self.k_control.is_some() { 1 } else { 2 };
+            host.status("You can read it. Change it, choose the key to re-encrypt with, pass it on.", Tone::Info);
         } else {
+            self.reenc = 2;
             host.status("Deliver the message to see whether you learned anything.", Tone::Warn);
         }
     }
@@ -112,21 +123,52 @@ impl MitmRelay {
             return;
         }
         let g = DRONE_GROUP;
-        let (Some(_), Some(kc_relay)) = (self.k_patrol, self.k_control) else {
-            self.outcome = Some(("You forwarded the exchange honestly, so you never held a key. The control desk read the patrol's real message and you read nothing. That is Diffie–Hellman working as intended.".into(), false));
-            self.log.line("Control received the original message intact. You saw nothing.", Tone::Dim);
-            host.status("Relayed honestly. To read or change the traffic, substitute your key on BOTH exchanges.", Tone::Warn);
-            self.stage = Stage::Done;
+        let kc = g.shared(self.control.secret, self.to_control);
+        let forwarded = match self.reenc {
+            0 => self.k_patrol.map(|k| gcm_encrypt_text(&g.session_key(k), &self.message.nonce, &self.text)),
+            1 => self.k_control.map(|k| gcm_encrypt_text(&g.session_key(k), &self.message.nonce, &self.text)),
+            _ => Some(self.message.clone()),
+        };
+        let Some(forwarded) = forwarded else {
+            host.status("You do not hold that key.", Tone::Bad);
             return;
         };
-        let forwarded = gcm_encrypt_text(&g.session_key(kc_relay), &self.message.nonce, &self.text);
-        let kc = g.shared(self.control.secret, self.to_control);
-        let seen = gcm_decrypt_text(&g.session_key(kc), &forwarded).unwrap_or_else(|_| "(garbled)".into());
-        self.outcome = Some((seen, true));
-        self.log.line("Control accepted your rewritten message as genuine.", Tone::Bad);
-        host.sfx("unlock");
-        host.solve("You sat in the middle of the whole conversation. The cure is authentication: make each side sign its public value, and your substituted key no longer matches a signature. That is Chapter 4.");
-        self.stage = Stage::Done;
+        match gcm_decrypt_text(&g.session_key(kc), &forwarded) {
+            Err(_) => {
+                let why = match self.reenc {
+                    0 => "You re-encrypted with the key you share with the PATROL. Control holds a different key, so the tag fails and the desk raises an alarm on line 7.",
+                    1 => "That should not happen.",
+                    _ if self.k_control.is_none() => "You never gave control your M, so control's key is not one you know. The untouched ciphertext was made for a key that differs from control's, and its tag fails.",
+                    _ => "The patrol encrypted under the key it shares with you, not with control. Passed on untouched, the tag fails at the desk.",
+                };
+                self.log.line("Control: authentication tag mismatch. Alarm raised.", Tone::Bad);
+                host.status(why, Tone::Bad);
+                host.sfx("error");
+            }
+            Ok(seen) => {
+                if self.k_patrol.is_none() && self.k_control.is_none() {
+                    self.outcome = Some(("You forwarded the exchange honestly, so you never held a key. The control desk read the patrol's real message and you read nothing. That is Diffie–Hellman working as intended.".into(), false));
+                    self.log.line("Control received the original message intact. You saw nothing.", Tone::Dim);
+                    host.status("Relayed honestly. To read or change the traffic, substitute your key on BOTH exchanges.", Tone::Warn);
+                    self.stage = Stage::Done;
+                    return;
+                }
+                if self.k_patrol.is_none() {
+                    self.log.line("Control accepted a message from you, believing it came from the patrol.", Tone::Warn);
+                    host.status("Control believes whatever you send it: it shares its key with you. But you never read the patrol's log, because the patrol got control's real B. Swap both sides to sit in the middle.", Tone::Warn);
+                    return;
+                }
+                if seen == ORIGINAL {
+                    host.status("Control decrypts it fine… and flags the Exchange for audit. You were in the middle; change what it says before you pass it on.", Tone::Warn);
+                    return;
+                }
+                self.outcome = Some((seen, true));
+                self.log.line("Control accepted your rewritten message as genuine.", Tone::Bad);
+                host.sfx("unlock");
+                host.solve("You sat in the middle of the whole conversation. The cure is authentication: make each side sign its public value, and your substituted key no longer matches a signature. That is Chapter 4.");
+                self.stage = Stage::Done;
+            }
+        }
     }
 
     fn reset(&mut self) {
@@ -137,6 +179,8 @@ impl MitmRelay {
         self.k_patrol = None;
         self.k_control = None;
         self.outcome = None;
+        self.text.clear();
+        self.reenc = 0;
         self.log.line("Line 7 reset. The nodes start a fresh exchange.", Tone::Dim);
     }
 }
@@ -226,16 +270,37 @@ impl Puzzle for MitmRelay {
                 ui.label(RichText::new(format!("▶ PATROL → CONTROL   MSG  {} bytes, GCM", self.message.ct.len())).font(mono(13.0)));
                 match self.read() {
                     Some(text) => {
-                        note(ui, "Decrypted with your shared-with-patrol key:");
+                        note(ui, "Decrypted with the key you share with the patrol:");
                         ui.add(egui::Label::new(RichText::new(text).font(mono(15.0)).color(GREEN)).wrap());
-                        note(ui, "Re-encrypt whatever you like for the control desk:");
+                        note(ui, "Rewrite it for the control desk:");
                         ui.add(egui::TextEdit::multiline(&mut self.text).desired_rows(2).desired_width(f32::INFINITY).font(mono(13.5)));
                     }
-                    None => note(ui, "You do not share a key with the patrol, so this is just ciphertext to you. (Forward both exchanges unchanged and you learn nothing.)"),
+                    None => note(ui, "You do not share a key with the patrol, so this is just ciphertext to you. (The patrol got control's real B.)"),
                 }
-                if button(ui, "Relay to control desk", Kind::Primary).clicked() {
-                    act = Act::Deliver;
+                note(ui, "Pass it on:");
+                let choices: [(u8, &str, bool); 3] = [
+                    (0, "re-encrypt with your key shared with the patrol", self.k_patrol.is_some()),
+                    (1, "re-encrypt with your key shared with control", self.k_control.is_some()),
+                    (2, "forward the ciphertext untouched", true),
+                ];
+                for (v, label, ok) in choices {
+                    if !ok {
+                        continue;
+                    }
+                    if select_card(ui, self.reenc == v, AMBER, |ui| {
+                        ui.label(RichText::new(label).font(mono(13.0)));
+                    }) {
+                        self.reenc = v;
+                    }
                 }
+                ui.horizontal_wrapped(|ui| {
+                    if button(ui, "Relay to control desk", Kind::Primary).clicked() {
+                        act = Act::Deliver;
+                    }
+                    if button(ui, "Drop the line and start over", Kind::Ghost).clicked() {
+                        act = Act::Reset;
+                    }
+                });
             }
             Stage::Done => {
                 match &self.outcome {
@@ -277,6 +342,39 @@ impl Puzzle for MitmRelay {
         self.patrol_hello(true, host);
         self.control_hello(true, host);
         self.text = REWRITE.into();
+        self.reenc = 1;
         self.deliver(host);
+    }
+
+    fn steps(&self) -> Vec<StepView> {
+        let m = self.relay.map(|r| r.public);
+        let swapped_a = m.is_some_and(|m| self.to_control == m);
+        let swapped_b = m.is_some_and(|m| self.to_patrol == m);
+        let solved = self.outcome.as_ref().is_some_and(|(_, ok)| *ok);
+        steps(&[
+            ("Make yourself a key pair in their group", "You need a public value M of your own to hand out.", self.relay.is_some()),
+            ("Give control your M instead of the patrol's A", "Control will then compute a key with you, thinking it is the patrol.", swapped_a || solved),
+            ("Give the patrol your M instead of control's B", "Now the patrol shares a key with you too.", swapped_b || solved),
+            ("Read the log, rewrite it, re-encrypt it for control", "You hold two keys. Which one does the control desk have?", solved),
+        ])
+    }
+
+    fn deep_sheet(&self) -> Option<HandSheet> {
+        let g = TOY_GROUP;
+        let mut rng = self.world.rng("ch2/mitm-deep");
+        let (a, b, m) = (2 + rng.int(500) as u64, 2 + rng.int(500) as u64, 2 + rng.int(500) as u64);
+        let (ya, yb, ym) = (g.public(a), g.public(b), g.public(m));
+        Some(HandSheet::new(
+            "two keys in the middle",
+            &format!("p = {}, g = {}. The patrol's secret is a = {a}, control's is b = {b}, yours is m = {m}. You swap your M into both exchanges.", g.p, g.g),
+            240.0,
+            vec![
+                HandCell::new(format!("A = g^a mod {}", g.p), "what the patrol sends", ya as i64),
+                HandCell::new(format!("M = g^m mod {}", g.p), "what both of them receive", ym as i64),
+                HandCell::new(format!("your key with the patrol: A^m mod {}", g.p), "", g.shared(m, ya) as i64),
+                HandCell::new(format!("the patrol's key: M^a mod {}", g.p), "it should equal the line above", g.shared(a, ym) as i64),
+                HandCell::new(format!("your key with control: B^m mod {} (B = {yb})", g.p), "a different number: two conversations", g.shared(m, yb) as i64),
+            ],
+        ))
     }
 }

@@ -1,20 +1,24 @@
 //! Chapter 5, part 1. The Directorate checkpoint wants to see your key.
 //! Instead you prove you *hold* it, revealing nothing, with the Schnorr
 //! identification protocol: commit R = r·G, receive challenge c, answer
-//! s = r + c·x; the verifier checks s·G = R + c·X. A full-size challenge makes
-//! bluffing hopeless.
+//! s = r + c·x; the verifier checks s·G = R + c·X. The player builds the
+//! response formula; the terminal evaluates it with the real numbers. A
+//! full-size challenge makes bluffing hopeless.
 
 use std::rc::Rc;
 
 use cpl_crypto::bytes::{Big, to_hex};
 use cpl_crypto::drbg::Drbg;
-use cpl_crypto::secp::{N, Pt, compressed, mul};
-use cpl_crypto::sigma::{Transcript, commit, respond, verify_transcript};
+use cpl_crypto::secp::{N, Pt, compressed, mod_n, mul};
+use cpl_crypto::sigma::{Transcript, commit, verify_transcript};
 use egui::{Color32, RichText};
 
-use crate::puzzle::{Host, Puzzle};
+use crate::puzzle::{HandCell, HandSheet, Host, Puzzle, StepView, steps};
 use crate::ui::theme::{AMBER, DIM, RED, TEXT, VIOLET, mono};
-use crate::ui::widgets::{Kind, Log, Tone, button, card, lede, math, note, shorten};
+use crate::ui::widgets::{Formula, Kind, Log, Part, Tone, button, button_enabled, card, formula, lede, math, note, shorten};
+
+const PARTS: &[Part] = &[Part::Text("s = "), Part::Slot, Part::Text(" + "), Part::Slot, Part::Text(" · "), Part::Slot, Part::Text("   mod n")];
+const PALETTE: &[&str] = &["r", "c", "x", "R", "X"];
 use crate::world::{World, hex32};
 
 const NEEDED: u32 = 3;
@@ -27,12 +31,15 @@ pub struct SigmaCheckpoint {
     passed: u32,
     counter: u64,
     log: Log,
+    response: Formula,
+    built_ok: bool,
+    committed_once: bool,
 }
 
 impl SigmaCheckpoint {
     pub fn new(world: Rc<World>) -> Self {
         let x = world.identity().x.clone();
-        Self { big_x: mul(&x), x, pending: None, passed: 0, counter: 0, log: Log::default() }
+        Self { big_x: mul(&x), x, pending: None, passed: 0, counter: 0, log: Log::default(), response: Formula::new(PARTS), built_ok: false, committed_once: false }
     }
 
     fn fresh(&mut self, what: &str) -> Drbg {
@@ -46,21 +53,53 @@ impl SigmaCheckpoint {
         self.log.line(format!("round {}: R = {}", self.passed + 1, shorten(&to_hex(&compressed(&rp)), 8, 6)), Tone::Dim);
         self.log.line(format!("checkpoint challenges c = {}", shorten(&c.to_str_radix(16), 8, 6)), Tone::Info);
         self.pending = Some((r, rp, c));
+        self.committed_once = true;
         host.sfx("blip");
+    }
+
+    /// The player's response formula, evaluated with this round's numbers.
+    fn evaluate(&self, r: &Big, c: &Big) -> Result<Big, String> {
+        let toks = self.response.tokens();
+        let (Some(a), Some(b), Some(d)) = (toks[0], toks[1], toks[2]) else { return Err("Build the response first.".into()) };
+        if [a, b, d].iter().any(|t| *t >= 3) {
+            return Err("R and X are points. s is a number mod n: build it from r, c and x.".into());
+        }
+        let val = |t: usize| match t {
+            0 => r.clone(),
+            1 => c.clone(),
+            _ => self.x.clone(),
+        };
+        Ok(mod_n(&(val(a) + val(b) * val(d))))
     }
 
     fn do_respond(&mut self, honest: bool, host: &mut Host) {
         if host.solved() {
             return;
         }
-        let Some((r, rp, c)) = self.pending.take() else { return };
-        let s = if honest { respond(&r, &c, &self.x) } else { self.fresh("bluff").scalar(&N) };
+        let Some((r, rp, c)) = self.pending.clone() else { return };
+        let s = if honest {
+            match self.evaluate(&r, &c) {
+                Ok(s) => s,
+                Err(e) => {
+                    host.status(e, Tone::Bad);
+                    host.sfx("error");
+                    return;
+                }
+            }
+        } else {
+            self.fresh("bluff").scalar(&N)
+        };
+        self.pending = None;
         let ok = verify_transcript(&self.big_x, &Transcript { r_point: rp, c, s: s.clone() });
+        if honest {
+            self.built_ok = ok;
+        }
         self.log.line(format!("s = {} · verify s·G = R + c·X → {}", shorten(&s.to_str_radix(16), 8, 6), if ok { "PASS" } else { "FAIL" }), if ok { Tone::Ok } else { Tone::Bad });
         if !ok {
             host.sfx("error");
             self.passed = 0;
-            host.status("Verification failed. A bluff against a full-size challenge has no chance. Start over.", Tone::Bad);
+            let why = if honest { "Verification failed: s·G ≠ R + c·X. Expand R = r·G and X = x·G: which s makes both sides agree? The count starts over." } else { "Verification failed. A bluff against a full-size challenge has no chance. Start over." };
+            host.status(why, Tone::Bad);
             return;
         }
         host.sfx("confirm");
@@ -130,9 +169,10 @@ impl Puzzle for SigmaCheckpoint {
                         ui.label(RichText::new(shorten(&hex32(c), 10, 8)).font(mono(12.5)).color(AMBER));
                         ui.end_row();
                     });
-                    note(ui, "Answer with s = r + c·x. The checkpoint will verify s·G = R + c·X.");
+                    note(ui, "Answer with a number s. The checkpoint will verify s·G = R + c·X, knowing only R, c and X.");
+                    formula(ui, PARTS, PALETTE, &mut self.response);
                     ui.horizontal_wrapped(|ui| {
-                        if button(ui, "Respond s = r + c·x", Kind::Primary).clicked() {
+                        if button_enabled(ui, self.response.complete(), "Send s", Kind::Primary).clicked() {
                             action = Some(1);
                         }
                         if button(ui, "Try to bluff (random s)", Kind::Ghost).clicked() {
@@ -152,9 +192,39 @@ impl Puzzle for SigmaCheckpoint {
     }
 
     fn autoplay(&mut self, host: &mut Host) {
-        for _ in 0..NEEDED {
-            self.do_commit(host);
+        self.response.set(&[0, 1, 2]);
+        for _ in 0..2 * NEEDED {
+            if host.solved() {
+                break;
+            }
+            if self.pending.is_none() {
+                self.do_commit(host);
+            }
             self.do_respond(true, host);
         }
+    }
+
+    fn steps(&self) -> Vec<StepView> {
+        let rounds = format!("Pass three rounds in a row ({}/{NEEDED})", self.passed.min(NEEDED));
+        steps(&[
+            ("Commit: a fresh r, and R = r·G", "Never reuse r. That was all of Chapter 4.", self.committed_once),
+            ("Answer: build s from r, c and x", "The check is s·G = R + c·X. Write R as r·G and X as x·G.", self.built_ok),
+            (&rounds, "Each round needs a new commitment.", self.passed >= NEEDED),
+        ])
+    }
+
+    fn deep_sheet(&self) -> Option<HandSheet> {
+        Some(HandSheet::new(
+            "how lucky does a bluffer get",
+            "A prover without x can still pass one round if it guesses the challenge before committing (pick s, then R = s·G − c·X). With a challenge of b bits, a guess is right with odds 1 in 2^b. Answer each as N, for odds of 1 in N.",
+            150.0,
+            vec![
+                HandCell::new("1-bit challenges, one round", "", 2),
+                HandCell::new("1-bit challenges, three rounds in a row", "", 8),
+                HandCell::new("2-bit challenges, three rounds", "", 64),
+                HandCell::new("1-bit rounds needed for odds under one in a million", "2^20 = 1,048,576", 20),
+                HandCell::new("this checkpoint, one round: 2^?", "c is a 256-bit number", 256),
+            ],
+        ))
     }
 }

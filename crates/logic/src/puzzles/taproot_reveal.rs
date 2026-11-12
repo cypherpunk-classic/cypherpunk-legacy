@@ -10,7 +10,7 @@ use cpl_crypto::secp::x_only;
 use cpl_crypto::taproot::{LEAF_VERSION_TAPSCRIPT, tap_branch_hash, tap_leaf_hash, tweak_key};
 use egui::{Color32, RichText};
 
-use crate::puzzle::{Host, Puzzle};
+use crate::puzzle::{HandCell, HandSheet, Host, Puzzle, StepView, steps};
 use crate::ui::theme::{self, AMBER, CYAN, DIM, GREEN, RED, TEXT, mono};
 use crate::ui::widgets::{Kind, Tone, button, card, lede, math, note, shorten, tag};
 use crate::world::{World, hex32};
@@ -28,12 +28,13 @@ pub struct TaprootReveal {
     internal_x: [u8; 32],
     selected: Vec<String>,
     outcome: Option<Outcome>,
+    tries: u32,
 }
 
 impl TaprootReveal {
     pub fn new(world: Rc<World>) -> Self {
         let internal_x = x_only(&world.grandpa().p);
-        Self { world, internal_x, selected: Vec::new(), outcome: None }
+        Self { world, internal_x, selected: Vec::new(), outcome: None, tries: 0 }
     }
 
     fn toggle(&mut self, id: &str, on: bool) {
@@ -61,6 +62,7 @@ impl TaprootReveal {
         let root = tap_branch_hash(&tap_leaf_hash(&a.script, LEAF_VERSION_TAPSCRIPT), &tap_leaf_hash(&b.script, LEAF_VERSION_TAPSCRIPT));
         let Ok(tw) = tweak_key(&self.internal_x, Some(&root), "bc") else { return };
         let matched = tw.address == tp.target.address;
+        self.tries += 1;
         // name the pair in the order Grandpa drafted them
         let (first, second) = if tp.leaves.iter().position(|l| l.id == a.id) < tp.leaves.iter().position(|l| l.id == b.id) { (a, b) } else { (b, a) };
         self.outcome = Some(Outcome { root, tweak: hex32(&tw.tweak), address: tw.address, matched, names: format!("{}  ·  {}", first.label, second.label) });
@@ -173,5 +175,29 @@ impl Puzzle for TaprootReveal {
         self.toggle(a, true);
         self.toggle(b, true);
         self.check(host);
+    }
+
+    fn steps(&self) -> Vec<StepView> {
+        let matched = self.outcome.as_ref().is_some_and(|o| o.matched);
+        steps(&[
+            ("Pick two spending conditions", "Which two would Grandpa have written? Read the scripts: who can spend, and when.", self.selected.len() == 2 || matched),
+            ("Build the tree and compare addresses", "A wrong pair gives a different tweak, so a different address.", self.tries > 0),
+            ("Reproduce the Vault address", "", matched),
+        ])
+    }
+
+    fn deep_sheet(&self) -> Option<HandSheet> {
+        Some(HandSheet::new(
+            "what a Taproot tree hides",
+            "A Taproot spend through a script reveals one leaf and a control block: 33 bytes (leaf version and internal key) plus 32 bytes per level of the Merkle path. Everything else in the tree stays hidden.",
+            150.0,
+            vec![
+                HandCell::new("two-leaf trees you can build from four drafts", "pairs: 4·3/2", 6),
+                HandCell::new("control block for a leaf at depth 1, in bytes", "33 + 32·depth", 65),
+                HandCell::new("…at depth 3 (a tree of 8 leaves)", "", 129),
+                HandCell::new("leaves you could hide at depth 10", "2^depth", 1024),
+                HandCell::new("bytes revealed for spending by key path instead", "just a 64-byte signature", 64),
+            ],
+        ))
     }
 }

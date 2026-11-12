@@ -2,7 +2,8 @@
 //! sign a release statement with your inherited key (BIP-340), bind it to the
 //! Archive's hash, and broadcast it to every node in Cryptopolis. Warden's
 //! whole power was keeping things locked; a signature everyone can verify ends
-//! it.
+//! it. The terminal also shows who carries it: your allies, who each check the
+//! signature before passing it on, and the Hashcash postage for the remailers.
 
 use std::rc::Rc;
 
@@ -12,8 +13,9 @@ use cpl_crypto::bytes::to_hex;
 use cpl_crypto::drbg::random_bytes;
 use egui::{Color32, CornerRadius, Margin, RichText, Stroke};
 
-use crate::puzzle::{Host, Puzzle};
-use crate::ui::theme::{self, CYAN, GREEN, LINE, mono};
+use crate::puzzle::{Host, Puzzle, StepView, steps};
+use crate::script::Ctx;
+use crate::ui::theme::{self, AMBER, CYAN, DIM, GREEN, LINE, VIOLET, mono};
 use crate::ui::widgets::{Kind, Tone, button, card, hex_box, lede, note};
 use crate::world::World;
 
@@ -24,16 +26,30 @@ We cannot expect governments, corporations, or other large, faceless organizatio
 Cypherpunks write code. We know that someone has to write software to defend privacy, and we're going to write it.";
 
 pub struct Broadcast {
+    ctx: Ctx,
     world: Rc<World>,
     statement: String,
     signature: Option<(String, bool)>,
+    /// the player checked the signature themselves before sending
+    verified: bool,
+    sent: bool,
 }
 
 impl Broadcast {
-    pub fn new(world: Rc<World>) -> Self {
+    pub fn new(ctx: Ctx) -> Self {
+        let world = ctx.world();
         let archive_hash = sha256_hex(format!("{MANIFESTO}|archive|{}", world.seed_hex()).as_bytes());
         let statement = format!("CYPHERPUNK LEGACY — PUBLIC RELEASE\nReleased by: {}\nArchive SHA-256: {archive_hash}\n\n{MANIFESTO}", world.handle());
-        Self { world, statement, signature: None }
+        Self { ctx, world, statement, signature: None, verified: false, sent: false }
+    }
+
+    fn verify_own(&mut self, host: &mut Host) {
+        let Some((hex, _)) = &self.signature else { return };
+        let bytes = cpl_crypto::bytes::from_hex(hex).unwrap_or_default();
+        let ok = cpl_crypto::bip340::verify_bytes(&bytes, self.statement.as_bytes(), &self.world.identity().xonly);
+        self.verified = ok;
+        host.sfx(if ok { "confirm" } else { "error" });
+        host.status(if ok { "It verifies against your public key, exactly as every node will check it. Broadcast." } else { "It does not verify." }, if ok { Tone::Ok } else { Tone::Bad });
     }
 
     fn sign(&mut self, host: &mut Host) {
@@ -52,6 +68,11 @@ impl Broadcast {
         if host.solved() || self.signature.is_none() {
             return;
         }
+        if !self.verified {
+            host.status("Check your own signature first. Every node will.", Tone::Warn);
+            return;
+        }
+        self.sent = true;
         host.sfx("success");
         host.solve("Broadcast complete. The manifesto and the Archive are public, signed, and permanent. There is no key that locks this again.");
     }
@@ -100,6 +121,18 @@ impl Puzzle for Broadcast {
                 });
             });
         });
+        {
+            let state = self.ctx.state_ref();
+            let names: Vec<&str> = state.data.allies.iter().map(|a| crate::allies::ally_def(a).map(|d| d.name).unwrap_or(a.as_str())).collect();
+            let stamps = state.data.stamps.len();
+            card(ui, Some("Who carries it"), None, |ui| {
+                ui.label(RichText::new(format!("{} allies will check the signature and pass it on", names.len())).font(mono(13.0)).color(VIOLET));
+                if !names.is_empty() {
+                    ui.add(egui::Label::new(RichText::new(names.join(" · ")).font(mono(12.0)).color(DIM)).wrap());
+                }
+                ui.label(RichText::new(format!("route: three remailers · postage: {} Hashcash stamp{} attached", stamps.min(3), if stamps.min(3) == 1 { "" } else { "s" })).font(mono(12.5)).color(AMBER));
+            });
+        }
         let mut act: Option<u8> = None;
         card(ui, Some("Sign and broadcast"), None, |ui| {
             hex_box(ui, &to_hex(&self.world.identity().xonly), Some("your inherited public key (BIP-340 x-only)"), None, false);
@@ -110,7 +143,10 @@ impl Puzzle for Broadcast {
                 hex_box(ui, sig, Some("signature (verifies against your public key, forever)"), Some(GREEN), false);
                 note(ui, if *ok { "Valid. Every node in Cryptopolis can check this against your public key and the Archive hash." } else { "invalid" });
                 ui.horizontal_wrapped(|ui| {
-                    if !host.solved() && button(ui, "Broadcast to all nodes", Kind::Primary).clicked() {
+                    if !self.verified && button(ui, "Verify it yourself", Kind::Normal).clicked() {
+                        act = Some(3);
+                    }
+                    if !host.solved() && self.verified && button(ui, "Broadcast to all nodes", Kind::Primary).clicked() {
                         act = Some(1);
                     }
                     if button(ui, "Save signed certificate", Kind::Normal).clicked() {
@@ -122,6 +158,7 @@ impl Puzzle for Broadcast {
         match act {
             Some(0) => self.sign(host),
             Some(1) => self.broadcast(host),
+            Some(3) => self.verify_own(host),
             Some(2) => {
                 if let Some(cert) = self.certificate() {
                     let name = format!("cypherpunk-legacy-{}.txt", self.world.handle());
@@ -136,6 +173,15 @@ impl Puzzle for Broadcast {
 
     fn autoplay(&mut self, host: &mut Host) {
         self.sign(host);
+        self.verify_own(host);
         self.broadcast(host);
+    }
+
+    fn steps(&self) -> Vec<StepView> {
+        steps(&[
+            ("Sign the release with your key", "", self.signature.is_some()),
+            ("Verify it yourself, the way every node will", "", self.verified),
+            ("Broadcast it", "", self.sent),
+        ])
     }
 }

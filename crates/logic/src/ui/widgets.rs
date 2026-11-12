@@ -419,12 +419,15 @@ pub fn countdown(ui: &mut Ui, left: f32, total: f32) {
 /// Draw a deep-dive sheet: one row per cell, a number to type, a tick when right.
 pub fn hand_sheet(ui: &mut Ui, sheet: &mut crate::puzzle::HandSheet, hints: bool) {
     lede(ui, &sheet.intro);
-    egui::Grid::new(("hand-sheet", sheet.title.as_str())).num_columns(3).spacing([12.0, 6.0]).show(ui, |ui| {
-        for (i, cell) in sheet.cells.iter_mut().enumerate() {
-            ui.vertical(|ui| {
-                ui.label(RichText::new(&cell.label).font(mono(13.0)).color(TEXT));
+    ui.add_space(6.0);
+    for (i, cell) in sheet.cells.iter_mut().enumerate() {
+        ui.horizontal(|ui| {
+            let label_w = (ui.available_width() - 160.0).max(220.0);
+            ui.allocate_ui_with_layout(egui::vec2(label_w, 0.0), egui::Layout::top_down(egui::Align::LEFT), |ui| {
+                ui.set_width(label_w);
+                ui.add(egui::Label::new(RichText::new(&cell.label).font(mono(13.5)).color(TEXT)).wrap());
                 if hints && !cell.hint.is_empty() {
-                    ui.label(RichText::new(&cell.hint).font(mono(11.0)).color(DIM));
+                    ui.add(egui::Label::new(RichText::new(&cell.hint).font(mono(11.5)).color(DIM)).wrap());
                 }
             });
             ui.add(egui::TextEdit::singleline(&mut cell.input).id_salt(("hand", i)).font(mono(14.0)).desired_width(110.0));
@@ -435,8 +438,8 @@ pub fn hand_sheet(ui: &mut Ui, sheet: &mut crate::puzzle::HandSheet, hints: bool
             } else {
                 ("✕", RED)
             };
-            ui.label(RichText::new(mark).font(mono(14.0)).color(c));
-            ui.end_row();
-        }
-    });
+            ui.label(RichText::new(mark).font(mono(15.0)).color(c));
+        });
+        ui.add_space(6.0);
+    }
 }

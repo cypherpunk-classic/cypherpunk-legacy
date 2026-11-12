@@ -134,7 +134,7 @@ pub fn show(ctx: &egui::Context, ap: &mut ActivePuzzle, dt: f32) -> Option<bool>
             };
             if side && ap.deep.is_none() {
                 ui.horizontal_top(|ui| {
-                    ui.allocate_ui(egui::vec2(196.0, body_h), |ui| {
+                    ui.allocate_ui_with_layout(egui::vec2(196.0, body_h), Layout::top_down(Align::LEFT), |ui| {
                         ui.set_width(196.0);
                         egui::Frame::NONE.fill(theme::rgb(0x0a0f1c)).stroke(Stroke::new(1.0, LINE)).corner_radius(CornerRadius::same(4)).inner_margin(Margin::same(8)).show(ui, |ui| {
                             ui.set_width(180.0);

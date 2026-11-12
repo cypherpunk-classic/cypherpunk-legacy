@@ -20,6 +20,9 @@ pub struct Launch {
     pub exit_at_end: bool,
     /// The autopilot takes the side quests too (`CPL_SIDE=1` / `?side`).
     pub side: bool,
+    /// Preview puzzle terminals instead of playing: ids separated by commas,
+    /// or `all` (`CPL_PUZZLE=ch4.nonce` / `?puzzle=ch4.nonce`).
+    pub puzzle: Option<String>,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -30,7 +33,7 @@ mod imp {
 
     pub fn launch() -> Launch {
         let var = |k: &str| std::env::var(k).ok().filter(|v| !v.is_empty());
-        let autoplay = var("CPL_AUTOPLAY").is_some_and(|v| v != "0");
+        let autoplay = var("CPL_AUTOPLAY").is_some_and(|v| v != "0") || var("CPL_PUZZLE").is_some();
         Launch {
             autoplay,
             pace: var("CPL_PACE").and_then(|v| v.parse().ok()).unwrap_or(0.0),
@@ -40,6 +43,7 @@ mod imp {
             shot_every: var("CPL_SHOT_EVERY").and_then(|v| v.parse().ok()),
             exit_at_end: var("CPL_EXIT_AT_END").is_some_and(|v| v != "0"),
             side: var("CPL_SIDE").is_some_and(|v| v != "0"),
+            puzzle: var("CPL_PUZZLE"),
         }
     }
 
@@ -121,7 +125,7 @@ mod imp {
         let autoplay = param("autoplay");
         let demo = autoplay.as_deref() == Some("demo");
         Launch {
-            autoplay: autoplay.is_some(),
+            autoplay: autoplay.is_some() || param("puzzle").is_some(),
             pace: param("pace").and_then(|v| v.parse().ok()).unwrap_or(if demo { 1.4 } else { 0.0 }),
             speed: param("speed").and_then(|v| v.parse().ok()).unwrap_or(1.0),
             seed: param("seed"),
@@ -129,6 +133,7 @@ mod imp {
             shot_every: None,
             exit_at_end: false,
             side: param("side").is_some() || autoplay.as_deref() == Some("full"),
+            puzzle: param("puzzle"),
         }
     }
 

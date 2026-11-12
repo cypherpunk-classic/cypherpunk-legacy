@@ -159,6 +159,31 @@ impl Game {
         true
     }
 
+    /// Open one puzzle's terminal on its own (development previews and
+    /// screenshots: `CPL_PUZZLE=ch4.nonce`). Returns false if busy or unknown.
+    pub fn preview_puzzle(&mut self, id: &str) -> bool {
+        if self.busy() {
+            return false;
+        }
+        let c = self.ctx.clone();
+        let Some(p) = crate::puzzles::make(id, &c) else { return false };
+        self.runner.spawn(format!("preview:{id}"), true, Box::pin(async move {
+            c.puzzle(p).await;
+        }));
+        self.pump();
+        true
+    }
+
+    /// Close the open terminal as if the player left it (previews).
+    pub fn close_terminal(&mut self) {
+        if let Some(ap) = self.terminal.take() {
+            let ok = ap.host.solved();
+            self.ctx.shared().reply(ap.reply, Reply::Bool(ok));
+            self.close_modal();
+            self.pump();
+        }
+    }
+
     /// The Dragnet's trace reached 100 with the player at (x, y).
     pub fn flagged(&mut self, x: f32, y: f32) {
         if self.busy() {

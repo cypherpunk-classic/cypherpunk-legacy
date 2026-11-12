@@ -1,7 +1,8 @@
 //! Chapter 2, part 1. Diffie–Hellman with numbers small enough to watch:
-//! p = 1019, g = 4 (order 509). Pick a secret, publish g^a, combine with
-//! Felix's public value, and end up with the same key he has. Then watch an
-//! eavesdropper break such a tiny group by trying every exponent.
+//! p = 1019, g = 4 (order 509). Pick a secret, publish g^a, then build the
+//! shared key yourself from what you hold (a and Felix's B) and land on the
+//! same number he does. Then watch an eavesdropper break such a tiny group by
+//! trying every exponent.
 
 use std::rc::Rc;
 
@@ -9,12 +10,16 @@ use cpl_crypto::bytes::Big;
 use cpl_crypto::dh::TOY_GROUP;
 use egui::{Color32, RichText};
 
-use crate::puzzle::{Host, Puzzle};
+use crate::puzzle::{HandCell, HandSheet, Host, Puzzle, StepView, steps};
 use crate::ui::theme::{self, DIM, GREEN, RED, mono};
-use crate::ui::widgets::{Kind, Log, Tone, button, card, columns2, kv, lede, math, note};
+use crate::ui::widgets::{Formula, Kind, Log, Part, Tone, button, button_enabled, card, columns2, formula, kv, lede, math, note};
+
+const PARTS: &[Part] = &[Part::Text("K = "), Part::Slot, Part::Text(" ^ "), Part::Slot, Part::Text("  mod p")];
+const PALETTE: &[&str] = &["A", "B", "a", "b", "g"];
 use crate::world::World;
 
 pub struct DhBasics {
+    world: Rc<World>,
     a_input: String,
     a: Option<u64>,
     big_a: Option<u64>,
@@ -25,13 +30,18 @@ pub struct DhBasics {
     steps: Log,
     eve: Option<String>,
     random_counter: u64,
+    /// A has gone to Felix (and B is known to be his answer)
+    sent: bool,
+    key: Formula,
+    /// what the player's formula computed
+    mine: Option<u64>,
 }
 
 impl DhBasics {
     pub fn new(world: Rc<World>) -> Self {
         let g = TOY_GROUP;
         let b = u64::try_from(world.rng("ch2/felix-toy").range(&Big::from(2), &Big::from(g.q - 1))).unwrap();
-        Self { a_input: String::new(), a: None, big_a: None, b, big_b: g.public(b), k: None, kf: None, steps: Log::default(), eve: None, random_counter: 0 }
+        Self { world, a_input: String::new(), a: None, big_a: None, b, big_b: g.public(b), k: None, kf: None, steps: Log::default(), eve: None, random_counter: 0, sent: false, key: Formula::new(PARTS), mine: None }
     }
 
     fn compute_a(&mut self, host: &mut Host) {
@@ -61,29 +71,72 @@ impl DhBasics {
         self.big_a = Some(acc);
         self.k = None;
         self.kf = None;
+        self.sent = false;
+        self.mine = None;
         host.sfx("confirm");
         host.status("Now send A to Felix. It is safe to say out loud.", Tone::Info);
     }
 
     fn send(&mut self, host: &mut Host) {
-        let (Some(a), Some(big_a)) = (self.a, self.big_a) else {
+        let (Some(_), Some(big_a)) = (self.a, self.big_a) else {
             host.status("Compute A first.", Tone::Bad);
             return;
         };
         if host.solved() {
             return;
         }
-        let g = TOY_GROUP;
-        let k = g.shared(a, self.big_b);
-        let kf = g.shared(self.b, big_a);
-        self.k = Some(k);
-        self.kf = Some(kf);
-        if k != kf {
-            host.status("Keys differ? That should be impossible.", Tone::Bad);
+        self.kf = Some(TOY_GROUP.shared(self.b, big_a));
+        self.sent = true;
+        host.sfx("blip");
+        host.status("Felix has A, and he has computed his key from it. You have his B. Build yours.", Tone::Info);
+    }
+
+    /// Evaluate K = base ^ exponent with the real numbers, or say why not.
+    fn combine(&mut self, host: &mut Host) {
+        if host.solved() {
             return;
         }
-        host.sfx("unlock");
-        host.solve(format!("Same key on both sides: K = {k}. Nobody ever sent it."));
+        let (Some(a), Some(big_a), Some(kf)) = (self.a, self.big_a, self.kf) else {
+            host.status("Send A to Felix first.", Tone::Warn);
+            return;
+        };
+        let g = TOY_GROUP;
+        let toks = self.key.tokens();
+        let (Some(base), Some(exp)) = (toks[0], toks[1]) else { return };
+        if base == 3 || exp == 3 {
+            host.status("b is Felix's secret. It never left his machine, and it never will.", Tone::Bad);
+            host.sfx("error");
+            return;
+        }
+        if base == 2 {
+            host.status("a is a secret exponent, not a group element. The base must be one of the public values.", Tone::Bad);
+            host.sfx("error");
+            return;
+        }
+        if exp != 2 {
+            host.status(format!("{} is a group element, not an exponent. The only secret number you hold is a.", PALETTE[exp]), Tone::Bad);
+            host.sfx("error");
+            return;
+        }
+        let base_v = match base {
+            0 => big_a,
+            1 => self.big_b,
+            _ => g.g,
+        };
+        let k = g.pow(base_v, a);
+        self.mine = Some(k);
+        if k == kf {
+            self.k = Some(k);
+            host.sfx("unlock");
+            host.solve(format!("Same key on both sides: K = {k}. B^a = (g^b)^a = g^(ab) = (g^a)^b = A^b, and nobody ever sent it."));
+            return;
+        }
+        let why = match base {
+            0 => "A^a = g^(a·a): a number only you can compute, but Felix cannot. Use what he sent you.",
+            _ => "g^a is just A, your public value. Eve heard it on the line, so it is no secret.",
+        };
+        host.status(format!("You get {k}, Felix gets something else. {why}"), Tone::Bad);
+        host.sfx("error");
     }
 
     fn brute(&mut self) {
@@ -142,7 +195,7 @@ impl Puzzle for DhBasics {
                         if button(ui, "Compute A = g^a mod p", Kind::Primary).clicked() {
                             compute = true;
                         }
-                        if button(ui, "Send A to Felix", Kind::Normal).clicked() {
+                        if button_enabled(ui, self.big_a.is_some() && !self.sent, "Send A to Felix", Kind::Normal).clicked() {
                             send = true;
                         }
                     });
@@ -152,8 +205,8 @@ impl Puzzle for DhBasics {
                     if let Some(a) = self.big_a {
                         kv(ui, "dh-mine", &[("public A", a.to_string())]);
                     }
-                    if let Some(k) = self.k {
-                        kv(ui, "dh-mine-k", &[("you compute", "B^a mod p".into()), ("your key", k.to_string())]);
+                    if let Some(k) = self.mine {
+                        kv(ui, "dh-mine-k", &[("your key", k.to_string())]);
                     }
                 });
             },
@@ -161,8 +214,11 @@ impl Puzzle for DhBasics {
                 card(ui, Some("Felix"), None, |ui| {
                     kv(ui, "dh-felix", &[("secret b", "(only Felix knows)".into()), ("public B", big_b.to_string())]);
                     if let Some(kf) = self.kf {
-                        kv(ui, "dh-felix-k", &[("Felix computes", "A^b mod p".into()), ("his key", kf.to_string())]);
-                        ui.label(RichText::new(if Some(kf) == self.k { "keys match" } else { "keys differ" }).font(mono(13.0)).color(if Some(kf) == self.k { GREEN } else { RED }));
+                        let shown = if self.k.is_some() { kf.to_string() } else { "computed, kept to himself".into() };
+                        kv(ui, "dh-felix-k", &[("Felix computes", "A^b mod p".into()), ("his key", shown)]);
+                        if let Some(m) = self.mine {
+                            ui.label(RichText::new(if m == kf { "keys match" } else { "keys differ" }).font(mono(13.0)).color(if m == kf { GREEN } else { RED }));
+                        }
                     }
                 });
             },
@@ -173,10 +229,25 @@ impl Puzzle for DhBasics {
         if send {
             self.send(host);
         }
+        let mut combine = false;
+        card(ui, Some("Your key"), None, |ui| {
+            if !self.sent {
+                note(ui, "Send A first. Then you hold your secret a and Felix's public B; he holds b and your A.");
+                return;
+            }
+            note(ui, "Build your key from what you hold. It has to come out equal to Felix's, which he built from b and A.");
+            formula(ui, PARTS, PALETTE, &mut self.key);
+            if button_enabled(ui, self.key.complete() && !host.solved(), "Compute and compare with Felix", Kind::Primary).clicked() {
+                combine = true;
+            }
+        });
+        if combine {
+            self.combine(host);
+        }
         let mut brute = false;
         card(ui, Some("Eve, listening on the line"), None, |ui| {
             note(ui, "Eve sees p, g, A and B. To get K she needs a or b: a {discrete logarithm}.");
-            if self.k.is_some() {
+            if self.big_a.is_some() {
                 ui.horizontal(|ui| {
                     if button(ui, "Let Eve try every exponent", Kind::Normal).clicked() {
                         brute = true;
@@ -197,5 +268,36 @@ impl Puzzle for DhBasics {
         self.a_input = "277".into();
         self.compute_a(host);
         self.send(host);
+        self.key.set(&[1, 2]);
+        self.combine(host);
+    }
+
+    fn steps(&self) -> Vec<StepView> {
+        steps(&[
+            ("Choose a secret a and compute A = g^a mod p", "Any number from 2 to 508. Square-and-multiply does the rest.", self.big_a.is_some()),
+            ("Send A to Felix", "Public values are safe to say out loud. His B is already on the board.", self.sent),
+            ("Build the same key Felix has", "You hold a and B; he holds b and A. Both must land on g^(ab).", self.k.is_some()),
+            ("Let Eve try every exponent (optional)", "", self.eve.is_some()),
+        ])
+    }
+
+    fn deep_sheet(&self) -> Option<HandSheet> {
+        let g = TOY_GROUP;
+        let mut rng = self.world.rng("ch2/dh-deep");
+        let a = 11 + rng.int(20) as u64;
+        let b = 11 + rng.int(20) as u64;
+        let (ya, yb) = (g.public(a), g.public(b));
+        let k = g.shared(a, yb);
+        Some(HandSheet::new(
+            "Diffie–Hellman with pencil and paper",
+            &format!("p = {}, g = {}. Your secret is a = {a}; Felix's public value is B = {yb} (his secret, which you would never see, is b = {b}). Square-and-multiply: write the exponent in binary, square at every bit, multiply by the base at every 1.", g.p, g.g),
+            240.0,
+            vec![
+                HandCell::new(format!("A = {}^{a} mod {}", g.g, g.p), format!("{a} = 0b{a:b}"), ya as i64),
+                HandCell::new(format!("K = B^a = {yb}^{a} mod {}", g.p), "same method, bigger base", k as i64),
+                HandCell::new(format!("Felix's check: A^b = A^{b} mod {}", g.p), "it must equal your K", k as i64),
+                HandCell::new("exponents Eve must try, at most", "the group order, minus the trivial one", (g.q - 1) as i64),
+            ],
+        ))
     }
 }

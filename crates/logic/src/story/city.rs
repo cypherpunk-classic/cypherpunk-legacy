@@ -70,23 +70,59 @@ pub fn hint(c: &Ctx) -> &'static str {
             "Mara is by the radio shack at the west end of the Wharf. Look for the antenna."
         };
     }
-    if !f("ch2.done") {
+    if !f("ch2.logjam") {
         return "The Exchange gate is open now: west avenue, through the fence. Felix runs the switchboard.";
     }
-    if !f("ch3.done") {
+    if !f("ch2.book") {
+        return "Felix's press, in the Exchange. Grandpa's code is on paper; the scan needs fixing before it can be printed.";
+    }
+    if !f("ch2.done") {
+        return "Back to Felix. The book is out; he will want to hear it.";
+    }
+    if !f("ch3.feldman") {
         return "The Commons, east of the plaza. Juno is in the park. Shares hide in dead drops: a loose brick, a hollow tree.";
+    }
+    if !f("ch3.cash") {
+        return "The Commons Mint, in the park. Sol signs coins without ever seeing them. You will want a wallet.";
+    }
+    if !f("ch3.done") {
+        return "Juno again. She has the last piece of the Vault puzzle.";
     }
     if !f("vault.opened") {
         return "The Vault. Legacy Plaza. Now. I have waited a year for this.";
     }
-    if !f("ch4.done") {
+    if !f("party.done") {
+        return "Felix is throwing a key-signing party at the Exchange. Check every fingerprint, and every ID.";
+    }
+    if !f("ch4.nonce") {
         return "Ibrahim is at the Mint, north-east. Warden sealed the Archive door there.";
     }
+    if !f("ch4.rogue") {
+        return "The Archive door at the Mint. \"Joint custody\", the Directorate calls it.";
+    }
+    if !f("ch4.taproot") {
+        return "Ibrahim again. He found something in Grandpa's Vault address.";
+    }
+    if !f("ch4.clipper") {
+        return "The payphone by the Mint. The Directorate's escrow chip sits in it, sixteen bits of checksum and all.";
+    }
+    if !f("ch4.done") {
+        return "Ibrahim, at the Mint. The Archive is waiting.";
+    }
+    if !f("ch5.remail") {
+        return "The Masquerade, north-west. Lin's remailer is the server in the corner. Kestrel needs an answer that cannot be traced.";
+    }
+    if !f("ch5.stamps") {
+        return "The notice board in the Masquerade. Postage, paid in hashes.";
+    }
     if !f("ch5.done") {
-        return "The Masquerade, north-west. Lin will teach you to prove things without telling them.";
+        return "Lin will teach you to prove things without telling them.";
     }
     if !f("ch6.done") {
         return "Ada is at the Observatory, north of the plaza. Dress warmly; the future is cold.";
+    }
+    if f("ch5.stampsAgain") && c.state_ref().data.stamps.is_empty() {
+        return "The broadcast needs postage. Mint stamps at the Masquerade notice board, then the Vault.";
     }
     if !f("end.done") {
         return "Back to the Vault. Time to finish what he started.";
@@ -131,7 +167,7 @@ pub async fn gate(c: Ctx, which: &'static str) {
     let (a, b) = match which {
         "exchange" => ("A shimmering barrier: DIRECTORATE OF LAWFUL ACCESS — RESTRICTED ZONE.", "Mara can get this open. Help her first."),
         "commons" => ("The barrier crackles. A placard: CLOSED FOR YOUR SAFETY.", "Felix has the override for the Commons. One thing at a time."),
-        "mint" => ("The Mint is sealed: NOTICE OF LAWFUL SEIZURE.", "Open the Vault first. Your grandfather wrote down what to do about this."),
+        "mint" => ("The Mint is sealed: NOTICE OF LAWFUL SEIZURE.", if c.flag("vault.opened") { "Felix's key-signing party first. The people inside only open the door for keys they can check." } else { "Open the Vault first. Your grandfather wrote down what to do about this." }),
         "masks" => ("The barrier pulses in time with a checkpoint scanner beyond it.", "Finish at the Mint. Ibrahim will know who can let you in."),
         _ => ("Beyond the barrier, the Observatory dome is open to the sky.", "Ada only takes visitors who can pass a checkpoint without showing their papers. Lin first."),
     };

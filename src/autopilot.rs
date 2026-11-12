@@ -43,6 +43,9 @@ pub struct Autopilot {
     pub seed: Option<String>,
     /// Take the optional steps of the route too.
     pub side: bool,
+    /// Puzzle previews still to show, and where the current one is: (phase, since).
+    preview: Vec<String>,
+    preview_at: (u8, f64, u32),
     started: bool,
     path: Vec<Vec2>,
     goal: Option<(String, Vec2)>,
@@ -77,7 +80,12 @@ pub struct Autopilot {
 
 impl Autopilot {
     pub fn from_launch(l: &Launch) -> Self {
-        Self { on: l.autoplay, seed: l.seed.clone(), side: l.side, shots: l.shots.clone(), exit_at_end: l.exit_at_end, every: l.shot_every, ..default() }
+        let preview = match l.puzzle.as_deref() {
+            None => Vec::new(),
+            Some("all") => cpl_logic::puzzles::ALL.iter().map(|s| s.to_string()).collect(),
+            Some(list) => list.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect(),
+        };
+        Self { on: l.autoplay, seed: l.seed.clone(), side: l.side, preview, shots: l.shots.clone(), exit_at_end: l.exit_at_end, every: l.shot_every, ..default() }
     }
 
     fn shot_later(&mut self, now: f64, delay: f64, name: &str) {
@@ -328,6 +336,10 @@ pub fn drive(
         }
         Mode::World => {}
     }
+    if !ap.preview.is_empty() {
+        preview(&mut ap, &mut game, &director, now, &mut exit);
+        return;
+    }
     // the watchdog (CI only): a step that never finishes is a failure, not a hang
     if ap.exit_at_end && now - ap.step_start.2 > STEP_LIMIT {
         let doing = if game.busy() { game.busy_reason() } else { format!("walking, {} waypoints to go", ap.path.len()) };
@@ -461,6 +473,77 @@ pub fn drive(
                 ap.replans = 0;
             }
         }
+    }
+}
+
+/// One terminal at a time: open it fresh, solve it with its own autoplay,
+/// open its deep dive, a screenshot at each stage, then the next one.
+fn preview(ap: &mut Autopilot, game: &mut GameRes, director: &Director, now: f64, exit: &mut MessageWriter<AppExit>) {
+    let (phase, since, tries) = ap.preview_at;
+    let wait = now - since;
+    let id = ap.preview[0].clone();
+    match phase {
+        // let the opening scene finish (auto mode), then take over the controls
+        0 => {
+            if director.transition.is_some() || game.busy() {
+                return;
+            }
+            game.auto = false;
+            if game.preview_puzzle(&id) {
+                info!("[preview] {id}");
+                ap.preview_at = (1, now, 0);
+            } else {
+                warn!("[preview] cannot open {id}");
+                ap.preview.remove(0);
+            }
+        }
+        1 if wait > 1.2 => {
+            ap.shot_later(now, 0.0, &format!("{id}-1-open"));
+            ap.preview_at = (2, now, 0);
+        }
+        2 if wait > 0.5 => {
+            let solved = match game.terminal.as_mut() {
+                Some(t) => {
+                    if !t.host.solved() {
+                        t.puzzle.autoplay(&mut t.host);
+                    }
+                    t.host.solved()
+                }
+                None => true,
+            };
+            if solved || tries > 40 {
+                ap.preview_at = (3, now, 0);
+            } else {
+                ap.preview_at = (2, since, tries + 1);
+            }
+        }
+        3 if wait > 1.5 => {
+            ap.shot_later(now, 0.0, &format!("{id}-2-solved"));
+            ap.preview_at = (4, now, 0);
+        }
+        4 if wait > 0.5 => {
+            let deep = game.terminal.as_mut().is_some_and(|t| t.start_deep());
+            ap.preview_at = (if deep { 5 } else { 6 }, now, 0);
+        }
+        5 if wait > 1.0 => {
+            ap.shot_later(now, 0.0, &format!("{id}-3-deep"));
+            ap.preview_at = (6, now, 0);
+        }
+        6 if wait > 0.6 => {
+            game.close_terminal();
+            ap.preview.remove(0);
+            ap.preview_at = (0, now, 0);
+            if ap.preview.is_empty() {
+                info!("[preview] done");
+                if ap.exit_at_end {
+                    exit.write(AppExit::Success);
+                } else {
+                    // hand the game to the player
+                    ap.on = false;
+                }
+            }
+        }
+        _ => {}
     }
 }
 

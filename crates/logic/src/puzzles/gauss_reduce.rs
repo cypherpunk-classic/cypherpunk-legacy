@@ -3,23 +3,31 @@
 //! skewed, a good one short and near-orthogonal. Lagrange–Gauss reduction
 //! repeatedly subtracts the nearest multiple of the shorter vector from the
 //! longer and swaps. When it stops, the shorter vector is the shortest in the
-//! whole lattice. This is LLL's engine, visible.
+//! whole lattice. This is LLL's engine, visible. The player picks every
+//! multiple; the terminal only applies it and says whether the basis is
+//! reduced.
 
 use std::rc::Rc;
 
 use cpl_crypto::lattice::{Gauss2, V2, n2};
 use egui::{Align2, Color32, Pos2, RichText, Sense, Shape, Stroke};
 
-use crate::puzzle::{Host, Puzzle};
-use crate::ui::theme::{self, AMBER, CYAN, DIM, MAGENTA, TEXT, mono};
+use crate::puzzle::{HandCell, HandSheet, Host, Puzzle, StepView, steps};
+use crate::ui::theme::{self, AMBER, CYAN, DIM, GREEN, MAGENTA, TEXT, mono};
 use crate::ui::widgets::{Kind, Tone, button, card, lede, math, note};
 use crate::world::World;
 
 pub struct GaussReduce {
+    world: Rc<World>,
     s: Gauss2,
     shortest: i64,
     steps: u32,
     info: Option<(String, Color32)>,
+    /// the multiple of b₁ the player will subtract next
+    k: i64,
+    reductions: u32,
+    swaps: u32,
+    done: bool,
 }
 
 impl GaussReduce {
@@ -38,25 +46,32 @@ impl GaussReduce {
         }
         let s = Gauss2 { b1, b2 };
         let shortest = n2(s.reduce().0.b1);
-        Self { s, shortest, steps: 0, info: None }
+        Self { world, s, shortest, steps: 0, info: None, k: 1, reductions: 0, swaps: 0, done: false }
     }
 
     fn reduce_step(&mut self, host: &mut Host) {
-        let m = self.s.mu();
-        if m.nearest == 0 {
-            self.info = Some(("round(μ) = 0: subtracting would not help. Try a swap.".into(), AMBER));
-            host.sfx("error");
+        if self.k == 0 {
+            self.info = Some(("Subtracting 0·b₁ changes nothing.".into(), AMBER));
             return;
         }
-        self.s = self.s.step(m.nearest);
+        let before = n2(self.s.b2);
+        self.s = self.s.step(self.k);
         self.steps += 1;
+        self.reductions += 1;
+        let after = n2(self.s.b2);
         host.sfx("blip");
-        self.info = Some((format!("Subtracted {}·b₁ from b₂.", m.nearest), DIM));
+        let (text, c) = if after < before {
+            (format!("b₂ ← b₂ − {}·b₁: |b₂| went from {:.2} to {:.2}.", self.k, (before as f64).sqrt(), (after as f64).sqrt()), DIM)
+        } else {
+            (format!("b₂ ← b₂ − {}·b₁ made b₂ longer ({:.2} → {:.2}). Still the same lattice; try another multiple.", self.k, (before as f64).sqrt(), (after as f64).sqrt()), AMBER)
+        };
+        self.info = Some((text, c));
     }
 
     fn swap(&mut self, host: &mut Host) {
         self.s = self.s.swap();
         self.steps += 1;
+        self.swaps += 1;
         host.sfx("blip");
         self.info = Some(("Swapped.".into(), DIM));
     }
@@ -66,6 +81,7 @@ impl GaussReduce {
             return;
         }
         if self.s.is_reduced() {
+            self.done = true;
             host.sfx("unlock");
             host.solve(format!("Reduced in {} moves. b₁ is now a shortest nonzero vector of the lattice. In high dimensions this exact loop, run pairwise, is LLL.", self.steps));
         } else {
@@ -73,7 +89,7 @@ impl GaussReduce {
             let text = if n2(self.s.b1) > n2(self.s.b2) {
                 "Not reduced: b₂ is shorter than b₁. Swap them.".to_string()
             } else {
-                format!("Not reduced: |μ| = {:.2} > 0.5. Subtract round(μ)·b₁ from b₂.", m.value.abs())
+                format!("Not reduced: |μ| = {:.2} > 0.5, so some multiple of b₁ still shortens b₂.", m.value.abs())
             };
             self.info = Some((text, AMBER));
             host.sfx("error");
@@ -90,23 +106,26 @@ impl GaussReduce {
                 if self.s.mu().nearest == 0 {
                     break;
                 }
+                self.k = self.s.mu().nearest;
                 self.reduce_step(host);
             }
         }
         self.check(host);
     }
 
-    fn controls(&mut self, ui: &mut egui::Ui, act: &mut Option<u8>) {
+    fn controls(&mut self, ui: &mut egui::Ui, act: &mut Option<u8>, hints: bool) {
         lede(ui, "Both vectors below generate the same infinite grid of points. But one basis is a tangled mess and the equivalent short basis reveals the lattice's shortest vector. Reduce it.");
         math(ui, "μ = ⟨b₁,b₂⟩ / ⟨b₁,b₁⟩,   replace b₂ ← b₂ − round(μ)·b₁,   swap if |b₂| < |b₁|");
         let m = self.s.mu();
         let (b1, b2) = (self.s.b1, self.s.b2);
         card(ui, Some("Current basis"), None, |ui| {
             egui::Grid::new("gauss-basis").num_columns(2).spacing([12.0, 4.0]).show(ui, |ui| {
+                let mu = if hints { format!("{:.3}", m.value) } else { "work it out".into() };
                 let rows = [
                     ("b₁", format!("({}, {})  |b₁| = {:.2}", b1[0], b1[1], (n2(b1) as f64).sqrt()), CYAN),
                     ("b₂", format!("({}, {})  |b₂| = {:.2}", b2[0], b2[1], (n2(b2) as f64).sqrt()), MAGENTA),
-                    ("μ", format!("{:.3}  → round(μ) = {}", m.value, m.nearest), TEXT),
+                    ("⟨b₁,b₂⟩ / ⟨b₁,b₁⟩", format!("{} / {}", m.num, m.den), TEXT),
+                    ("μ", mu, TEXT),
                     ("det (area)", format!("{}  (never changes)", self.s.det()), TEXT),
                 ];
                 for (k, v, c) in rows {
@@ -118,20 +137,21 @@ impl GaussReduce {
         });
         card(ui, Some("Moves"), None, |ui| {
             note(ui, "Subtract the nearest multiple of the shorter vector from the longer, then swap so the shorter is b₁. Repeat until no subtraction shrinks anything.");
+            let preview = self.s.step(self.k).b2;
             ui.horizontal_wrapped(|ui| {
-                if button(ui, "b₂ ← b₂ − round(μ)·b₁", Kind::Primary).clicked() {
+                ui.label(RichText::new("k =").font(mono(13.0)).color(DIM));
+                ui.add(egui::DragValue::new(&mut self.k).range(-12..=12).speed(0.1));
+                ui.label(RichText::new(format!("→ b₂ would be ({}, {}), |b₂| = {:.2}", preview[0], preview[1], (n2(preview) as f64).sqrt())).font(mono(12.5)).color(if n2(preview) < n2(b2) { GREEN } else { DIM }));
+            });
+            ui.horizontal_wrapped(|ui| {
+                if button(ui, "b₂ ← b₂ − k·b₁", Kind::Primary).clicked() {
                     *act = Some(0);
                 }
                 if button(ui, "swap b₁ ↔ b₂", Kind::Normal).clicked() {
                     *act = Some(1);
                 }
-            });
-            ui.horizontal_wrapped(|ui| {
                 if button(ui, "Check if reduced", Kind::Normal).clicked() {
                     *act = Some(2);
-                }
-                if button(ui, "Auto-reduce", Kind::Ghost).clicked() {
-                    *act = Some(3);
                 }
             });
             if let Some((t, c)) = &self.info {
@@ -205,25 +225,55 @@ impl Puzzle for GaussReduce {
 
     fn ui(&mut self, ui: &mut egui::Ui, host: &mut Host) {
         let mut act = None;
+        let hints = host.hints;
         if ui.available_width() > 700.0 {
             ui.columns(2, |cols| {
-                self.controls(&mut cols[0], &mut act);
+                self.controls(&mut cols[0], &mut act, hints);
                 self.plot(&mut cols[1]);
             });
         } else {
-            self.controls(ui, &mut act);
+            self.controls(ui, &mut act, hints);
             self.plot(ui);
         }
         match act {
             Some(0) => self.reduce_step(host),
             Some(1) => self.swap(host),
             Some(2) => self.check(host),
-            Some(3) => self.auto(host),
             _ => {}
         }
     }
 
     fn autoplay(&mut self, host: &mut Host) {
         self.auto(host);
+    }
+
+    fn steps(&self) -> Vec<StepView> {
+        steps(&[
+            ("Shorten b₂ by subtracting a multiple of b₁", "The best k is the nearest whole number to ⟨b₁,b₂⟩ / ⟨b₁,b₁⟩.", self.reductions > 0),
+            ("Swap whenever b₂ becomes the shorter one", "", self.swaps > 0 || self.done),
+            ("Stop when nothing shrinks, and check", "Reduced means |μ| ≤ ½ and |b₁| ≤ |b₂|.", self.done),
+        ])
+    }
+
+    fn deep_sheet(&self) -> Option<HandSheet> {
+        let mut r = self.world.rng("ch6/gauss-deep");
+        let b1: V2 = [3 + r.int(3) as i64, 1 + r.int(2) as i64];
+        let k = 2 + r.int(3) as i64;
+        let b2: V2 = [k * b1[0] + 1, k * b1[1] - 2 + r.int(2) as i64];
+        let s = Gauss2 { b1, b2 };
+        let m = s.mu();
+        let next = s.step(m.nearest).b2;
+        Some(HandSheet::new(
+            "one Gauss step, by hand",
+            &format!("b₁ = ({}, {}), b₂ = ({}, {}). One reduction step: k = round(⟨b₁,b₂⟩ / ⟨b₁,b₁⟩), then b₂ ← b₂ − k·b₁.", b1[0], b1[1], b2[0], b2[1]),
+            150.0,
+            vec![
+                HandCell::new("⟨b₁,b₂⟩", "x₁x₂ + y₁y₂", m.num),
+                HandCell::new("⟨b₁,b₁⟩", "|b₁|²", m.den),
+                HandCell::new("k = round(μ)", "nearest whole number", m.nearest),
+                HandCell::new("new b₂, x", "", next[0]),
+                HandCell::new("new b₂, y", "", next[1]),
+            ],
+        ))
     }
 }

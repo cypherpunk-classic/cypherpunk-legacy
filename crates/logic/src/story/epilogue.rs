@@ -71,7 +71,7 @@ async fn finale(c: &Ctx) {
         c.follow();
     })
     .await;
-    if !c.puzzle(Box::new(Broadcast::new(c.world()))).await {
+    if !c.puzzle(Box::new(Broadcast::new(c.clone()))).await {
         return;
     }
     {
