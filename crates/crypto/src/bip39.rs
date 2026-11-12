@@ -53,7 +53,7 @@ pub struct ChecksumReport {
 }
 
 pub fn checksum_report<S: AsRef<str>>(words: &[S]) -> Result<ChecksumReport, String> {
-    if words.len() % 3 != 0 || words.len() < 12 {
+    if !words.len().is_multiple_of(3) || words.len() < 12 {
         return Err("mnemonic length must be 12, 15, 18, 21 or 24".into());
     }
     let bits = words.iter().map(|w| word_bits(w.as_ref())).collect::<Result<String, _>>()?;
@@ -98,7 +98,7 @@ pub fn recovery_funnel(words: &[Option<&str>], missing: usize, first_letter: cha
 }
 
 pub fn entropy_to_mnemonic(entropy: &[u8]) -> String {
-    assert!(entropy.len() % 4 == 0 && (16..=32).contains(&entropy.len()), "bad entropy length");
+    assert!(entropy.len().is_multiple_of(4) && (16..=32).contains(&entropy.len()), "bad entropy length");
     let cs_len = entropy.len() * 8 / 32;
     let mut bits = bytes_to_bits(entropy);
     bits.push_str(&bytes_to_bits(&Sha256::digest(entropy))[..cs_len]);

@@ -366,7 +366,7 @@ impl Puzzle for MitmRelay {
         let (ya, yb, ym) = (g.public(a), g.public(b), g.public(m));
         Some(HandSheet::new(
             "two keys in the middle",
-            &format!("p = {}, g = {}. The patrol's secret is a = {a}, control's is b = {b}, yours is m = {m}. You swap your M into both exchanges.", g.p, g.g),
+            format!("p = {}, g = {}. The patrol's secret is a = {a}, control's is b = {b}, yours is m = {m}. You swap your M into both exchanges.", g.p, g.g),
             240.0,
             vec![
                 HandCell::new(format!("A = g^a mod {}", g.p), "what the patrol sends", ya as i64),

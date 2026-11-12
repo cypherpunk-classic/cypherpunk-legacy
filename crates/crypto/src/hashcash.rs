@@ -192,7 +192,7 @@ mod tests {
         assert_eq!(verify(&stamp, "board@cryptopolis", 12, &[]).map(|b| b >= 12), Ok(true));
         assert_eq!(verify(&stamp, "other@cryptopolis", 12, &[]), Err(StampError::WrongResource));
         assert!(matches!(verify(&stamp, "board@cryptopolis", 20, &[]), Err(StampError::TooCheap { .. })));
-        assert_eq!(verify(&stamp, "board@cryptopolis", 12, &[stamp.clone()]), Err(StampError::Replayed));
+        assert_eq!(verify(&stamp, "board@cryptopolis", 12, std::slice::from_ref(&stamp)), Err(StampError::Replayed));
         // lying about the work is caught by the one hash the server computes
         let liar = stamp.replacen(":12:", ":30:", 1);
         assert!(matches!(verify(&liar, "board@cryptopolis", 12, &[]), Err(StampError::NotEnoughWork { .. })));

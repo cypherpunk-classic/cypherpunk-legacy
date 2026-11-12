@@ -290,7 +290,7 @@ impl Puzzle for DhBasics {
         let k = g.shared(a, yb);
         Some(HandSheet::new(
             "Diffie–Hellman with pencil and paper",
-            &format!("p = {}, g = {}. Your secret is a = {a}; Felix's public value is B = {yb} (his secret, which you would never see, is b = {b}). Square-and-multiply: write the exponent in binary, square at every bit, multiply by the base at every 1.", g.p, g.g),
+            format!("p = {}, g = {}. Your secret is a = {a}; Felix's public value is B = {yb} (his secret, which you would never see, is b = {b}). Square-and-multiply: write the exponent in binary, square at every bit, multiply by the base at every 1.", g.p, g.g),
             240.0,
             vec![
                 HandCell::new(format!("A = {}^{a} mod {}", g.g, g.p), format!("{a} = 0b{a:b}"), ya as i64),

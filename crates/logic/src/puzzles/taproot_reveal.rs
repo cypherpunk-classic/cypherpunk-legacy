@@ -117,7 +117,7 @@ impl Puzzle for TaprootReveal {
         card(ui, Some("Candidate spending conditions"), None, |ui| {
             note(ui, "Grandpa drafted four. Pick the two you think he committed to. The tree is a single branch of exactly two leaves.");
             for leaf in &tp.leaves {
-                let on = self.selected.iter().any(|s| *s == leaf.id);
+                let on = self.selected.contains(&leaf.id);
                 theme::card_frame(if on { Some(CYAN) } else { None }).show(ui, |ui| {
                     ui.set_width(ui.available_width());
                     ui.horizontal_top(|ui| {

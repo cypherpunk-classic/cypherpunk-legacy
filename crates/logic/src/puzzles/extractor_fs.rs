@@ -466,7 +466,7 @@ impl Puzzle for ExtractorFs {
         debug_assert_eq!(got, x);
         Some(HandSheet::new(
             "the extractor by hand",
-            &format!("Exponents mod q = {q}. One commitment, two answers: (c₁ = {c1}, s₁ = {s1}) and (c₂ = {c2}, s₂ = {s2})."),
+            format!("Exponents mod q = {q}. One commitment, two answers: (c₁ = {c1}, s₁ = {s1}) and (c₂ = {c2}, s₂ = {s2})."),
             240.0,
             vec![
                 HandCell::new(format!("s₁ − s₂ mod {q}"), "", ds),

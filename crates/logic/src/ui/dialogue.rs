@@ -102,7 +102,7 @@ pub fn show(ctx: &egui::Context, item: &mut DialogueItem, env: DialogueEnv) -> O
         let now = *shown as usize;
         let plain: Vec<char> = markup::plain(&text_owned).chars().collect();
         while item.typed < now {
-            if item.typed % 3 == 0 && plain.get(item.typed).is_some_and(|c| *c != ' ') {
+            if item.typed.is_multiple_of(3) && plain.get(item.typed).is_some_and(|c| *c != ' ') {
                 env.sfx.push("type");
             }
             item.typed += 1;

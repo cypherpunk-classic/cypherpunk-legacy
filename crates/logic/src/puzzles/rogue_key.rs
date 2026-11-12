@@ -95,7 +95,7 @@ impl RogueKey {
         host.status("Sole control, without ever knowing your key. MuSig2 is the fix.", Tone::Bad);
     }
 
-    fn to_musig(&mut self, host: &mut Host) {
+    fn switch_to_musig(&mut self, host: &mut Host) {
         self.stage = Stage::Musig;
         host.status("Now the same keys, aggregated with MuSig2. Try the trick again.", Tone::Info);
     }
@@ -216,7 +216,7 @@ impl Puzzle for RogueKey {
         match action {
             Some(0) => self.honest(host),
             Some(1) => self.naive(host),
-            Some(2) => self.to_musig(host),
+            Some(2) => self.switch_to_musig(host),
             Some(3) => self.musig(false, host),
             Some(4) => self.musig(true, host),
             _ => {}
@@ -226,7 +226,7 @@ impl Puzzle for RogueKey {
     fn autoplay(&mut self, host: &mut Host) {
         self.rogue.set(&[0, 1]);
         self.naive(host);
-        self.to_musig(host);
+        self.switch_to_musig(host);
         self.musig(false, host);
         self.musig(true, host);
     }
@@ -252,7 +252,7 @@ impl Puzzle for RogueKey {
         debug_assert_eq!(q, tt);
         Some(HandSheet::new(
             "the rogue key in a toy group",
-            &format!("In the integers mod p = {} (g = {}), \"adding keys\" is multiplying them. Your key is P_you = g^{d}; the Directorate's secret is t = {t}.", grp.p, grp.g),
+            format!("In the integers mod p = {} (g = {}), \"adding keys\" is multiplying them. Your key is P_you = g^{d}; the Directorate's secret is t = {t}.", grp.p, grp.g),
             240.0,
             vec![
                 HandCell::new(format!("P_you = g^{d} mod {}", grp.p), "", p_you as i64),

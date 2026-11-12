@@ -95,7 +95,7 @@ pub fn bits_to_text(bits: &[u8]) -> String {
 pub fn encrypt_text(public: &[Big], text: &str) -> Vec<Big> {
     let chars_per_block = public.len() / 8;
     let mut padded: String = text.to_string();
-    while padded.chars().count() % chars_per_block != 0 {
+    while !padded.chars().count().is_multiple_of(chars_per_block) {
         padded.push(' ');
     }
     let chars: Vec<char> = padded.chars().collect();
@@ -135,7 +135,7 @@ pub fn decode_solution(reduced: &Basis, public: &[Big], c: &Big) -> Option<(Vec<
             continue;
         }
         for sign in [one.clone(), minus.clone()] {
-            let bits: Vec<u8> = v[..n].iter().map(|x| u8::from(&(x * &sign) == &one)).collect();
+            let bits: Vec<u8> = v[..n].iter().map(|x| u8::from((x * &sign) == one)).collect();
             if &mh_encrypt(public, &bits) == c {
                 return Some((bits, r));
             }

@@ -321,7 +321,7 @@ impl Puzzle for TwoTimePad {
         let x_j = c1[j] ^ c2[j];
         Some(HandSheet::new(
             "XOR by hand",
-            &format!(
+            format!(
                 "Position {i}: C₁ = 0x{:02X} ({:08b}), C₂ = 0x{:02X} ({:08b}). Position {j}: C₁ = 0x{:02X}, C₂ = 0x{:02X}. Message A has ‘{}’ (ASCII {}) at {i}; message B has ‘{}’ (ASCII {}) at {j}. Answer in decimal.",
                 c1[i], c1[i], c2[i], c2[i], c1[j], c2[j], p1[i] as char, p1[i], p2[j] as char, p2[j]
             ),

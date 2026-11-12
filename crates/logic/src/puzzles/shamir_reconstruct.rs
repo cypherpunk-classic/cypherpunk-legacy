@@ -237,7 +237,7 @@ impl Puzzle for ShamirReconstruct {
         debug_assert_eq!(secret, self.coeffs[0]);
         Some(HandSheet::new(
             "Lagrange at zero, mod 31",
-            &format!("Use Mara's (1, {}), Felix's (2, {}) and the fourth share (4, {}). The secret is f(0) = Σ yᵢ·Lᵢ(0), with Lᵢ(0) = Π (0 − xⱼ)/(xᵢ − xⱼ) over the other two shares. Division mod 31 means multiplying by an inverse.", ys[0], ys[1], ys[2]),
+            format!("Use Mara's (1, {}), Felix's (2, {}) and the fourth share (4, {}). The secret is f(0) = Σ yᵢ·Lᵢ(0), with Lᵢ(0) = Π (0 − xⱼ)/(xᵢ − xⱼ) over the other two shares. Division mod 31 means multiplying by an inverse.", ys[0], ys[1], ys[2]),
             240.0,
             vec![
                 HandCell::new("L₁(0) = (0−2)(0−4) / ((1−2)(1−4))  mod 31", "8/3: find 3⁻¹ mod 31 first", l1),

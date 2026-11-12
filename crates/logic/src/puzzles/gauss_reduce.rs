@@ -265,7 +265,7 @@ impl Puzzle for GaussReduce {
         let next = s.step(m.nearest).b2;
         Some(HandSheet::new(
             "one Gauss step, by hand",
-            &format!("b₁ = ({}, {}), b₂ = ({}, {}). One reduction step: k = round(⟨b₁,b₂⟩ / ⟨b₁,b₁⟩), then b₂ ← b₂ − k·b₁.", b1[0], b1[1], b2[0], b2[1]),
+            format!("b₁ = ({}, {}), b₂ = ({}, {}). One reduction step: k = round(⟨b₁,b₂⟩ / ⟨b₁,b₁⟩), then b₂ ← b₂ − k·b₁.", b1[0], b1[1], b2[0], b2[1]),
             150.0,
             vec![
                 HandCell::new("⟨b₁,b₂⟩", "x₁x₂ + y₁y₂", m.num),

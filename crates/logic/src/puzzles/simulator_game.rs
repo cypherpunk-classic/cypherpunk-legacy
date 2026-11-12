@@ -279,7 +279,7 @@ impl Puzzle for SimulatorGame {
         debug_assert_eq!(r * xc % grp.p, gs);
         Some(HandSheet::new(
             "a forgery in a toy group",
-            &format!("Mod p = {} with g = {}, the check reads g^s = R · X^c. The public key is X = {big_x}. You pick c = {c} and s = {s}, and never learn x.", grp.p, grp.g),
+            format!("Mod p = {} with g = {}, the check reads g^s = R · X^c. The public key is X = {big_x}. You pick c = {c} and s = {s}, and never learn x.", grp.p, grp.g),
             240.0,
             vec![
                 HandCell::new(format!("g^s mod {}", grp.p), "", gs as i64),

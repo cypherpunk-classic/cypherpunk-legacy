@@ -223,7 +223,7 @@ impl Puzzle for FeldmanVerify {
         let forged = if g.public(y3) == rhs(3) { 0 } else { 3 };
         Some(HandSheet::new(
             "Feldman in a toy group",
-            &format!(
+            format!(
                 "Exponents mod q = {}, group elements mod p = {}, g = {}. The dealer published C₀ = {c0}, C₁ = {c1}, C₂ = {c2}. Two shares arrive: (2, {y2}) and (3, {y3}). In this group the check reads g^y = C₀ · C₁^x · C₂^(x²).",
                 g.q, g.p, g.g
             ),

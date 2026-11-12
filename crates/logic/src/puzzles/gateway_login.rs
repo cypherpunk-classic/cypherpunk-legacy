@@ -233,7 +233,7 @@ impl Puzzle for GatewayLogin {
         debug_assert_eq!(lhs, rhs);
         Some(HandSheet::new(
             "a Schnorr login in a toy group",
-            &format!(
+            format!(
                 "The same protocol with numbers you can hold: integers mod p = {} under multiplication, generator g = {} of prime order q = {}. Your key is d = {d}, your nonce k = {k}, and the hash gave e = {e}. Exponents live mod q.",
                 grp.p, grp.g, grp.q
             ),

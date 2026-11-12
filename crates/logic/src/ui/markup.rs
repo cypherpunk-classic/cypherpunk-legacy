@@ -62,14 +62,13 @@ fn parse(text: &str) -> Vec<(Span, String)> {
                 i = end + 1;
                 continue;
             }
-        } else if c == '{' {
-            if let Some(end) = find(i + 1, &['}']) {
+        } else if c == '{'
+            && let Some(end) = find(i + 1, &['}']) {
                 flush(&mut buf, &mut out);
                 out.push((Span::Term, chars[i + 1..end].iter().collect()));
                 i = end + 1;
                 continue;
             }
-        }
         buf.push(c);
         i += 1;
     }

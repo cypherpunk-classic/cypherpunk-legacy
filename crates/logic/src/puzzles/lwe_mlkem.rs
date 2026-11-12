@@ -315,14 +315,14 @@ impl Puzzle for LweMlkem {
         let (p1, p2) = (lwe_phase(&v.keys, c1), lwe_phase(&v.keys, c2));
         Some(HandSheet::new(
             "LWE decryption with a pencil",
-            &format!("q = {q}, secret s = {s:?}. Ciphertext A: u = {:?}, v = {}. Ciphertext B: u = {:?}, v = {}. Phase = v − ⟨u, s⟩ mod q; near 0 means 0, near {} means 1.", c1.u, c1.v, c2.u, c2.v, q / 2),
+            format!("q = {q}, secret s = {s:?}. Ciphertext A: u = {:?}, v = {}. Ciphertext B: u = {:?}, v = {}. Phase = v − ⟨u, s⟩ mod q; near 0 means 0, near {} means 1.", c1.u, c1.v, c2.u, c2.v, q / 2),
             240.0,
             vec![
                 HandCell::new(format!("⟨u, s⟩ mod {q} for A"), "four products, then reduce", d1),
-                HandCell::new(format!("phase of A"), "", p1),
+                HandCell::new("phase of A".to_string(), "", p1),
                 HandCell::new("bit A (0 or 1)", "", lwe_decrypt(&v.keys, c1) as i64),
                 HandCell::new(format!("⟨u, s⟩ mod {q} for B"), "", d2),
-                HandCell::new(format!("phase of B"), "", p2),
+                HandCell::new("phase of B".to_string(), "", p2),
                 HandCell::new("bit B (0 or 1)", "", lwe_decrypt(&v.keys, c2) as i64),
             ],
         ))

@@ -154,7 +154,7 @@ pub fn lll(basis: &Basis, delta: (i64, i64), trace_every: usize) -> Result<LllRe
                 }
                 d[k - 1] = bb;
                 swaps += 1;
-                if swaps % trace_every == 0 {
+                if swaps.is_multiple_of(trace_every) {
                     trace.push(LllTraceFrame { swaps, reductions, k, profile: current_profile(&d, kmax) });
                 }
                 k = (k - 1).max(2);

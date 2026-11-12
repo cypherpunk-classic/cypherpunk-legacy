@@ -303,7 +303,7 @@ impl Puzzle for NonceReuse {
         debug_assert_eq!(got, d);
         Some(HandSheet::new(
             "the PS3 attack, mod 509",
-            &format!("Exponents mod q = {q}. Two signatures with one nonce: (e₁ = {e1}, s₁ = {s1}) and (e₂ = {e2}, s₂ = {s2}). Recover the key, then the nonce."),
+            format!("Exponents mod q = {q}. Two signatures with one nonce: (e₁ = {e1}, s₁ = {s1}) and (e₂ = {e2}, s₂ = {s2}). Recover the key, then the nonce."),
             240.0,
             vec![
                 HandCell::new(format!("s₁ − s₂ mod {q}"), "", ds),

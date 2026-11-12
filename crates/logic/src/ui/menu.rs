@@ -250,11 +250,10 @@ pub fn show(ctx: &egui::Context, m: &mut MenuState, state: &GameState, sfx: &mut
         });
     });
     m.frames += 1;
-    if m.frames > 1 && (ctx.input(|i| i.key_pressed(Key::Escape)) || modal.should_close()) {
-        if action == MenuAction::None {
+    if m.frames > 1 && (ctx.input(|i| i.key_pressed(Key::Escape)) || modal.should_close())
+        && action == MenuAction::None {
             action = MenuAction::Close;
         }
-    }
     let _ = RED;
     action
 }

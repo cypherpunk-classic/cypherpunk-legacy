@@ -28,7 +28,7 @@ pub fn from_hex(h: &str) -> Result<Vec<u8>, String> {
     let lower = h.trim().to_lowercase();
     let stripped = lower.strip_prefix("0x").unwrap_or(&lower);
     let clean: String = stripped.chars().filter(|c| !c.is_whitespace()).collect();
-    if clean.len() % 2 != 0 || !clean.chars().all(|c| c.is_ascii_hexdigit()) {
+    if !clean.len().is_multiple_of(2) || !clean.chars().all(|c| c.is_ascii_hexdigit()) {
         let head: String = h.chars().take(16).collect();
         return Err(format!("invalid hex: {head}"));
     }
@@ -40,7 +40,7 @@ pub fn from_hex(h: &str) -> Result<Vec<u8>, String> {
 pub fn is_hex(h: &str) -> bool {
     let lower = h.trim().to_lowercase();
     let clean = lower.strip_prefix("0x").unwrap_or(&lower);
-    clean.len() % 2 == 0 && clean.chars().all(|c| c.is_ascii_hexdigit())
+    clean.len().is_multiple_of(2) && clean.chars().all(|c| c.is_ascii_hexdigit())
 }
 
 /// Fixed-size version of [`from_hex`].
@@ -81,7 +81,7 @@ pub fn bytes_to_bits(b: &[u8]) -> String {
 }
 
 pub fn bits_to_bytes(bits: &str) -> Result<Vec<u8>, String> {
-    if bits.len() % 8 != 0 {
+    if !bits.len().is_multiple_of(8) {
         return Err("bit length must be a multiple of 8".into());
     }
     (0..bits.len() / 8)

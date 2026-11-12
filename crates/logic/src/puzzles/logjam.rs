@@ -199,7 +199,7 @@ impl Puzzle for Logjam {
         let m = sqrt_ceil(q);
         Some(HandSheet::new(
             "how big is big enough",
-            &format!("The same arithmetic the Logjam authors did, without a computer. q = {q}."),
+            format!("The same arithmetic the Logjam authors did, without a computer. q = {q}."),
             180.0,
             vec![
                 HandCell::new("⌈√q⌉", "about 46 thousand", m as i64),

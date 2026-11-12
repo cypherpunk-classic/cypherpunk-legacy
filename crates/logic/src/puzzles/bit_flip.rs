@@ -62,7 +62,7 @@ impl BitFlip {
         self.plain.as_bytes()[i] ^ self.original()[i] ^ self.work[i]
     }
 
-    fn to_gcm(&mut self, host: &mut Host) {
+    fn switch_to_gcm(&mut self, host: &mut Host) {
         self.stage = Stage::Gcm;
         self.work = self.gbox.ct.clone();
         self.selected = 5;
@@ -117,7 +117,7 @@ impl BitFlip {
             if *t <= 0.0 {
                 let (_, what) = self.pending.take().unwrap();
                 match what {
-                    Pending::ToGcm => self.to_gcm(host),
+                    Pending::ToGcm => self.switch_to_gcm(host),
                     Pending::Solve => host.solve("Lesson learned: encryption hides, authentication protects. Use AEAD."),
                 }
             }
@@ -283,7 +283,7 @@ impl Puzzle for BitFlip {
             }
             self.present(host);
             self.pending = None;
-            self.to_gcm(host);
+            self.switch_to_gcm(host);
         }
         self.work[5] ^= 0x01;
         self.present(host);

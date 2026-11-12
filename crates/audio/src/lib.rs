@@ -356,7 +356,7 @@ fn bpm(track: &str) -> f32 {
 pub fn music(track: &str) -> Vec<f32> {
     let sixteenth = 60.0 / bpm(track) / 4.0;
     let steps = 128;
-    let mut m = Mixer::new(sixteenth * steps as f32, true, 0x5eed ^ track.len() as u32 * 7919);
+    let mut m = Mixer::new(sixteenth * steps as f32, true, 0x5eed ^ (track.len() as u32 * 7919));
     for s in 0..steps {
         play_step(&mut m, track, s, s as f32 * sixteenth, sixteenth);
     }
@@ -390,7 +390,7 @@ fn play_step(m: &mut Mixer, track: &str, s: usize, t: f32, dt: f32) {
         "title" => {
             let arp = [57.0, 60.0, 64.0, 69.0, 64.0, 60.0, 57.0, 52.0];
             let root = [0.0, -4.0, 3.0, -2.0][bar];
-            if i % 2 == 0 {
+            if i.is_multiple_of(2) {
                 m.tone(note(arp[(i / 2) % 8] + root), t, dt * 3.0, Wave::Triangle, 0.05, ToneOpts { filter: Some(2400.0), ..opts() });
             }
             if i == 0 {
@@ -398,13 +398,13 @@ fn play_step(m: &mut Mixer, track: &str, s: usize, t: f32, dt: f32) {
             }
         }
         "tension" => {
-            if i % 4 == 0 {
+            if i.is_multiple_of(4) {
                 m.tone(note(if i == 0 { 33.0 } else { 36.0 }), t, dt * 3.0, Wave::Saw, 0.09, ToneOpts { filter: Some(500.0), ..opts() });
             }
             if i == 8 && bar % 2 == 1 {
                 m.tone(note(63.0), t, dt * 8.0, Wave::Square, 0.03, ToneOpts { filter: Some(1500.0), ..opts() });
             }
-            if i % 2 == 0 {
+            if i.is_multiple_of(2) {
                 m.noise(t, 0.03, 0.04, 6000.0, Filter::High);
             }
         }
@@ -417,7 +417,7 @@ fn play_step(m: &mut Mixer, track: &str, s: usize, t: f32, dt: f32) {
             };
             let ch = prog[bar];
             let root = ch[0] - 24.0;
-            if i % 4 == 0 || i == 6 || i == 14 {
+            if i.is_multiple_of(4) || i == 6 || i == 14 {
                 m.tone(note(root), t, dt * 1.8, Wave::Saw, 0.08, ToneOpts { filter: Some(700.0), ..opts() });
             }
             let arp_n = ch[[0, 1, 2, 1][i % 4]] + if i >= 8 { 12.0 } else { 0.0 };
@@ -430,7 +430,7 @@ fn play_step(m: &mut Mixer, track: &str, s: usize, t: f32, dt: f32) {
             if i == 4 || i == 12 {
                 m.noise(t, 0.08, 0.08, 1800.0, Filter::High);
             }
-            if i % 2 == 0 {
+            if i.is_multiple_of(2) {
                 m.noise(t, 0.02, 0.03, 8000.0, Filter::High);
             }
         }
