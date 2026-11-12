@@ -4,6 +4,7 @@
 
 pub mod allies;
 pub mod codex;
+pub mod dragnet;
 pub mod economy;
 pub mod ending;
 pub mod game;

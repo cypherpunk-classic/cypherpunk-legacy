@@ -189,11 +189,13 @@ pub struct Settings {
     pub ui_scale: f32,
     /// Guided (steps with hints) or Minimal (steps only).
     pub hints: bool,
+    /// The Dragnet raises your trace and can flag you (off: sensors only show).
+    pub dragnet: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { music: 0.5, sfx: 0.7, text_speed: 60.0, crt: true, reduced_motion: false, ui_scale: 1.0, hints: true }
+        Self { music: 0.5, sfx: 0.7, text_speed: 60.0, crt: true, reduced_motion: false, ui_scale: 1.0, hints: true, dragnet: true }
     }
 }
 

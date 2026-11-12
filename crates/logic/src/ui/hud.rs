@@ -134,10 +134,10 @@ impl HudState {
                             ui.label(RichText::new(format!("{ious} IOU")).font(mono(13.0)).color(AMBER)).on_hover_text("credit notes with your name on them");
                         }
                         if stamps > 0 {
-                            ui.label(RichText::new(format!("{stamps} ✉")).font(mono(13.0)).color(CYAN)).on_hover_text("Hashcash stamps");
+                            ui.label(RichText::new(format!("{stamps} {}", if stamps == 1 { "stamp" } else { "stamps" })).font(mono(13.0)).color(CYAN)).on_hover_text("Hashcash stamps");
                         }
                         if allies > 0 {
-                            ui.label(RichText::new(format!("{allies} ⚿")).font(mono(13.0)).color(theme::VIOLET)).on_hover_text("allies on your web of trust");
+                            ui.label(RichText::new(format!("{allies} {}", if allies == 1 { "ally" } else { "allies" })).font(mono(13.0)).color(theme::VIOLET)).on_hover_text("allies on your web of trust");
                         }
                     });
                     if trace > 0.5 {

@@ -210,6 +210,9 @@ pub struct Level {
     /// Dynamic bodies this frame: NPCs, a wandering cat, the player.
     pub actors: Vec<(Entity, Aabb)>,
     pub water_t: f32,
+    /// Different for every level built (0 = none), so systems can tell a
+    /// rebuilt map from the one they last saw.
+    pub serial: u64,
 }
 
 impl Level {
@@ -456,7 +459,9 @@ pub fn spawn_level(cx: &mut SpawnCtx, map: MapDef, state: &GameState, arrival: A
     prompt.color = Color::WHITE;
     cx.commands.spawn((MapEntity, Prompt, prompt, Anchor::BOTTOM_CENTER, Transform::from_translation(to_world(0.0, 0.0, Z_PROMPT)), Visibility::Hidden, Looping { frames: vec![0, 1], fps: 2.5, t: 0.0 }));
 
-    let mut level = Level { map: Some(map), solid, bodies, object_visible, objects, npcs, cat: None, actors: Vec::new(), water_t: 0.0 };
+    static SERIAL: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+    let serial = SERIAL.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let mut level = Level { map: Some(map), solid, bodies, object_visible, objects, npcs, cat: None, actors: Vec::new(), water_t: 0.0, serial };
     spawn_cat(cx, &mut level, state, start);
     level
 }

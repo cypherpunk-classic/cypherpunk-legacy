@@ -257,7 +257,7 @@ impl Mixer {
 // Sound effects
 // ---------------------------------------------------------------------------
 
-pub const SFX: &[&str] = &["blip", "type", "confirm", "error", "unlock", "success", "door", "power", "glitch", "meow", "pickup", "warden", "step", "select"];
+pub const SFX: &[&str] = &["blip", "type", "confirm", "error", "unlock", "success", "door", "power", "glitch", "meow", "pickup", "warden", "step", "select", "ping", "coin"];
 
 /// Render one sound effect.
 pub fn sfx(name: &str, seed: u32) -> Vec<f32> {
@@ -317,6 +317,16 @@ pub fn sfx(name: &str, seed: u32) -> Vec<f32> {
             m.tone(82.4, t, 1.2, Wave::Saw, 0.12, ToneOpts { filter: Some(300.0), attack: 0.1, detune: 8.0, ..opts() });
         }
         "step" => m.noise(t, 0.04, 0.05, 900.0, Filter::Low),
+        // a sensor has you: a soft radar ping
+        "ping" => {
+            m.tone(1480.0, t, 0.18, Wave::Sine, 0.12, ToneOpts { glide_to: Some(1240.0), ..opts() });
+            m.tone(1480.0, t + 0.16, 0.3, Wave::Sine, 0.04, ToneOpts { glide_to: Some(1240.0), ..opts() });
+        }
+        // eCash changing hands
+        "coin" => {
+            m.tone(note(88.0), t, 0.06, Wave::Square, 0.08, ToneOpts { filter: Some(5000.0), ..opts() });
+            m.tone(note(95.0), t + 0.05, 0.22, Wave::Triangle, 0.12, opts());
+        }
         _ => {}
     }
     let mut out = m.finish(1.0);

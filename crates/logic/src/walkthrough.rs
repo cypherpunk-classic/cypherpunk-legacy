@@ -106,6 +106,8 @@ pub struct Report {
     pub interactions: Vec<String>,
     pub puzzles: Vec<String>,
     pub gotos: Vec<MapId>,
+    /// Spawn points the story sent the player to.
+    pub spawns: Vec<String>,
     pub downloads: Vec<String>,
     pub world_cmds: Vec<&'static str>,
 }
@@ -193,6 +195,7 @@ impl Headless {
                             Cmd::Goto { map: m, spawn } => {
                                 if let Some(s) = &spawn {
                                     assert!(map(m).spawns.contains_key(s.as_str()), "unknown spawn {s} on {}", m.name());
+                                    self.report.spawns.push(s.clone());
                                 }
                                 self.report.gotos.push(m);
                                 self.game.map_ready(m);
@@ -270,13 +273,21 @@ impl Headless {
 
     /// Play the whole route. Returns an error describing the first step that stalled.
     pub fn play(&mut self) -> Result<(), String> {
-        if !self.settle(5_000) {
+        self.play_until(None)
+    }
+
+    /// Play the route until a flag is set (or to the end with `None`).
+    pub fn play_until(&mut self, stop: Option<&str>) -> Result<(), String> {
+        if self.report.frames == 0 && !self.settle(5_000) {
             return Err("the opening never settled".into());
         }
         let side = self.side;
         for s in ROUTE.iter().filter(|s| side || !s.side) {
             let mut tries = 0;
             while !self.game.ctx.state_ref().flag(s.until) {
+                if stop.is_some_and(|f| self.game.ctx.state_ref().flag(f)) {
+                    return Ok(());
+                }
                 if self.game.mode == Mode::Credits {
                     break;
                 }

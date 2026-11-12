@@ -803,6 +803,20 @@ mod tests {
             ids.sort();
             ids.dedup();
             assert_eq!(ids.len(), m.objects.len(), "duplicate object ids on {:?}", id);
+            let chars: Vec<&str> = cpl_art::characters::all_characters().into_iter().map(|c| c.id).collect();
+            for n in &m.npcs {
+                assert!(chars.contains(&n.char), "no character sheet for {}", n.char);
+            }
+            // every sensor stands where its sprite is, and is on the map
+            for s in &m.sensors {
+                let o = m.object(s.id).unwrap_or_else(|| panic!("no sprite for sensor {}", s.id));
+                assert_eq!(o.x, s.x, "{} x", s.id);
+                assert!(s.x > 0.0 && s.y > 0.0 && s.x < (m.w as f32) * T && s.y < (m.h as f32) * T);
+            }
+        }
+        let city = map(MapId::City);
+        for (spawn, ..) in crate::story::dragnet::SAFE_HOUSES {
+            assert!(city.spawns.contains_key(spawn), "safe house {spawn} has no spawn");
         }
     }
 }

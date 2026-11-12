@@ -137,6 +137,8 @@ impl Stamps {
                 for st in keep {
                     s.add_stamp(st);
                 }
+                // the ones posted to the board were minted too
+                s.data.stats.stamps_minted += self.spent.len() as u32;
             }
             self.minted.clear();
             host.sfx("unlock");

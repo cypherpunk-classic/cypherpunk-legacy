@@ -42,7 +42,7 @@ impl Shop {
                 }
                 self.ctx.state().set(&format!("bought.{}", w.id), true);
                 self.bought.push(w.id);
-                host.sfx("unlock");
+                host.sfx("coin");
                 host.status(format!("{} is yours. The mint accepted {} token(s) it had never seen.", w.name, r.tokens.len()), Tone::Ok);
                 self.receipt = Some((w.name.to_string(), r));
             }

@@ -209,6 +209,12 @@ pub fn show(ctx: &egui::Context, m: &mut MenuState, state: &GameState, sfx: &mut
                         ui.selectable_value(&mut s.hints, false, "Minimal (steps only)");
                     });
                     ui.end_row();
+                    ui.label("Surveillance");
+                    egui::ComboBox::from_id_salt("dragnet").selected_text(if s.dragnet { "Dragnet on" } else { "Story only" }).show_ui(ui, |ui| {
+                        ui.selectable_value(&mut s.dragnet, true, "Dragnet on (sensors raise your trace)");
+                        ui.selectable_value(&mut s.dragnet, false, "Story only (sensors never flag you)");
+                    });
+                    ui.end_row();
                 });
                 ui.add_space(12.0);
                 note(ui, "Controls: WASD or arrow keys to move, Shift to walk faster, E / Space / Enter to interact, C for the codex, Esc for this menu.");

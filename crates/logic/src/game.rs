@@ -323,7 +323,7 @@ impl Game {
                 StateEvent::Credits(n, why) => {
                     let (title, body) = if n >= 0 { ("CREDITS", format!("+{n} cr · {why}")) } else { ("PAID", format!("{n} cr · {why}")) };
                     self.hud.toast(title, &body, if n >= 0 { ToastKind::Item } else { ToastKind::Info });
-                    self.audio.push(AudioReq::Sfx(if n >= 0 { "pickup" } else { "blip" }));
+                    self.audio.push(AudioReq::Sfx("coin"));
                 }
                 StateEvent::Ally(id) => {
                     let name = crate::allies::ally_def(&id).map(|a| a.name).unwrap_or(&id).to_string();

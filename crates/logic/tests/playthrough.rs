@@ -122,6 +122,42 @@ fn choices_change_the_ending() {
 }
 
 #[test]
+fn the_dragnet_flags_you_and_a_safe_house_takes_you_in() {
+    let mut h = Headless::new("loiterer", "playthrough-seed-6");
+    h.play_until(Some("ch1.done")).expect("chapter 1 plays");
+    assert!(h.game.ctx.state_ref().flag("ch1.done"));
+    // stand under the Wharf mast with nothing to hide behind
+    let city = cpl_logic::maps::map(MapId::City);
+    let mast = city.sensors.iter().find(|s| s.id == "mast-wharf").unwrap().clone();
+    let mut frames = 0;
+    loop {
+        let tick = h.game.ctx.state().dragnet(&city, mast.x, mast.y, 0.0, 1.0 / 30.0);
+        frames += 1;
+        if tick.flagged {
+            break;
+        }
+        assert!(frames < 30 * 30, "a mast should flag a loiterer within half a minute");
+    }
+    let (credits, ious) = {
+        let s = h.game.ctx.state_ref();
+        (s.credits(), s.data.ious)
+    };
+    h.game.flagged(mast.x, mast.y);
+    assert!(h.settle(20_000));
+    let s = h.game.ctx.state_ref();
+    assert_eq!(s.data.stats.flagged, 1);
+    assert_eq!(s.trace, 0.0, "the trace starts over");
+    assert!(s.data.codex.iter().any(|c| c == "metadata"));
+    let to = h.report.spawns.last().expect("sent somewhere");
+    assert!(to.starts_with("safe-"), "sent to {to}");
+    assert_eq!(s.credits() + s.data.ious, (credits + ious).saturating_sub(2), "a fine of two credits");
+    drop(s);
+    // the story carries on from the safe house
+    h.play().expect("the rest of the route");
+    assert_eq!(h.game.mode, Mode::Credits);
+}
+
+#[test]
 fn playthrough_with_keyboard() {
     // dialogue typed out and advanced with Space, choices taken with Space,
     // terminals left with Enter: the same input paths a player uses

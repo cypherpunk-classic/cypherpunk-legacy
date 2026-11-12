@@ -18,6 +18,8 @@ pub struct Launch {
     pub shot_every: Option<f32>,
     /// Quit once the credits have rolled (native only, for tests).
     pub exit_at_end: bool,
+    /// The autopilot takes the side quests too (`CPL_SIDE=1` / `?side`).
+    pub side: bool,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -37,6 +39,7 @@ mod imp {
             shots: var("CPL_SHOTS"),
             shot_every: var("CPL_SHOT_EVERY").and_then(|v| v.parse().ok()),
             exit_at_end: var("CPL_EXIT_AT_END").is_some_and(|v| v != "0"),
+            side: var("CPL_SIDE").is_some_and(|v| v != "0"),
         }
     }
 
@@ -125,6 +128,7 @@ mod imp {
             shots: None,
             shot_every: None,
             exit_at_end: false,
+            side: param("side").is_some() || autoplay.as_deref() == Some("full"),
         }
     }
 

@@ -3,7 +3,11 @@
 //! finds a way to each person or prop, the player turns to face it and
 //! presses E; dialogue and puzzles play themselves (`Game::auto`). Used for
 //! the attract-mode demo (`?autoplay=demo`) and as an end-to-end test of the
-//! engine side (`CPL_AUTOPLAY=1 CPL_SHOTS=dir CPL_EXIT_AT_END=1`).
+//! engine side (`CPL_AUTOPLAY=1 CPL_SHOTS=dir CPL_EXIT_AT_END=1`, plus
+//! `CPL_SIDE=1` to take the side quests on the way).
+//!
+//! The Dragnet's sensor fields cost extra to walk through, so paths go
+//! around them where the map allows it.
 //!
 //! Walking has to work at any frame rate: CI renders on a software Vulkan
 //! driver at a dozen frames a second, where one frame's stride is longer than
@@ -16,7 +20,8 @@ use std::collections::BinaryHeap;
 use bevy::prelude::*;
 use bevy::render::view::screenshot::{Screenshot, save_to_disk};
 use cpl_logic::game::Mode;
-use cpl_logic::walkthrough::{Step, next_step};
+use cpl_logic::maps::SensorKind;
+use cpl_logic::walkthrough::{Step, next_step_with};
 
 use crate::actors::{Pace, Target, player_stride};
 use crate::director::{Director, GameRes};
@@ -36,6 +41,8 @@ const STEP_LIMIT: f64 = 300.0;
 pub struct Autopilot {
     pub on: bool,
     pub seed: Option<String>,
+    /// Take the optional steps of the route too.
+    pub side: bool,
     started: bool,
     path: Vec<Vec2>,
     goal: Option<(String, Vec2)>,
@@ -70,7 +77,7 @@ pub struct Autopilot {
 
 impl Autopilot {
     pub fn from_launch(l: &Launch) -> Self {
-        Self { on: l.autoplay, seed: l.seed.clone(), shots: l.shots.clone(), exit_at_end: l.exit_at_end, every: l.shot_every, ..default() }
+        Self { on: l.autoplay, seed: l.seed.clone(), side: l.side, shots: l.shots.clone(), exit_at_end: l.exit_at_end, every: l.shot_every, ..default() }
     }
 
     fn shot_later(&mut self, now: f64, delay: f64, name: &str) {
@@ -135,8 +142,32 @@ fn can_reach(feet: Vec2, ip: Vec2, radius: f32) -> bool {
     probe.distance(ip) < radius * 0.8
 }
 
+/// A field to keep out of: centre, radius, and the extra cost per cell inside.
+#[derive(Clone, Copy, Debug)]
+struct Danger {
+    at: Vec2,
+    r: f32,
+    cost: f32,
+}
+
+/// The active sensors' fields, as path costs (a camera's whole sweep counts).
+fn dangers(game: &GameRes, level: &Level) -> Vec<Danger> {
+    let Some(map) = level.map.as_ref() else { return Vec::new() };
+    let state = game.ctx.state_ref();
+    state
+        .active_sensors(map)
+        .map(|s| {
+            let cost = match s.kind {
+                SensorKind::Mast { .. } => 3.0,
+                SensorKind::Camera { .. } => 2.0,
+            };
+            Danger { at: Vec2::new(s.x, s.y), r: s.reach() + 6.0, cost: cost * CELL }
+        })
+        .collect()
+}
+
 /// A* from the player's feet to any spot that reaches the interaction point.
-fn find_path(level: &Level, me: Entity, from: Vec2, ip: Vec2, radius: f32, avoid: &[usize]) -> Option<Vec<Vec2>> {
+fn find_path(level: &Level, me: Entity, from: Vec2, ip: Vec2, radius: f32, avoid: &[usize], danger: &[Danger]) -> Option<Vec<Vec2>> {
     let size = level.size();
     let (gw, gh) = ((size.x / CELL) as i32, (size.y / CELL) as i32);
     if gw <= 0 || gh <= 0 {
@@ -186,7 +217,9 @@ fn find_path(level: &Level, me: Entity, from: Vec2, ip: Vec2, radius: f32, avoid
                     continue;
                 }
             }
-            let cost = g[i] + if dx != 0 && dy != 0 { 1.414 } else { 1.0 } * CELL;
+            let cj = center(j);
+            let extra: f32 = danger.iter().filter(|d| d.at.distance(cj) < d.r).map(|d| d.cost).sum();
+            let cost = g[i] + if dx != 0 && dy != 0 { 1.414 } else { 1.0 } * CELL + extra;
             if cost < g[j] {
                 g[j] = cost;
                 came[j] = i;
@@ -329,7 +362,7 @@ pub fn drive(
         }
         return;
     }
-    let state_step = next_step(&game.ctx.state_ref());
+    let state_step = next_step_with(&game.ctx.state_ref(), ap.side);
     let Some(step) = state_step else { return };
     if ap.last_step != Some(step.until) {
         if let Some(prev) = ap.last_step {
@@ -374,7 +407,8 @@ pub fn drive(
     ap.reach_t = 0.0;
     let moved_goal = ap.goal.as_ref().is_none_or(|(id, g)| id != step.target || g.distance(ip) > 12.0);
     if ap.path.is_empty() || moved_goal {
-        match find_path(&level, me, pos.p, ip, radius, &ap.avoid) {
+        let danger = dangers(&game, &level);
+        match find_path(&level, me, pos.p, ip, radius, &ap.avoid, &danger) {
             Some(p) => {
                 ap.path = corners(p);
                 ap.goal = Some((step.target.to_string(), ip));
