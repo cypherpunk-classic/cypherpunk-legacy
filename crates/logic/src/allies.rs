@@ -35,11 +35,11 @@ pub const ALLIES: &[AllyDef] = &[
     AllyDef { id: "rosa", name: "Rosa", uid: "Rosa <rosa@harbourlight.news>", role: "reporter, the Harbour Light", vouches: &["mara"] },
     AllyDef { id: "theo", name: "Theo", uid: "Theo <theo@exchange.records>", role: "records clerk, the Exchange", vouches: &["felix"] },
     AllyDef { id: "wen", name: "Wen", uid: "Wen <wen@commons.grocer>", role: "grocer, the Commons", vouches: &["juno"] },
-    AllyDef { id: "c1", name: "Dock worker", uid: "Bao <bao@wharf>", role: "dock worker, the Wharf", vouches: &[] },
-    AllyDef { id: "c2", name: "Fisher", uid: "Ines <ines@wharf>", role: "fisher, the Wharf", vouches: &[] },
-    AllyDef { id: "c3", name: "Student", uid: "Kai <kai@plaza>", role: "student, Legacy Plaza", vouches: &[] },
-    AllyDef { id: "c4", name: "Gardener", uid: "Odile <odile@commons.park>", role: "gardener, the Commons", vouches: &[] },
-    AllyDef { id: "c5", name: "Courier", uid: "Ravi <ravi@avenue>", role: "courier, the avenues", vouches: &[] },
+    AllyDef { id: "c1", name: "Bao", uid: "Bao <bao@wharf>", role: "dock worker, the Wharf", vouches: &[] },
+    AllyDef { id: "c2", name: "Ines", uid: "Ines <ines@wharf>", role: "fisher, the Wharf", vouches: &[] },
+    AllyDef { id: "c3", name: "Kai", uid: "Kai <kai@plaza>", role: "student, Legacy Plaza", vouches: &[] },
+    AllyDef { id: "c4", name: "Odile", uid: "Odile <odile@commons.park>", role: "gardener, the Commons", vouches: &[] },
+    AllyDef { id: "c5", name: "Ravi", uid: "Ravi <ravi@avenue>", role: "courier, the avenues", vouches: &[] },
 ];
 
 /// Keys you meet but never shake hands with.
