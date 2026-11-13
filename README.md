@@ -13,6 +13,13 @@ This is v3, a rewrite of the whole game in **Rust** on the **[Bevy](https://bevy
 WebGL2). The TypeScript/Phaser v2 lives on the `v2` branch; the original
 single-file prototype is preserved under [`legacy/`](legacy/).
 
+**v3.1, "Cypherpunks write code"**, puts the decisive step of every puzzle in
+your hands (the terminal checks, it never solves), adds six missions from
+cypherpunk history, and turns the movement's ideals into systems you live
+with between puzzles: a surveillance Dragnet, a web of trust, a wallet of
+blind-signed eCash, side quests, and choices that lead to three endings. See
+[`docs/GAMEPLAY.md`](docs/GAMEPLAY.md).
+
 ---
 
 ## Play
@@ -38,7 +45,8 @@ on the left half to walk and tap the E button to interact.
 
 **Watch it play itself:** `CPL_AUTOPLAY=1 cargo run --release` natively, or
 `?autoplay=demo` on the web build. The autopilot walks the city, talks to
-everyone and solves every puzzle with the honest method.
+everyone and solves every puzzle with the honest method. Add `CPL_SIDE=1` (or
+use `?autoplay=full`) and it takes every side quest on the way.
 
 ---
 
@@ -48,18 +56,39 @@ Seven acts, each built on a working implementation you drive yourself:
 
 | Act | Place | Cryptography |
 |----|-------|--------------|
-| **Prologue** | The Cabin | BIP-39 seed recovery (checksum + master fingerprint), BIP-340 Schnorr challenge–response login |
+| **Prologue** | The Cabin | BIP-39 seed recovery (checksum + master fingerprint), a BIP-340 Schnorr login whose response you build yourself |
 | **1 · One time only** | The Wharf | One-time pad reuse (crib dragging), AES-CTR malleability vs AES-GCM authentication |
-| **2 · Strangers agree** | The Exchange | Diffie–Hellman, man-in-the-middle on an unauthenticated exchange, baby-step giant-step on a weak group |
-| **3 · Threshold** | The Commons | Shamir secret sharing over GF(31) and secp256k1, Feldman verifiable secret sharing (catch a forged share) |
-| **4 · Signatures** | The Mint | Nonce-reuse key recovery, rogue-key attack vs BIP-327 MuSig2, BIP-341 Taproot script trees |
-| **5 · Knowledge** | The Masquerade | Schnorr Σ-protocol, the real-or-simulated game, the rewinding extractor, Fiat–Shamir (and its weak form) |
+| **2 · Strangers agree** | The Exchange | Diffie–Hellman, man-in-the-middle on an unauthenticated exchange, baby-step giant-step on an export-grade group, and Grandpa's code smuggled out as a printed book (OCR repair against CRC-16) |
+| **3 · Threshold** | The Commons | Shamir secret sharing over GF(31) and secp256k1, Feldman verifiable secret sharing, Chaumian eCash with blind Diffie–Hellman at the Commons Mint |
+| *Interlude* | The Exchange | A key-signing party: fingerprints, IDs and a colliding short key ID (PGP's web of trust) |
+| **4 · Signatures** | The Mint | Nonce-reuse key recovery, rogue-key attack vs BIP-327 MuSig2, BIP-341 Taproot script trees, Matt Blaze's attack on the Clipper chip's LEAF |
+| **5 · Knowledge** | The Masquerade | Onion-routed remailers and mixing, Hashcash postage, the Schnorr Σ-protocol, the simulator, the rewinding extractor, Fiat–Shamir done right and wrong |
 | **6 · After the quantum** | The Observatory | Lagrange–Gauss & LLL lattice reduction, breaking a Merkle–Hellman knapsack, LWE, and a real ML-KEM-768 encapsulation |
-| **Epilogue** | Legacy Plaza | Sign and broadcast the manifesto; the Archive goes public for good |
+| **Epilogue** | Legacy Plaza | Sign, verify and broadcast the manifesto through the remailers; the Archive goes public for good |
 
-A **Codex** of 37 entries unlocks as you play, covering both the mathematics
+Between the puzzles:
+
+- **The Dragnet.** Masts and sweeping cameras log you; stand in their fields and
+  your trace climbs, faster or slower depending on the tools you have earned. At
+  100 an agent fines you and walks you to a safe house.
+- **The web of trust.** People who check your fingerprint sign your key with a
+  real BIP-340 certification; validity follows GnuPG's rules, and your allies
+  fill the plaza at the end.
+- **A wallet of blind-signed eCash.** Every purchase is a real redemption at the
+  Commons Mint, which never learns who paid. Hashcash stamps are the second
+  currency.
+- **Side quests and floppies.** A reporter's forged drops, a clerk's printer
+  dots, a grocer's hash-chained ledger, and six disks from Grandpa's
+  mailing-list years.
+- **Choices with consequences**, and three endings tallied in the credits.
+
+Every terminal lists its steps (with hints in *Guided* mode), and most offer a
+**deep dive**: the same idea worked by hand in a toy group, against a clock.
+
+A **Codex** of 48 entries unlocks as you play, covering both the mathematics
 and the history: the Crypto Wars, PGP, Clipper, Bernstein v. US, Venona,
-Dual_EC_DRBG, the NIST post-quantum standards, and more.
+DigiCash, the remailers, Hashcash, Dual_EC_DRBG, the NIST post-quantum
+standards, and more.
 
 ---
 
@@ -77,7 +106,11 @@ vectors.
   KeyAgg, BIP-341 tweaking and bech32m addresses, Shamir + Feldman over the
   curve order, the Schnorr Σ-protocol (simulator, extractor, Fiat–Shamir),
   **integral LLL** with exact big-integer arithmetic, the CJLOSS knapsack
-  attack, and a toy LWE.
+  attack, a toy LWE, Chaumian eCash with blind DH and DLEQ proofs (the Cashu
+  construction), ECIES onion layers with a mixing simulation, Hashcash, a model
+  of the Clipper chip's LEAF and Blaze's attack, an OpenPGP-style web of trust
+  with GnuPG validity, CRC-16 OCR repair, printer tracking dots and hash
+  chains.
 - **Verified** against the official BIP-39 (Trezor), BIP-340, BIP-341, BIP-327
   and BIP-86 test vectors (`crates/crypto/tests`).
 
@@ -131,16 +164,26 @@ cargo run -p cpl-art --example preview                           # write every s
 
 The headless playthroughs (`crates/logic/tests/playthrough.rs`) start a new
 game and play to the credits through the real scripts, dialogue and egui
-terminals, once in autoplay mode and once by simulated key presses. The
-autopilot run does the same through the real Bevy world: walking, collisions,
-interactions, map changes, camera pans and all.
+terminals: the main story in autoplay mode and by simulated key presses, a
+completionist run through every side quest, two runs with different choices
+that must reach the other endings, and a run that gets caught by the Dragnet.
+The autopilot run does the same through the real Bevy world: walking,
+collisions, sensor fields, interactions, map changes, camera pans and all.
 
-Environment variables for native runs: `CPL_AUTOPLAY`, `CPL_SPEED` (walking
-speed multiplier), `CPL_PACE` (seconds per line while autoplaying), `CPL_SEED`
-(reproducible new game), `CPL_SHOTS` (screenshot folder), `CPL_EXIT_AT_END`
-(quit after the credits with status 0, or with status 1 and a report if any
-step of the route stalls for five minutes), `CPL_DATA_DIR` (where saves go). On
-the web: `?autoplay`, `?autoplay=demo`, `?seed=…`, `?speed=…`.
+Environment variables for native runs: `CPL_AUTOPLAY`, `CPL_SIDE` (the
+autopilot takes the side quests too), `CPL_SPEED` (walking speed multiplier),
+`CPL_PACE` (seconds per line while autoplaying), `CPL_SEED` (reproducible new
+game), `CPL_SHOTS` (screenshot folder), `CPL_SHOT_EVERY` (also a screenshot
+every so many seconds), `CPL_EXIT_AT_END` (quit after the credits with status
+0, or with status 1 and a report if any step of the route stalls for five
+minutes), `CPL_DATA_DIR` (where saves go), and `CPL_PUZZLE` (open one terminal,
+a comma-separated list, or `all`, and screenshot each fresh, solved and in its
+deep dive). On the web: `?autoplay`, `?autoplay=demo`, `?autoplay=full`,
+`?side`, `?puzzle=…`, `?seed=…`, `?speed=…`.
+
+```bash
+CPL_PUZZLE=all CPL_SHOTS=shots CPL_EXIT_AT_END=1 cargo run   # every terminal, three screenshots each
+```
 
 ---
 
