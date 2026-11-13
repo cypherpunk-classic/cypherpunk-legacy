@@ -32,7 +32,11 @@ impl GameState {
     pub fn dragnet(&mut self, map: &MapDef, x: f32, y: f32, t: f32, dt: f32) -> Tick {
         let seen: Vec<&Sensor> = self.active_sensors(map).filter(|s| s.sees(x, y, t)).collect();
         let gain: f32 = seen.iter().map(|s| s.gain).sum();
-        let ids = seen.iter().map(|s| s.id).collect();
+        let ids: Vec<&'static str> = seen.iter().map(|s| s.id).collect();
+        if !ids.is_empty() {
+            // the first time a sensor logs you, the codex explains what it took
+            self.unlock_codex("metadata");
+        }
         if gain > 0.0 && self.settings.dragnet {
             self.trace += gain * self.opsec_factor() * dt;
         } else {

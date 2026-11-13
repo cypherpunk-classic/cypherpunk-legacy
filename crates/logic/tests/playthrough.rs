@@ -80,6 +80,9 @@ fn side_quests_floppies_and_shops() {
     }
     assert!(state.data.stats.payments >= 4, "paid in eCash: {:?}", state.data.stats);
     assert_eq!(ending::ending(&state), Ending::OpenSociety);
+    // everything in the codex can be found
+    let missing: Vec<&str> = cpl_logic::codex::CODEX.iter().map(|e| e.id).filter(|id| !state.data.codex.iter().any(|c| c == id)).collect();
+    assert!(missing.is_empty(), "codex entries never unlocked: {missing:?}");
     // the mint's spent list holds every token you ever paid with, and none of them twice
     let spent = &state.data.mint_spent;
     let mut uniq = spent.clone();

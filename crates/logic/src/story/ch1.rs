@@ -108,6 +108,7 @@ pub async fn mara(c: Ctx) {
         )
         .await;
         c.give("sealed-messenger");
+        c.codex(&["metadata"]);
         c.sfx("unlock");
         c.objective("Find Felix at the Exchange (west avenue, through the gate).");
         return;

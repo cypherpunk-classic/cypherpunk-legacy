@@ -241,7 +241,7 @@ pub async fn run_clipper(c: &Ctx) -> bool {
         return false;
     }
     c.set("ch4.clipper");
-    c.codex(&["clipper"]);
+    c.codex(&["clipper", "dual-ec"]);
     say!(
         c,
         (Ibrahim, "Sixteen bits. They built a whole national wiretap on sixteen bits, in our city as in the real one. Matt Blaze found it in 1994 and the Clipper chip never recovered."),
@@ -342,7 +342,7 @@ pub async fn run_stamps(c: &Ctx) -> bool {
         return false;
     }
     c.set("ch5.stamps");
-    c.codex(&["hashcash"]);
+    c.codex(&["hashcash", "bitcoin"]);
     c.say1(Sp::Lin, "Postage. Cheap for one person, ruinous for a flood. Keep those stamps: the broadcast will need them.").await;
     c.objective("Tell Lin the remailers are holding.");
     true

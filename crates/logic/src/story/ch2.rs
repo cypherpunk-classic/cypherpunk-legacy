@@ -11,7 +11,7 @@ async fn run_dh(c: &Ctx) {
         return;
     }
     c.set("ch2.dh");
-    c.codex(&["dh", "dlog"]);
+    c.codex(&["dh", "dlog", "gchq"]);
     say!(
         c,
         (Felix, "See? We never said the key out loud. Eve heard every number and still has nothing. Diffie and Hellman, 1976. Changed everything."),
