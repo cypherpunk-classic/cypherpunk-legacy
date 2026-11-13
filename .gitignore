@@ -3,6 +3,7 @@
 /dist
 /scratch
 /shots
+/shots-*
 .DS_Store
 *.log
 # left over from the v2 (TypeScript) checkout

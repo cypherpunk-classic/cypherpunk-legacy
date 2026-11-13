@@ -37,11 +37,18 @@ jobs:
           mkdir -p shots
           xvfb-run -s "-screen 0 1280x720x24" env WGPU_BACKEND=vulkan CPL_AUTOPLAY=1 CPL_SPEED=3 CPL_EXIT_AT_END=1 \
             CPL_SHOTS=shots CPL_DATA_DIR="$RUNNER_TEMP/cpl" CPL_SEED=ci timeout 1800 ./target/release/cypherpunk-legacy
+      - name: Again, with every side quest, shop, floppy and recruit on the way
+        run: |
+          mkdir -p shots-side
+          xvfb-run -s "-screen 0 1280x720x24" env WGPU_BACKEND=vulkan CPL_AUTOPLAY=1 CPL_SIDE=1 CPL_SPEED=3 CPL_EXIT_AT_END=1 \
+            CPL_SHOTS=shots-side CPL_DATA_DIR="$RUNNER_TEMP/cpl-side" CPL_SEED=ci-side timeout 1800 ./target/release/cypherpunk-legacy
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: autopilot-screenshots
-          path: shots
+          path: |
+            shots
+            shots-side
 
   web:
     name: Web build
