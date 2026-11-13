@@ -46,7 +46,8 @@ on the left half to walk and tap the E button to interact.
 **Watch it play itself:** `CPL_AUTOPLAY=1 cargo run --release` natively, or
 `?autoplay=demo` on the web build. The autopilot walks the city, talks to
 everyone and solves every puzzle with the honest method. Add `CPL_SIDE=1` (or
-use `?autoplay=full`) and it takes every side quest on the way.
+use `?autoplay=full`) and it takes every side quest on the way. It plays a
+fresh game of its own and never overwrites your save.
 
 ---
 

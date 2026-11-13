@@ -30,6 +30,7 @@ enum Phase {
 
 fn main() -> AppExit {
     let launch = platform::launch();
+    platform::protect_saves(&launch);
     let game = director::build_game(&launch);
     App::new()
         .add_plugins(

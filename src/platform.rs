@@ -25,6 +25,22 @@ pub struct Launch {
     pub puzzle: Option<String>,
 }
 
+/// While the game plays itself (autoplay, terminal previews) it must not
+/// overwrite the player's real save. Runs that point `CPL_DATA_DIR` somewhere
+/// of their own (CI, the tests) still write there.
+static READ_ONLY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub fn protect_saves(launch: &Launch) {
+    let own_dir = cfg!(not(target_arch = "wasm32")) && std::env::var("CPL_DATA_DIR").is_ok_and(|d| !d.is_empty());
+    if (launch.autoplay || launch.puzzle.is_some()) && !own_dir {
+        READ_ONLY.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+}
+
+fn read_only() -> bool {
+    READ_ONLY.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 mod imp {
     use std::path::PathBuf;
@@ -80,7 +96,7 @@ mod imp {
     }
 
     pub fn store_save(json: &str) -> bool {
-        write("save.json", json)
+        super::read_only() || write("save.json", json)
     }
 
     pub fn load_settings() -> Option<String> {
@@ -88,7 +104,7 @@ mod imp {
     }
 
     pub fn store_settings(json: &str) -> bool {
-        write("settings.json", json)
+        super::read_only() || write("settings.json", json)
     }
 
     /// Save a file for the player; returns where it went.
@@ -142,7 +158,7 @@ mod imp {
     }
 
     pub fn store_save(json: &str) -> bool {
-        storage().is_some_and(|s| s.set_item(SAVE_KEY, json).is_ok())
+        super::read_only() || storage().is_some_and(|s| s.set_item(SAVE_KEY, json).is_ok())
     }
 
     pub fn load_settings() -> Option<String> {
@@ -150,7 +166,7 @@ mod imp {
     }
 
     pub fn store_settings(json: &str) -> bool {
-        storage().is_some_and(|s| s.set_item(SETTINGS_KEY, json).is_ok())
+        super::read_only() || storage().is_some_and(|s| s.set_item(SETTINGS_KEY, json).is_ok())
     }
 
     pub fn download(name: &str, contents: &str) -> Option<String> {
