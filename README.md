@@ -179,8 +179,10 @@ every so many seconds), `CPL_EXIT_AT_END` (quit after the credits with status
 0, or with status 1 and a report if any step of the route stalls for five
 minutes), `CPL_DATA_DIR` (where saves go), and `CPL_PUZZLE` (open one terminal,
 a comma-separated list, or `all`, and screenshot each fresh, solved and in its
-deep dive). On the web: `?autoplay`, `?autoplay=demo`, `?autoplay=full`,
-`?side`, `?puzzle=…`, `?seed=…`, `?speed=…`.
+deep dive; without `CPL_SHOTS` the terminal simply opens for you to play,
+and the next one in the list opens when you close it). On the web:
+`?autoplay`, `?autoplay=demo`, `?autoplay=full`, `?side`, `?puzzle=…` (jump
+straight into a terminal, e.g. `?puzzle=ch4.nonce`), `?seed=…`, `?speed=…`.
 
 ```bash
 CPL_PUZZLE=all CPL_SHOTS=shots CPL_EXIT_AT_END=1 cargo run   # every terminal, three screenshots each

@@ -338,6 +338,10 @@ pub fn drive(
     }
     if !ap.preview.is_empty() {
         preview(&mut ap, &mut game, &director, now, &mut exit);
+        if !ap.on {
+            // handed over to the player: give them back the controls
+            control.override_axis = None;
+        }
         return;
     }
     // the watchdog (CI only): a step that never finishes is a failure, not a hang
@@ -476,8 +480,10 @@ pub fn drive(
     }
 }
 
-/// One terminal at a time: open it fresh, solve it with its own autoplay,
-/// open its deep dive, a screenshot at each stage, then the next one.
+/// One terminal at a time. With a screenshot folder: open it fresh, solve it
+/// with its own autoplay, open its deep dive, a screenshot at each stage, then
+/// the next one. Without one (the web's `?puzzle=`, or a plain run): open it
+/// and leave it to the player; the next one opens when they close it.
 fn preview(ap: &mut Autopilot, game: &mut GameRes, director: &Director, now: f64, exit: &mut MessageWriter<AppExit>) {
     let (phase, since, tries) = ap.preview_at;
     let wait = now - since;
@@ -497,9 +503,21 @@ fn preview(ap: &mut Autopilot, game: &mut GameRes, director: &Director, now: f64
                 ap.preview.remove(0);
             }
         }
+        1 if ap.shots.is_none() => ap.preview_at = (7, now, 0),
         1 if wait > 1.2 => {
             ap.shot_later(now, 0.0, &format!("{id}-1-open"));
             ap.preview_at = (2, now, 0);
+        }
+        // the player's turn: wait until they leave the terminal
+        7 => {
+            if game.terminal.is_none() && !game.busy() {
+                ap.preview.remove(0);
+                ap.preview_at = (0, now, 0);
+                if ap.preview.is_empty() {
+                    info!("[preview] done");
+                    ap.on = false;
+                }
+            }
         }
         2 if wait > 0.5 => {
             let solved = match game.terminal.as_mut() {
