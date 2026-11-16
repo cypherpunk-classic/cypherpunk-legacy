@@ -172,6 +172,12 @@ pub struct SaveData {
     /// Deep dives completed (puzzle ids).
     #[serde(default)]
     pub badges: Vec<String>,
+    /// Punched cards in your pocket (the Wharf's signal boards).
+    #[serde(default)]
+    pub cards: Vec<crate::signals::Card>,
+    /// Stencils in the glyph book, by glyph id.
+    #[serde(default)]
+    pub glyphs: Vec<String>,
     #[serde(default)]
     pub stats: Stats,
 }
@@ -271,6 +277,8 @@ impl GameState {
             trust: BTreeMap::new(),
             certs: BTreeMap::new(),
             badges: Vec::new(),
+            cards: Vec::new(),
+            glyphs: Vec::new(),
             stats: Stats::default(),
         }
     }

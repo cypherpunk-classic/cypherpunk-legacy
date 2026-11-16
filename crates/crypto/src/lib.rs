@@ -8,7 +8,7 @@
 //! protocol logic on top (BIP-39 recovery funnels, BIP-340 nonce reuse,
 //! BIP-327 KeyAgg, BIP-341 tweaks, Shamir/Feldman, Sigma protocols, LLL,
 //! knapsacks, LWE, Chaumian e-cash, onion routing, Hashcash, the Clipper LEAF,
-//! the web of trust) is written out in full here, because that logic *is* the
+//! the web of trust, lamp-board pads) is written out in full here, because that logic *is* the
 //! lesson.
 
 pub mod aead;
@@ -25,6 +25,7 @@ pub mod ecash;
 pub mod hashcash;
 pub mod hashchain;
 pub mod knapsack;
+pub mod lamps;
 pub mod lattice;
 pub mod lwe;
 pub mod musig;

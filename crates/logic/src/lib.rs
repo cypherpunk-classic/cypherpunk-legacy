@@ -14,6 +14,7 @@ pub mod puzzle;
 pub mod puzzles;
 pub mod quests;
 pub mod script;
+pub mod signals;
 pub mod speakers;
 pub mod state;
 pub mod story;
