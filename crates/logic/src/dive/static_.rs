@@ -107,7 +107,7 @@ fn plausible(b: u8) -> bool {
 impl Static {
     pub fn new(seed: &[u8]) -> Self {
         let mut rng = Drbg::new(seed, "dive/static");
-        let levels = vec![level(&mut rng, "FIRST WATCH", 19, 8, 0.9), level(&mut rng, "SECOND WATCH", 25, 11, 1.0), level(&mut rng, "DOG WATCH", 31, 14, 1.1)];
+        let levels = vec![level(&mut rng, "FIRST WATCH", 19, 8, 0.6), level(&mut rng, "SECOND WATCH", 25, 11, 0.7), level(&mut rng, "DOG WATCH", 31, 14, 0.8)];
         let mut d = Self { levels, idx: 0, phase: Phase::Intro(0.0), row: 0, crib: 0, off: 0, locked: Vec::new(), trace: 0.0, t: 0.0, last: None, cleared: false, bot_wait: 0.0, wrong: 0 };
         d.load();
         d

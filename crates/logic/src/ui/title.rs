@@ -37,7 +37,7 @@ pub enum TitleAction {
     Wharf,
 }
 
-pub const VERSION: &str = "v3.1";
+pub const VERSION: &str = "v3.2";
 
 fn logo(ui: &mut egui::Ui, time: f64) {
     let size = (ui.available_width() / 7.0).clamp(46.0, 112.0);

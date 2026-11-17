@@ -217,14 +217,14 @@ fn levels(seed: &[u8]) -> Vec<LevelDef> {
     let mut rng = Drbg::new(seed, "dive/interceptor");
     let liar = 1 + rng.int(3);
     vec![
-        LevelDef { name: "TWO KEEPERS", brief: "Two shares, one line. Drag the handles until the line threads both, then fire.", kind: real_level(&mut rng, 1, &[-5.0, 6.0], None, None), rate: 1.6 },
-        LevelDef { name: "A THIRD", brief: "Three shares bend it into one curve, and only one.", kind: real_level(&mut rng, 2, &[-6.0, 3.0, 7.0], None, None), rate: 1.6 },
-        LevelDef { name: "ANY THREE", brief: "Five keepers, and a curve that needs three. Thread any three.", kind: real_level(&mut rng, 2, &[-9.0, -5.0, -2.0, 4.0, 7.0], None, None), rate: 1.6 },
-        LevelDef { name: "ONE OF THEM LIES", brief: "Four agree. The one that never lights with the others is forged.", kind: real_level(&mut rng, 2, &[-9.0, -5.0, -2.0, 4.0, 7.0], Some(liar), None), rate: 1.4 },
-        LevelDef { name: "NOT ENOUGH", brief: "Two keepers online. Move the free handle and watch where the core could be.", kind: real_level(&mut rng, 2, &[-6.0, 5.0, 2.0], None, Some((2, 14.0))), rate: 1.2 },
-        LevelDef { name: "FOUR OF FOUR", brief: "A cubic. Every share you add pins it a little more.", kind: real_level(&mut rng, 3, &[-7.0, -5.0, 2.0, 6.0], None, None), rate: 1.1 },
-        LevelDef { name: "THE REAL THING", brief: "Integers mod 31. Click three nodes: the curve is the scatter of pink dots. Fire.", kind: field_level(&mut rng, 3, 5, false), rate: 1.4 },
-        LevelDef { name: "NOISE WITH A LIAR IN IT", brief: "Six nodes, one forged. The right three light the other honest ones too.", kind: field_level(&mut rng, 3, 6, true), rate: 1.2 },
+        LevelDef { name: "TWO KEEPERS", brief: "Two shares, one line. Drag the handles until the line threads both, then fire.", kind: real_level(&mut rng, 1, &[-5.0, 6.0], None, None), rate: 0.7 },
+        LevelDef { name: "A THIRD", brief: "Three shares bend it into one curve, and only one.", kind: real_level(&mut rng, 2, &[-6.0, 3.0, 7.0], None, None), rate: 0.9 },
+        LevelDef { name: "ANY THREE", brief: "Five keepers, and a curve that needs three. Thread any three.", kind: real_level(&mut rng, 2, &[-9.0, -5.0, -2.0, 4.0, 7.0], None, None), rate: 1.1 },
+        LevelDef { name: "ONE OF THEM LIES", brief: "Four agree. The one that never lights with the others is forged.", kind: real_level(&mut rng, 2, &[-9.0, -5.0, -2.0, 4.0, 7.0], Some(liar), None), rate: 1.1 },
+        LevelDef { name: "NOT ENOUGH", brief: "Two keepers online. Move the free handle and watch where the core could be.", kind: real_level(&mut rng, 2, &[-6.0, 5.0, 2.0], None, Some((2, 14.0))), rate: 1.0 },
+        LevelDef { name: "FOUR OF FOUR", brief: "A cubic. Every share you add pins it a little more.", kind: real_level(&mut rng, 3, &[-7.0, -5.0, 2.0, 6.0], None, None), rate: 0.9 },
+        LevelDef { name: "THE REAL THING", brief: "Integers mod 31. Click three nodes: the curve is the scatter of pink dots. Fire.", kind: field_level(&mut rng, 3, 5, false), rate: 1.0 },
+        LevelDef { name: "NOISE WITH A LIAR IN IT", brief: "Six nodes, one forged. The right three light the other honest ones too.", kind: field_level(&mut rng, 3, 6, true), rate: 1.0 },
     ]
 }
 
@@ -905,7 +905,7 @@ mod tests {
         let mut d = Interceptor::new(b"slow");
         let mut fx = Fx::default();
         let mut traced = false;
-        for _ in 0..(90 * 60) {
+        for _ in 0..(160 * 60) {
             d.update(1.0 / 60.0, &Input::default(), &mut fx);
             if matches!(d.phase, Phase::Traced(_)) {
                 traced = true;

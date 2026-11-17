@@ -20,6 +20,17 @@ with between puzzles: a surveillance Dragnet, a web of trust, a wallet of
 blind-signed eCash, side quests, and choices that lead to three endings. See
 [`docs/GAMEPLAY.md`](docs/GAMEPLAY.md).
 
+**The Wharf, a v4 preview.** Playtesting 3.1 showed that honest cryptography
+had not made a fun game: too much walking between terminals, too much text,
+puzzles that read like exercises. The next version rebuilds the city one
+district at a time around puzzles that stand in the street. The first is
+playable now from the title screen (or with `CPL_WHARF=1` / `?wharf`): a
+harbour where every gate, patrol and camera is a lamp board speaking in
+one-time-pad pictures, and you carry punched cards that flip the lamps behind
+their holes. No quest givers, a map with one-key travel, a guard and a camera
+that keep watching while you work, and two cyberspace dives. Why, and where
+it goes next: [`docs/V4.md`](docs/V4.md).
+
 ---
 
 ## Play
@@ -42,6 +53,11 @@ python3 -m http.server -d dist 8080                # then open http://localhost:
 **Controls:** WASD / arrow keys to move · Shift to walk faster · E / Space /
 Enter to interact · C for the codex · Esc for the menu. On a touch screen, drag
 on the left half to walk and tap the E button to interact.
+
+**The Wharf preview:** click a card to put it in a board's reader, right-click
+(or drag) it onto the light table, M for the map, `?` on a board for
+Grandpa's notes. `CPL_WHARF=1 CPL_AUTOPLAY=1 CPL_PACE=0.6 cargo run --release`
+(or `?wharf&autoplay=demo`) shows it played.
 
 **Watch it play itself:** `CPL_AUTOPLAY=1 cargo run --release` natively, or
 `?autoplay=demo` on the web build. The autopilot walks the city, talks to
