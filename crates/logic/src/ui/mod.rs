@@ -1,7 +1,10 @@
 //! The egui interface: theme, markup, widgets, and the screens that sit on
 //! top of the world (dialogue, HUD, terminals, menus, title, credits).
 
+pub mod board;
+pub mod citymap;
 pub mod dialogue;
+pub mod dive;
 pub mod hud;
 pub mod markup;
 pub mod menu;

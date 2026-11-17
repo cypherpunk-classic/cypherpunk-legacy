@@ -19,6 +19,8 @@ pub const SAVE_VERSION: u32 = 4;
 pub enum MapId {
     Cabin,
     City,
+    /// the Wharf rebuilt as a puzzle district (the v4 preview)
+    Wharf,
 }
 
 impl MapId {
@@ -26,6 +28,7 @@ impl MapId {
         match self {
             MapId::Cabin => "cabin",
             MapId::City => "city",
+            MapId::Wharf => "wharf",
         }
     }
 }

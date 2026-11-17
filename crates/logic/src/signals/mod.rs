@@ -357,6 +357,23 @@ impl Signals {
         self.sites.iter().find(|s| self.site_open(st, s.id) && !st.flag(s.done))
     }
 
+    /// The first board standing at a site.
+    pub fn first_board(&self, site: &str) -> Option<&'static str> {
+        self.boards.iter().find(|b| b.site == site).map(|b| b.id)
+    }
+
+    /// Repaint every board and empty every reader (an agent pulls your cards).
+    pub fn reset_boards(&mut self, st: &mut GameState) {
+        let ids: Vec<&'static str> = self.boards.iter().map(|b| b.id).collect();
+        for b in &mut self.boards {
+            b.cards.clear();
+            b.hand = 0;
+        }
+        for id in ids {
+            self.after_change(st, id);
+        }
+    }
+
     pub fn bits_of(&self, st: &GameState, r: CardRef) -> Bits {
         match r {
             CardRef::Glyph(g) => g.bits(),
@@ -508,7 +525,9 @@ impl Signals {
         {
             // a broken seal trips the lock and the console repaints the board
             b.hand = 0;
-            st.trace = (st.trace + SEAL_BROKEN).min(100.0);
+            if st.settings.dragnet {
+                st.trace = (st.trace + SEAL_BROKEN).min(100.0);
+            }
             self.events.push(Event::SealBroken { board: id });
             self.after_change(st, id);
             return Outcome::SealBroken;
@@ -517,13 +536,17 @@ impl Signals {
         let hit = Glyph::from_bits(picture).and_then(|g| b.accepts.iter().find(|(a, _)| *a == g).copied());
         match hit {
             None => {
-                st.trace = (st.trace + BUZZ).min(100.0);
+                if st.settings.dragnet {
+                    st.trace = (st.trace + BUZZ).min(100.0);
+                }
                 self.events.push(Event::Buzz { board: id });
                 Outcome::NotASignal
             }
             Some((g, Effect::Nothing)) => Outcome::Idle(g),
             Some((g, Effect::Alarm)) => {
-                st.trace = (st.trace + ALARM).min(100.0);
+                if st.settings.dragnet {
+                    st.trace = (st.trace + ALARM).min(100.0);
+                }
                 self.events.push(Event::Alarm { board: id });
                 Outcome::Alarm(g)
             }

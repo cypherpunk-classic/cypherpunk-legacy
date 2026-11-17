@@ -23,6 +23,8 @@ pub struct Launch {
     /// Preview puzzle terminals instead of playing: ids separated by commas,
     /// or `all` (`CPL_PUZZLE=ch4.nonce` / `?puzzle=ch4.nonce`).
     pub puzzle: Option<String>,
+    /// Go straight to the Wharf preview (`CPL_WHARF=1` / `?wharf`).
+    pub wharf: bool,
 }
 
 /// While the game plays itself (autoplay, terminal previews) it must not
@@ -60,6 +62,7 @@ mod imp {
             exit_at_end: var("CPL_EXIT_AT_END").is_some_and(|v| v != "0"),
             side: var("CPL_SIDE").is_some_and(|v| v != "0"),
             puzzle: var("CPL_PUZZLE"),
+            wharf: var("CPL_WHARF").is_some_and(|v| v != "0"),
         }
     }
 
@@ -99,6 +102,14 @@ mod imp {
         super::read_only() || write("save.json", json)
     }
 
+    pub fn load_wharf() -> Option<String> {
+        read("wharf.json")
+    }
+
+    pub fn store_wharf(json: &str) -> bool {
+        super::read_only() || write("wharf.json", json)
+    }
+
     pub fn load_settings() -> Option<String> {
         read("settings.json")
     }
@@ -125,6 +136,7 @@ mod imp {
     use super::Launch;
 
     const SAVE_KEY: &str = "cpl3.save";
+    const WHARF_KEY: &str = "cpl4.wharf";
     const SETTINGS_KEY: &str = "cpl3.settings";
 
     fn storage() -> Option<web_sys::Storage> {
@@ -150,6 +162,7 @@ mod imp {
             exit_at_end: false,
             side: param("side").is_some() || autoplay.as_deref() == Some("full"),
             puzzle: param("puzzle"),
+            wharf: param("wharf").is_some(),
         }
     }
 
@@ -159,6 +172,14 @@ mod imp {
 
     pub fn store_save(json: &str) -> bool {
         super::read_only() || storage().is_some_and(|s| s.set_item(SAVE_KEY, json).is_ok())
+    }
+
+    pub fn load_wharf() -> Option<String> {
+        storage()?.get_item(WHARF_KEY).ok().flatten()
+    }
+
+    pub fn store_wharf(json: &str) -> bool {
+        super::read_only() || storage().is_some_and(|s| s.set_item(WHARF_KEY, json).is_ok())
     }
 
     pub fn load_settings() -> Option<String> {

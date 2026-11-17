@@ -57,7 +57,11 @@ pub const DRONE_AT: f32 = 7.0;
 pub const DRONE_OPEN: f32 = 7.0;
 
 pub const GUARD_RADIUS: f32 = 30.0;
-pub const GUARD_GAIN: f32 = 70.0;
+pub const GUARD_GAIN: f32 = 45.0;
+/// How far off you hear him coming.
+pub const FOOTSTEPS: f32 = 84.0;
+/// The slice is over: you walked out of the district.
+pub const END: &str = "w.end";
 
 const fn t(n: f32) -> f32 {
     n * T
@@ -292,6 +296,17 @@ impl Signals {
         vec![Watcher { id: "w-guard", x, y, radius: GUARD_RADIUS, gain: GUARD_GAIN }]
     }
 
+    /// Is the guard close and coming closer?
+    pub fn footsteps(&self, st: &GameState, x: f32, y: f32) -> bool {
+        if st.flag(MAST) {
+            return false;
+        }
+        let (gx, gy, dx, dy) = self.guard_at(st);
+        let (ox, oy) = (x - gx, y - gy);
+        let d = (ox * ox + oy * oy).sqrt();
+        d <= FOOTSTEPS && d > GUARD_RADIUS * 0.6 && ox * dx + oy * dy > 0.0
+    }
+
     /// Trace per second from the watchers at this spot.
     pub fn exposure(&self, st: &GameState, x: f32, y: f32) -> f32 {
         self.watchers(st).iter().filter(|w| ((w.x - x).powi(2) + (w.y - y).powi(2)).sqrt() <= w.radius).map(|w| w.gain).sum()
@@ -308,7 +323,8 @@ pub fn guard_post() -> Walk {
     Walk { pts: vec![(t(34.5), t(21.5), 2.5), (t(38.5), t(21.5), 2.5)], speed: 22.0 }
 }
 
-fn sites() -> Vec<Site> {
+/// Every place on the district map, in the order the map lists them.
+pub fn sites() -> Vec<Site> {
     vec![
         Site {
             id: "pier",

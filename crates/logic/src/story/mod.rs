@@ -13,6 +13,7 @@ pub mod epilogue;
 pub mod missions;
 pub mod prologue;
 pub mod side;
+pub mod wharf;
 
 use crate::script::{BoxFut, Ctx};
 use crate::speakers::Sp;
@@ -93,6 +94,11 @@ pub const INTERACTIONS: &[&str] = &[
 
 /// The script for an interaction id.
 pub fn interaction(c: Ctx, id: &str) -> BoxFut {
+    if (id.starts_with("w.") || id == "nonce") && c.current_map() == MapId::Wharf
+        && let Some(f) = wharf::interaction(c.clone(), id)
+    {
+        return f;
+    }
     match id {
         "cabin.dresser" => Box::pin(prologue::dresser(c)),
         "cabin.computer" => Box::pin(prologue::computer(c)),
@@ -196,11 +202,17 @@ pub fn interaction(c: Ctx, id: &str) -> BoxFut {
 
 /// The Dragnet flagged the player at (x, y).
 pub fn flagged(c: Ctx, x: f32, y: f32) -> BoxFut {
+    if c.current_map() == MapId::Wharf {
+        return Box::pin(wharf::flagged(c));
+    }
     Box::pin(dragnet::flagged(c, x, y))
 }
 
 /// The player entered a zone.
 pub fn zone(c: Ctx, id: &str) -> BoxFut {
+    if id.starts_with("w.") {
+        return Box::pin(wharf::zone(c, id.to_string()));
+    }
     Box::pin(city::city_zone(c, id.to_string()))
 }
 
@@ -209,5 +221,6 @@ pub fn ready(c: Ctx, map: MapId) -> BoxFut {
     match map {
         MapId::Cabin => Box::pin(prologue::cabin_ready(c)),
         MapId::City => Box::pin(city::city_ready(c)),
+        MapId::Wharf => Box::pin(wharf::ready(c)),
     }
 }

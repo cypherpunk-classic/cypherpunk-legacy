@@ -46,6 +46,7 @@ pub struct HudState {
 pub struct HudClicks {
     pub menu: bool,
     pub codex: bool,
+    pub map: bool,
 }
 
 impl HudState {
@@ -92,7 +93,16 @@ impl HudState {
         // pips + buttons
         egui::Area::new(egui::Id::new("hud-right")).anchor(Align2::RIGHT_TOP, egui::vec2(-12.0, 12.0)).show(ctx, |ui| {
             ui.horizontal(|ui| {
-                for (i, label) in CHAPTER_LABELS.iter().enumerate() {
+                let wharf = state.data.scene == crate::state::MapId::Wharf;
+                if wharf {
+                    let cards = state.data.cards.len();
+                    ui.label(RichText::new(format!("{cards} {}", if cards == 1 { "card" } else { "cards" })).font(mono(13.0)).color(theme::GOLD)).on_hover_text("punched cards in your pocket");
+                    ui.add_space(4.0);
+                    if ui.add(egui::Button::new(RichText::new("MAP").font(retro(18.0)).color(theme::GOLD)).fill(theme::PANEL)).on_hover_text("District map (M)").clicked() {
+                        clicks.map = true;
+                    }
+                }
+                for (i, label) in CHAPTER_LABELS.iter().enumerate().filter(|_| !wharf) {
                     let done = state.chapter_done(i);
                     let current = state.data.chapter as usize == i;
                     let (fill, fg, stroke) = if done {

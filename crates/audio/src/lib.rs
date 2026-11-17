@@ -257,7 +257,9 @@ impl Mixer {
 // Sound effects
 // ---------------------------------------------------------------------------
 
-pub const SFX: &[&str] = &["blip", "type", "confirm", "error", "unlock", "success", "door", "power", "glitch", "meow", "pickup", "warden", "step", "select", "ping", "coin"];
+pub const SFX: &[&str] = &[
+    "blip", "type", "confirm", "error", "unlock", "success", "door", "power", "glitch", "meow", "pickup", "warden", "step", "select", "ping", "coin", "tick", "alarm", "repaint", "lever", "launch", "boom", "lock", "miss",
+];
 
 /// Render one sound effect.
 pub fn sfx(name: &str, seed: u32) -> Vec<f32> {
@@ -327,6 +329,48 @@ pub fn sfx(name: &str, seed: u32) -> Vec<f32> {
             m.tone(note(88.0), t, 0.06, Wave::Square, 0.08, ToneOpts { filter: Some(5000.0), ..opts() });
             m.tone(note(95.0), t + 0.05, 0.22, Wave::Triangle, 0.12, opts());
         }
+        // a lamp flipped by hand
+        "tick" => {
+            m.noise(t, 0.012, 0.18, 2600.0, Filter::High);
+            m.tone(1900.0, t, 0.015, Wave::Square, 0.05, ToneOpts { filter: Some(4000.0), ..opts() });
+        }
+        // a lock that did not like what it read
+        "alarm" => {
+            for i in 0..3 {
+                let at = t + i as f32 * 0.16;
+                m.tone(880.0, at, 0.08, Wave::Square, 0.16, ToneOpts { filter: Some(2600.0), ..opts() });
+                m.tone(660.0, at + 0.08, 0.08, Wave::Square, 0.16, ToneOpts { filter: Some(2600.0), ..opts() });
+            }
+        }
+        // a console repainting its board
+        "repaint" => {
+            for (i, n) in [88.0, 84.0, 81.0].into_iter().enumerate() {
+                m.tone(note(n), t + i as f32 * 0.03, 0.05, Wave::Square, 0.06, ToneOpts { filter: Some(3500.0), ..opts() });
+            }
+        }
+        "lever" => {
+            m.noise(t, 0.05, 0.35, 700.0, Filter::Low);
+            m.tone(140.0, t + 0.03, 0.1, Wave::Square, 0.14, ToneOpts { glide_to: Some(90.0), filter: Some(900.0), ..opts() });
+        }
+        // cyberspace: a disc leaves the rail
+        "launch" => {
+            m.tone(220.0, t, 0.35, Wave::Saw, 0.16, ToneOpts { glide_to: Some(1760.0), filter: Some(3200.0), ..opts() });
+            m.noise(t, 0.2, 0.08, 5000.0, Filter::High);
+        }
+        "boom" => {
+            m.noise(t, 0.5, 0.5, 500.0, Filter::Low);
+            m.tone(90.0, t, 0.45, Wave::Sine, 0.3, ToneOpts { glide_to: Some(38.0), ..opts() });
+            for i in 0..5 {
+                let f = 400.0 + m.random() * 1800.0;
+                m.tone(f, t + 0.02 + i as f32 * 0.03, 0.05, Wave::Square, 0.06, opts());
+            }
+        }
+        // a node snaps onto the curve
+        "lock" => {
+            m.tone(note(81.0), t, 0.05, Wave::Triangle, 0.16, opts());
+            m.tone(note(88.0), t + 0.04, 0.12, Wave::Triangle, 0.16, opts());
+        }
+        "miss" => m.tone(330.0, t, 0.3, Wave::Triangle, 0.14, ToneOpts { glide_to: Some(160.0), ..opts() }),
         _ => {}
     }
     let mut out = m.finish(1.0);

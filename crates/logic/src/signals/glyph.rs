@@ -173,7 +173,7 @@ glyphs! {
         ".##.##..",
         ".#...#..",
     ];
-    Tower, "tower", "DIRECTORATE", [
+    Tower, "tower", "TOWER", [
         "#..#..#.",
         ".#.#.#..",
         "...#....",

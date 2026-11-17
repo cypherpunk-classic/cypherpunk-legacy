@@ -317,6 +317,7 @@ pub fn map(id: MapId) -> MapDef {
     match id {
         MapId::Cabin => cabin(),
         MapId::City => city(),
+        MapId::Wharf => crate::wharf_map::wharf(),
     }
 }
 
@@ -786,7 +787,7 @@ mod tests {
 
     #[test]
     fn maps_are_consistent() {
-        for id in [MapId::Cabin, MapId::City] {
+        for id in [MapId::Cabin, MapId::City, MapId::Wharf] {
             let m = map(id);
             assert_eq!(m.tiles.len(), m.h);
             assert!(m.tiles.iter().all(|r| r.len() == m.w));

@@ -30,9 +30,19 @@ impl GameState {
     /// sensor time `t`. With the Dragnet turned off in the settings, sensors
     /// still see you (so the fields light up) but the trace only falls.
     pub fn dragnet(&mut self, map: &MapDef, x: f32, y: f32, t: f32, dt: f32) -> Tick {
+        self.dragnet_with(map, x, y, t, dt, None)
+    }
+
+    /// The same, with something that moves (the Wharf's guard) adding its
+    /// own gain while it is close: `(id, gain per second)`.
+    pub fn dragnet_with(&mut self, map: &MapDef, x: f32, y: f32, t: f32, dt: f32, extra: Option<(&'static str, f32)>) -> Tick {
         let seen: Vec<&Sensor> = self.active_sensors(map).filter(|s| s.sees(x, y, t)).collect();
-        let gain: f32 = seen.iter().map(|s| s.gain).sum();
-        let ids: Vec<&'static str> = seen.iter().map(|s| s.id).collect();
+        let mut gain: f32 = seen.iter().map(|s| s.gain).sum();
+        let mut ids: Vec<&'static str> = seen.iter().map(|s| s.id).collect();
+        if let Some((id, g)) = extra.filter(|e| e.1 > 0.0) {
+            gain += g;
+            ids.push(id);
+        }
         if !ids.is_empty() {
             // the first time a sensor logs you, the codex explains what it took
             self.unlock_codex("metadata");

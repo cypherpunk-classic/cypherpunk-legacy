@@ -4,6 +4,8 @@
 
 pub mod allies;
 pub mod codex;
+pub mod district;
+pub mod dive;
 pub mod dragnet;
 pub mod economy;
 pub mod ending;
@@ -20,6 +22,7 @@ pub mod state;
 pub mod story;
 pub mod ui;
 pub mod walkthrough;
+pub mod wharf_map;
 pub mod world;
 
 pub use cpl_art::characters::Facing;

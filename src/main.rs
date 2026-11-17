@@ -14,6 +14,7 @@ mod platform;
 mod sound;
 mod title;
 mod view;
+mod wharf;
 mod world;
 
 use bevy::prelude::*;
@@ -58,7 +59,8 @@ fn main() -> AppExit {
         .add_systems(Update, (autopilot::drive, input::gather).chain().in_set(Phase::Input))
         .add_systems(Update, director::run.in_set(Phase::Story))
         .add_systems(Update, (world::refresh_system, actors::gather_bodies, actors::move_player, actors::npc_ai, actors::cat_ai).chain().in_set(Phase::Move))
-        .add_systems(Update, (actors::interact, actors::zones, dragnet::spawn_fields, dragnet::update, actors::animate_walkers, actors::sync_positions).chain().in_set(Phase::React))
+        .init_resource::<wharf::WharfView>()
+        .add_systems(Update, (actors::interact, actors::zones, dragnet::spawn_fields, wharf::spawn, wharf::update, dragnet::update, actors::animate_walkers, actors::sync_positions).chain().in_set(Phase::React))
         .add_systems(Update, (view::update_camera, fx::particles, fx::loop_anims, fx::lights, fx::water, title::animate, sound::play).in_set(Phase::Present))
         .run()
 }

@@ -799,6 +799,11 @@ pub fn buildings() -> Vec<(&'static str, ObjectArt)> {
         ("tower", bstyle(96, 120, "#262a36", "#1a1d26", "#12141c", "#ff5566", "#ff8a8a", "#14151c", "#3d4554", 18, Panels, Flat)),
         ("block_a", bstyle(112, 92, "#2a2440", "#1d1930", "#141020", "#73eff7", "#73eff7", "#141026", "#3b5dc9", 19, Plain, Flat)),
         ("block_b", bstyle(112, 92, "#2b3a3a", "#1d2828", "#121a1a", "#a7f070", "#ffcd75", "#121c1c", "#257179", 20, Bricks, Flat)),
+        ("warehouse", bstyle(112, 70, "#4a3a34", "#33271f", "#1f1814", "#ef7d57", "#ffcd75", "#19130f", "#6e2a1f", 21, Bricks, Sawtooth)),
+        ("icehouse", bstyle(80, 56, "#3e6f86", "#2b5266", "#1a3442", "#c7f0ff", "#e6fbff", "#122832", "#2a5e8a", 22, Panels, Flat)),
+        ("shed", bstyle(96, 58, "#56503a", "#3d3828", "#262318", "#ffcd75", "#fff1d0", "#17150e", "#7a4a28", 23, Wood, Peak)),
+        ("customs", bstyle(96, 64, "#3a3f52", "#282c3a", "#161822", "#ff5566", "#ff8a8a", "#12131a", "#b13e53", 24, Panels, Flat)),
+        ("hut", bstyle(48, 44, "#3d4554", "#2b313d", "#1f2330", "#ff5566", "#ffcd75", "#141a14", "#566c86", 25, Panels, Flat)),
     ]
 }
 
@@ -1097,9 +1102,231 @@ pub fn objects() -> Vec<(&'static str, ObjectArt)> {
     ]
 }
 
+// ---------------------------------------------------------------------------
+// The Wharf's signal boards
+// ---------------------------------------------------------------------------
+
+/// A lamp board on a post. The 16x16 face at (3, 3) is left dark: the engine
+/// draws the live lamps over it. `trim` marks which console feeds it;
+/// `lever` adds a lock box with a lever to the post.
+pub fn signal_board(trim: &'static str, lever: bool, glass: bool) -> ObjectArt {
+    ObjectArt {
+        w: 22,
+        h: 34,
+        frames: 1,
+        outline: true,
+        draw: Arc::new(move |g: &mut Canvas, _f: i32| {
+            g.rect(9, 22, 4, 12, "#3d4554"); // post
+            g.rect(8, 32, 6, 2, "#262a36");
+            g.rect(0, 0, 22, 23, "#262a36"); // casing
+            g.rect(1, 1, 20, 21, trim);
+            g.rect(2, 2, 18, 19, "#12141c");
+            g.rect(3, 3, 16, 16, "#07080d"); // face
+            g.rect(3, 20, 16, 1, "#1a1d26");
+            if glass {
+                g.px(4, 4, "#3a4a66");
+                g.px(5, 4, "#3a4a66");
+                g.px(4, 5, "#3a4a66");
+                g.px(17, 17, "#27324a");
+            }
+            if lever {
+                g.rect(14, 24, 7, 7, "#3d4554");
+                g.rect(15, 25, 5, 5, "#1a1d26");
+                g.rect(17, 22, 1, 5, "#c7d3dc");
+                g.rect(16, 21, 3, 2, "#ff5566");
+            } else {
+                g.rect(3, 24, 5, 3, "#1a1d26"); // card reader
+                g.rect(4, 25, 3, 1, "#73eff7");
+            }
+        }),
+    }
+}
+
+/// The box that feeds one or two boards.
+pub fn signal_console(trim: &'static str) -> ObjectArt {
+    ObjectArt {
+        w: 14,
+        h: 16,
+        frames: 2,
+        outline: true,
+        draw: Arc::new(move |g: &mut Canvas, f: i32| {
+            g.rect(0, 2, 14, 14, "#3d4554");
+            g.rect(0, 2, 14, 2, "#5f6b7d");
+            g.rect(1, 5, 12, 6, "#12141c");
+            g.rect(2, 6, 10, 1, trim);
+            g.rect(2, 8, if f != 0 { 7 } else { 4 }, 1, trim);
+            g.rect(5, 0, 4, 2, trim);
+            g.rect(2, 13, 2, 1, "#a7f070");
+            g.rect(6, 13, 6, 1, "#262a36");
+        }),
+    }
+}
+
+fn locker(g: &mut Canvas, f: i32) {
+    g.rect(0, 0, 14, 24, "#3d4554");
+    g.rect(0, 0, 14, 2, "#5f6b7d");
+    g.rect(1, 3, 12, 19, "#2b313d");
+    if f == 0 {
+        g.rect(2, 4, 10, 17, "#566c86");
+        g.rect(3, 6, 8, 1, "#3d4554");
+        g.rect(3, 8, 8, 1, "#3d4554");
+        g.rect(9, 12, 2, 3, "#ffcd75"); // dial
+    } else {
+        g.rect(2, 4, 10, 17, "#0b0d16");
+        g.rect(10, 4, 3, 17, "#566c86"); // door swung open
+        g.rect(4, 15, 5, 4, "#ffcd75");
+    }
+}
+
+fn poster(g: &mut Canvas, _f: i32) {
+    g.rect(0, 0, 16, 20, "#e6e2c3");
+    g.rect(0, 0, 16, 3, "#b13e53");
+    for (i, col) in ["#1a1c2c", "#1a1c2c", "#1a1c2c"].iter().enumerate() {
+        let y = 5 + i as i32 * 5;
+        g.rect(2, y, 4, 4, *col);
+        g.rect(8, y + 1, 6, 1, "#566c86");
+        g.rect(8, y + 3, 4, 1, "#94b0c2");
+    }
+}
+
+fn punch_card(g: &mut Canvas, f: i32) {
+    g.rect(0, 1, 10, 7, "#fff1d0");
+    g.rect(0, 1, 10, 1, "#d9b38c");
+    for (x, y) in [(1, 3), (4, 3), (7, 4), (2, 5), (5, 6), (8, 6)] {
+        g.px(x, y, "#2b1810");
+    }
+    if f != 0 {
+        g.px(9, 0, "#ffffff");
+        g.px(8, 1, "#ffffff");
+    }
+}
+
+fn cabinet(g: &mut Canvas, f: i32) {
+    g.rect(1, 0, 16, 34, "#1d1930");
+    g.rect(0, 2, 18, 4, "#3a2a5c"); // marquee
+    g.rect(2, 3, 14, 2, if f != 0 { "#ff3e9a" } else { "#c792ff" });
+    g.rect(2, 8, 14, 11, "#07080d"); // screen
+    g.rect(3, 9, 12, 9, "#0b1a2a");
+    let line = if f != 0 { "#73eff7" } else { "#41a6f6" };
+    for (x, y) in [(4, 16), (6, 14), (8, 13), (10, 13), (12, 15)] {
+        g.px(x, y, line);
+    }
+    g.px(13, 11, "#ffcd75");
+    g.rect(1, 20, 16, 4, "#2a2440"); // controls
+    g.rect(4, 21, 2, 2, "#ff5566");
+    g.rect(9, 21, 2, 2, "#ffcd75");
+    g.rect(12, 21, 2, 2, "#73eff7");
+    g.rect(3, 26, 12, 6, "#141020");
+    g.rect(7, 28, 4, 2, "#3a2a5c");
+}
+
+/// A shipping container.
+pub fn container(body: &'static str, dark: &'static str) -> ObjectArt {
+    ObjectArt {
+        w: 32,
+        h: 22,
+        frames: 1,
+        outline: true,
+        draw: Arc::new(move |g: &mut Canvas, _f: i32| {
+            g.rect(0, 0, 32, 22, body);
+            g.rect(0, 0, 32, 3, dark);
+            for x in (2..32).step_by(4) {
+                g.rect(x, 4, 1, 16, dark);
+            }
+            g.rect(0, 20, 32, 2, dark);
+            g.rect(14, 8, 4, 8, dark);
+        }),
+    }
+}
+
+fn bollard(g: &mut Canvas, _f: i32) {
+    g.rect(1, 2, 6, 8, "#3d4554");
+    g.rect(0, 0, 8, 3, "#5f6b7d");
+    g.rect(2, 4, 4, 1, "#262a36");
+}
+
+fn fish_crate(g: &mut Canvas, _f: i32) {
+    g.rect(0, 4, 16, 10, "#7a4a28");
+    g.rect(0, 4, 16, 2, "#a8703f");
+    g.rect(1, 1, 14, 4, "#94b0c2"); // ice
+    for (x, col) in [(2, "#5f9ecf"), (7, "#ef7d57"), (11, "#5f9ecf")] {
+        g.rect(x, 2, 3, 1, col);
+        g.px(x + 3, 1, col);
+    }
+    g.rect(0, 12, 16, 2, "#4a2c1a");
+}
+
+fn banner(g: &mut Canvas, f: i32) {
+    g.rect(4, 0, 2, 28, "#3d4554");
+    g.rect(0, 2, 10, 14, "#b13e53");
+    g.rect(0, 2, 10, 2, "#6e2a1f");
+    // the Directorate's crest: an eye in a triangle
+    g.rect(4, 6, 2, 1, "#ffcd75");
+    g.rect(3, 8, 4, 1, "#ffcd75");
+    g.rect(2, 10, 6, 1, "#ffcd75");
+    g.px(4 + (f % 2), 9, "#1a1c2c");
+    g.rect(0, 15, 3, 1 + f % 2, "#b13e53");
+    g.rect(7, 15, 3, 2 - f % 2, "#b13e53");
+}
+
+fn lantern(g: &mut Canvas, f: i32) {
+    g.rect(4, 0, 2, 26, "#4a2c1a");
+    g.rect(1, 3, 8, 9, "#ffcd75");
+    g.rect(2, 4, 6, 7, if f != 0 { "#fff1d0" } else { "#ffe7a8" });
+    g.rect(1, 2, 8, 1, "#7a4a28");
+    g.rect(1, 12, 8, 1, "#7a4a28");
+    // the nightjar
+    g.px(3, 6, "#2b1810");
+    g.px(6, 6, "#2b1810");
+    g.rect(4, 7, 2, 2, "#2b1810");
+}
+
+fn rig_monitor(g: &mut Canvas, f: i32) {
+    g.rect(0, 0, 18, 15, "#262a36");
+    g.rect(1, 1, 16, 12, "#0b2a31");
+    g.rect(2, 2, 14, 10, if f != 0 { "#0f3b44" } else { "#0d323a" });
+    g.rect(7, 15, 4, 5, "#3d4554");
+    g.rect(4, 19, 10, 2, "#262a36");
+}
+
+/// Wharf-only props (`obj-<key>`).
+pub fn wharf_objects() -> Vec<(&'static str, ObjectArt)> {
+    vec![
+        // boards by console colour: plain reader, lever (a lock), glass (no hand flips)
+        ("sig_amber", signal_board("#8a6a2a", false, false)),
+        ("sig_grey_l", signal_board("#566c86", true, false)),
+        ("sig_teal_l", signal_board("#257179", true, false)),
+        ("sig_red_l", signal_board("#b13e53", true, false)),
+        ("sig_red_g", signal_board("#b13e53", true, true)),
+        ("sig_violet_g", signal_board("#7d4bd6", true, true)),
+        ("sig_green", signal_board("#38b764", false, false)),
+        ("sig_green_g", signal_board("#38b764", true, true)),
+        ("sig_blue", signal_board("#3b5dc9", false, false)),
+        ("sig_orange_l", signal_board("#ef7d57", true, false)),
+        ("sig_white", signal_board("#c7d3dc", false, false)),
+        ("sig_white_g", signal_board("#c7d3dc", true, true)),
+        ("console_green", signal_console("#38b764")),
+        ("console_blue", signal_console("#3b5dc9")),
+        ("console_white", signal_console("#c7d3dc")),
+        ("console_orange", signal_console("#ef7d57")),
+        ("locker", art(14, 24, 2, true, locker)),
+        ("poster", art(16, 20, 1, true, poster)),
+        ("card", art(10, 8, 2, true, punch_card)),
+        ("cabinet", art(18, 34, 2, true, cabinet)),
+        ("container_r", container("#9c4a32", "#6e2a1f")),
+        ("container_b", container("#2a5e8a", "#1a3a5c")),
+        ("container_g", container("#2f6b44", "#173326")),
+        ("bollard", art(8, 10, 1, true, bollard)),
+        ("fishcrate", art(16, 14, 1, true, fish_crate)),
+        ("banner", art(10, 28, 2, true, banner)),
+        ("lantern", art(10, 26, 2, true, lantern)),
+        ("rigmonitor", art(18, 21, 2, true, rig_monitor)),
+    ]
+}
+
 /// Every sprite sheet keyed the way maps refer to them: `obj-*`, `bld-*`, `sign-*`.
 pub fn all_sprites() -> Vec<(String, ObjectArt)> {
-    let mut v: Vec<(String, ObjectArt)> = objects().into_iter().map(|(k, a)| (format!("obj-{k}"), a)).collect();
+    let mut v: Vec<(String, ObjectArt)> = objects().into_iter().chain(wharf_objects()).map(|(k, a)| (format!("obj-{k}"), a)).collect();
     v.extend(buildings().into_iter().map(|(k, a)| (format!("bld-{k}"), a)));
     v.extend(signs().into_iter().map(|(k, a)| (format!("sign-{k}"), a)));
     v
@@ -1139,6 +1366,12 @@ pub fn anim_rate(key: &str) -> Option<f32> {
         "shard" => 3.0,
         "radio" => 2.0,
         "billboard" => 1.0,
+        "card" => 1.5,
+        "cabinet" => 3.0,
+        "banner" => 2.0,
+        "lantern" => 2.5,
+        "rigmonitor" => 2.0,
+        "console_green" | "console_blue" | "console_white" | "console_orange" => 1.2,
         "checkpoint" => 2.0,
         _ => return None,
     })

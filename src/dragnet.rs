@@ -105,16 +105,21 @@ pub fn update(
     }
     let t = time.elapsed_secs();
     let dt = time.delta_secs().min(0.1);
-    let free = game.mode == Mode::World && !game.busy() && director.transition.is_none();
+    // on the Wharf the street keeps watching while you work a board
+    let free = game.mode == Mode::World && (!game.busy() || game.at_board_only()) && director.transition.is_none();
 
     // the trace (only while you can walk; a conversation stops the clock)
     if free && let Ok(p) = player.single() {
         let (x, y) = (p.p.x, p.p.y - 6.0);
+        let extra = game.district.as_ref().map(|d| ("w-guard", d.sig.exposure(&game.ctx.state_ref(), x, y)));
         let (tick, on) = {
             let mut s = game.ctx.state();
-            let tick = s.dragnet(&map, x, y, t, dt);
+            let tick = s.dragnet_with(&map, x, y, t, dt, extra);
             (tick, s.settings.dragnet)
         };
+        if let Some(d) = game.district.as_mut() {
+            d.seen = !tick.seen.is_empty();
+        }
         if on && tick.seen.iter().any(|id| !view.seen.contains(id)) {
             sfx.0.push("ping");
         }

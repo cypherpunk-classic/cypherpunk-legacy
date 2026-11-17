@@ -33,6 +33,8 @@ pub enum TitleAction {
     Continue,
     NewGame { handle: String, look: usize },
     Settings(Settings),
+    /// The Wharf rebuilt as a puzzle district (the v4 preview).
+    Wharf,
 }
 
 pub const VERSION: &str = "v3.1";
@@ -89,6 +91,16 @@ pub fn show(ctx: &egui::Context, t: &mut TitleState, save: Option<&SaveData>, st
                 t.page = TitlePage::NewGame;
                 t.error.clear();
             }
+            ui.add_space(4.0);
+            let preview = egui::Button::new(RichText::new("THE WHARF · v4 PREVIEW").font(retro(24.0)).color(theme::rgb(0x1a0612)))
+                .fill(MAGENTA)
+                .stroke(Stroke::new(1.0, MAGENTA))
+                .min_size(egui::vec2(bw, 36.0));
+            if ui.add(preview).on_hover_text("The new direction: no errands, puzzles in the street. One district, about half an hour. It keeps a save of its own.").clicked() {
+                sfx.push("confirm");
+                action = TitleAction::Wharf;
+            }
+            ui.add_space(4.0);
             if big(ui, "SETTINGS", false) {
                 sfx.push("select");
                 t.page = TitlePage::Settings;

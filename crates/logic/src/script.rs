@@ -32,7 +32,14 @@ pub enum Cmd {
     Wait(f32),
     Goto { map: MapId, spawn: Option<String> },
     PanTo { x: f32, y: f32, ms: f32 },
+    /// The Wharf: a signal board's close-up, a locker's dial, a cyberspace
+    /// dive. Each replies when the player steps away (a dive with whether it fell).
+    Board(String),
+    Locker(String),
+    Dive(String),
     // --- fire and forget ---
+    /// Something for the district's signals to do ("pick:gull", "flagged").
+    Signal(String),
     Follow,
     Flash { ms: f32, color: u32 },
     Burst { x: f32, y: f32, color: u32, n: u32 },
@@ -47,7 +54,7 @@ pub enum Cmd {
 
 impl Cmd {
     pub fn blocking(&self) -> bool {
-        matches!(self, Cmd::Say(_) | Cmd::Choose { .. } | Cmd::Puzzle(_) | Cmd::Wait(_) | Cmd::Goto { .. } | Cmd::PanTo { .. })
+        matches!(self, Cmd::Say(_) | Cmd::Choose { .. } | Cmd::Puzzle(_) | Cmd::Wait(_) | Cmd::Goto { .. } | Cmd::PanTo { .. } | Cmd::Board(_) | Cmd::Locker(_) | Cmd::Dive(_))
     }
 
     pub fn name(&self) -> &'static str {
@@ -58,6 +65,10 @@ impl Cmd {
             Cmd::Wait(_) => "wait",
             Cmd::Goto { .. } => "goto",
             Cmd::PanTo { .. } => "pan",
+            Cmd::Board(_) => "board",
+            Cmd::Locker(_) => "locker",
+            Cmd::Dive(_) => "dive",
+            Cmd::Signal(_) => "signal",
             Cmd::Follow => "follow",
             Cmd::Flash { .. } => "flash",
             Cmd::Burst { .. } => "burst",
@@ -312,6 +323,24 @@ impl Ctx {
     }
 
     /// Run a routine with player control suspended.
+    /// Stand at a signal board until the player steps away.
+    pub async fn board(&self, id: &str) {
+        self.request(Cmd::Board(id.to_string())).await;
+    }
+
+    pub async fn locker(&self, id: &str) {
+        self.request(Cmd::Locker(id.to_string())).await;
+    }
+
+    /// Jack into a dive; true if its last level fell.
+    pub async fn dive(&self, id: &str) -> bool {
+        matches!(self.request(Cmd::Dive(id.to_string())).await, Reply::Bool(true))
+    }
+
+    pub fn signal(&self, what: &str) {
+        self.send(Cmd::Signal(what.to_string()));
+    }
+
     pub async fn cutscene<F: Future<Output = ()>>(&self, f: F) {
         self.0.borrow_mut().cutscene += 1;
         let _guard = CutsceneGuard(self.clone());
