@@ -1,4 +1,4 @@
-//! The Wharf preview: arriving, the few things anyone says, the gates, being
+//! The Wharf: arriving, the few things anyone says, the gates, being
 //! caught, the mast, and walking out. Everything else is the boards.
 
 use crate::say;
@@ -209,6 +209,6 @@ pub fn summary(st: &GameState) -> (String, Vec<String>) {
     lines.push("Every lock on the Wharf used a perfect cipher, and you never broke one.".to_string());
     lines.push("You broke how it was used: a pad used twice, a message nobody sealed, a seal that could not tell yesterday from today.".to_string());
     lines.push(String::new());
-    lines.push("This is a preview of Cypherpunk Legacy v4. The rest of the city comes next.".to_string());
+    lines.push("Cypherpunk Legacy v4. The rest of the city is being rebuilt the same way.".to_string());
     ("THE WHARF, FREE".to_string(), lines)
 }
