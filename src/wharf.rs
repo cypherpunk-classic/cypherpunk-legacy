@@ -1,7 +1,7 @@
-//! The Wharf in the world: every signal board's lamps lit live on its post,
-//! the guard walking the round the district's clock gives him, the supply
-//! drone, and what the street can see of you (for the board's header and
-//! the trace).
+//! The v4 districts in the world: every signal board's lamps lit live on
+//! its post (the Wharf), the guards walking the rounds the district's clock
+//! gives them, the supply drone, and what the street can see of you (for
+//! the close-up's header and the trace).
 
 use bevy::asset::RenderAssetUsages;
 use bevy::prelude::*;
@@ -101,7 +101,7 @@ pub fn update(
     player: Query<&Pos, (With<Player>, Without<Npc>)>,
 ) {
     let Some(map) = level.map.clone() else { return };
-    if map.id != MapId::Wharf {
+    if !matches!(map.id, MapId::Wharf | MapId::Exchange) {
         return;
     }
     let game = &mut game.0;
@@ -124,13 +124,11 @@ pub fn update(
             }
         }
     }
-    let poses = d.sig.poses(&state);
+    let poses = d.poses(&state);
     for (npc, mut pos, mut w) in npcs.iter_mut() {
         let def = &map.npcs[npc.idx];
-        if def.id != "w-guard" {
-            continue;
-        }
-        if let Some(p) = poses.iter().find(|p| p.id == "w-guard") {
+        // anyone the district walks itself
+        if let Some(p) = poses.iter().find(|p| p.id == def.id && !p.flying) {
             pos.p = Vec2::new(p.x, p.y);
             w.moving = p.dx != 0.0 || p.dy != 0.0;
             if w.moving {
@@ -148,6 +146,6 @@ pub fn update(
     }
     // what the street can see of you (the trace itself runs in the Dragnet)
     if let Ok(p) = player.single() {
-        d.footsteps = d.sig.footsteps(&state, p.p.x, p.p.y - 6.0);
+        d.footsteps = d.footsteps_at(&state, p.p.x, p.p.y - 6.0);
     }
 }

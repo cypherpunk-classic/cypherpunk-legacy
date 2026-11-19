@@ -105,13 +105,13 @@ pub fn update(
     }
     let t = time.elapsed_secs();
     let dt = time.delta_secs().min(0.1);
-    // on the Wharf the street keeps watching while you work a board
+    // in a v4 district the street keeps watching while you work a board or a panel
     let free = game.mode == Mode::World && (!game.busy() || game.at_board_only()) && director.transition.is_none();
 
     // the trace (only while you can walk; a conversation stops the clock)
     if free && let Ok(p) = player.single() {
         let (x, y) = (p.p.x, p.p.y - 6.0);
-        let extra = game.district.as_ref().map(|d| ("w-guard", d.sig.exposure(&game.ctx.state_ref(), x, y)));
+        let extra = game.district.as_ref().map(|d| ("guard", d.exposure(&game.ctx.state_ref(), x, y)));
         let (tick, on) = {
             let mut s = game.ctx.state();
             let tick = s.dragnet_with(&map, x, y, t, dt, extra);

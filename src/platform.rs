@@ -25,6 +25,8 @@ pub struct Launch {
     pub puzzle: Option<String>,
     /// Go straight to the Wharf preview (`CPL_WHARF=1` / `?wharf`).
     pub wharf: bool,
+    /// Go straight to the Exchange, the Wharf done (`CPL_EXCHANGE=1` / `?exchange`).
+    pub exchange: bool,
 }
 
 /// While the game plays itself (autoplay, terminal previews) it must not
@@ -63,6 +65,7 @@ mod imp {
             side: var("CPL_SIDE").is_some_and(|v| v != "0"),
             puzzle: var("CPL_PUZZLE"),
             wharf: var("CPL_WHARF").is_some_and(|v| v != "0"),
+            exchange: var("CPL_EXCHANGE").is_some_and(|v| v != "0"),
         }
     }
 
@@ -163,6 +166,7 @@ mod imp {
             side: param("side").is_some() || autoplay.as_deref() == Some("full"),
             puzzle: param("puzzle"),
             wharf: param("wharf").is_some(),
+            exchange: param("exchange").is_some(),
         }
     }
 

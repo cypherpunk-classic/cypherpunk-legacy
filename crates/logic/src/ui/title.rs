@@ -37,7 +37,7 @@ pub enum TitleAction {
     Wharf,
 }
 
-pub const VERSION: &str = "v4.0";
+pub const VERSION: &str = "v4.1";
 
 fn logo(ui: &mut egui::Ui, time: f64) {
     let size = (ui.available_width() / 7.0).clamp(46.0, 112.0);
@@ -83,15 +83,15 @@ pub fn show(ctx: &egui::Context, t: &mut TitleState, save: Option<&SaveData>, st
                 ui.add(b).clicked()
             };
             // v4 first: the city rebuilt around puzzles in the street
-            let wharf = egui::Button::new(RichText::new("PLAY · THE WHARF").font(retro(28.0)).color(theme::rgb(0x1a0612)))
+            let wharf = egui::Button::new(RichText::new("PLAY · v4").font(retro(28.0)).color(theme::rgb(0x1a0612)))
                 .fill(MAGENTA)
                 .stroke(Stroke::new(1.0, MAGENTA))
                 .min_size(egui::vec2(bw, 42.0));
-            if ui.add(wharf).on_hover_text("v4: no errands, puzzles in the street. The first district, about half an hour. It keeps a save of its own.").clicked() {
+            if ui.add(wharf).on_hover_text("v4: no errands, puzzles in the street. The Wharf, then the Exchange, about an hour. It keeps a save of its own and carries on where you left it.").clicked() {
                 sfx.push("confirm");
                 action = TitleAction::Wharf;
             }
-            ui.label(RichText::new("v4 · the first rebuilt district").font(mono(12.0)).color(DIM));
+            ui.label(RichText::new("v4 · the Wharf, then the Exchange").font(mono(12.0)).color(DIM));
             ui.add_space(8.0);
             ui.label(RichText::new("THE CLASSIC STORY · v3.1").font(retro(16.0)).color(FAINT));
             if save.is_some() && big(ui, "CONTINUE", false) {

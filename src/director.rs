@@ -68,6 +68,7 @@ pub fn build_game(launch: &platform::Launch) -> Game {
     game.auto_pace = launch.pace;
     // the autopilot starts the Wharf itself (with its own seed)
     game.launch_wharf = launch.wharf && !launch.autoplay;
+    game.launch_exchange = launch.exchange && !launch.autoplay;
     game
 }
 
@@ -145,7 +146,7 @@ pub fn run(
             EngineReq::PersistSave => {
                 let (json, wharf) = {
                     let s = game.ctx.state_ref();
-                    (s.save_json(), s.data.scene == MapId::Wharf)
+                    (s.save_json(), matches!(s.data.scene, MapId::Wharf | MapId::Exchange))
                 };
                 game.storage_ok = if wharf { platform::store_wharf(&json) } else { platform::store_save(&json) };
             }

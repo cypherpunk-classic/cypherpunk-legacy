@@ -9,6 +9,7 @@ pub mod hud;
 pub mod markup;
 pub mod menu;
 pub mod panels;
+pub mod patch;
 pub mod portraits;
 pub mod terminal;
 pub mod theme;

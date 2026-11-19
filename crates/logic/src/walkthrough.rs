@@ -147,6 +147,16 @@ impl Headless {
         h
     }
 
+    /// The Exchange, with the Wharf behind you, played by its autoplayer.
+    pub fn exchange(seed_phrase: &str) -> Self {
+        let mut game = Game::new(GameState::new(), None);
+        game.auto = true;
+        game.start_exchange(Some(seed_phrase));
+        let mut h = Self { game, egui: egui::Context::default(), report: Report::default(), dt: 1.0 / 30.0, manual: false, side: false, seen_terminal: None, key_down: false };
+        h.service();
+        h
+    }
+
     /// Like [`Headless::new`], but dialogue is read and advanced with key presses.
     pub fn manual(handle: &str, seed_phrase: &str) -> Self {
         let mut h = Self::new(handle, seed_phrase);

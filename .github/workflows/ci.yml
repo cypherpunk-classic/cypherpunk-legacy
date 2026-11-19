@@ -42,11 +42,11 @@ jobs:
           mkdir -p shots-side
           xvfb-run -s "-screen 0 1280x720x24" env WGPU_BACKEND=vulkan CPL_AUTOPLAY=1 CPL_SIDE=1 CPL_SPEED=3 CPL_EXIT_AT_END=1 \
             CPL_SHOTS=shots-side CPL_DATA_DIR="$RUNNER_TEMP/cpl-side" CPL_SEED=ci-side timeout 1800 ./target/release/cypherpunk-legacy
-      - name: The Wharf preview, every board, dial and dive
+      - name: v4, the Wharf and then the Exchange, every board, panel, dial and dive
         run: |
           mkdir -p shots-wharf
           xvfb-run -s "-screen 0 1280x720x24" env WGPU_BACKEND=vulkan CPL_AUTOPLAY=1 CPL_WHARF=1 CPL_PACE=0.2 CPL_EXIT_AT_END=1 \
-            CPL_SHOTS=shots-wharf CPL_DATA_DIR="$RUNNER_TEMP/cpl-wharf" CPL_SEED=ci-wharf timeout 1200 ./target/release/cypherpunk-legacy
+            CPL_SHOTS=shots-wharf CPL_DATA_DIR="$RUNNER_TEMP/cpl-wharf" CPL_SEED=ci-wharf timeout 1800 ./target/release/cypherpunk-legacy
       - uses: actions/upload-artifact@v4
         if: always()
         with:

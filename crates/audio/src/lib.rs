@@ -258,7 +258,7 @@ impl Mixer {
 // ---------------------------------------------------------------------------
 
 pub const SFX: &[&str] = &[
-    "blip", "type", "confirm", "error", "unlock", "success", "door", "power", "glitch", "meow", "pickup", "warden", "step", "select", "ping", "coin", "tick", "alarm", "repaint", "lever", "launch", "boom", "lock", "miss",
+    "blip", "type", "confirm", "error", "unlock", "success", "door", "power", "glitch", "meow", "pickup", "warden", "step", "select", "ping", "coin", "tick", "alarm", "repaint", "lever", "launch", "boom", "lock", "miss", "ring", "plug",
 ];
 
 /// Render one sound effect.
@@ -371,6 +371,20 @@ pub fn sfx(name: &str, seed: u32) -> Vec<f32> {
             m.tone(note(88.0), t + 0.04, 0.12, Wave::Triangle, 0.16, opts());
         }
         "miss" => m.tone(330.0, t, 0.3, Wave::Triangle, 0.14, ToneOpts { glide_to: Some(160.0), ..opts() }),
+        // a call box bell: two quick trills
+        "ring" => {
+            for burst in 0..2 {
+                for i in 0..6 {
+                    let at = t + burst as f32 * 0.32 + i as f32 * 0.04;
+                    m.tone(if i % 2 == 0 { 1240.0 } else { 1480.0 }, at, 0.035, Wave::Square, 0.07, ToneOpts { filter: Some(3800.0), ..opts() });
+                }
+            }
+        }
+        // a jack going into a socket
+        "plug" => {
+            m.noise(t, 0.03, 0.3, 1800.0, Filter::Band);
+            m.tone(180.0, t + 0.01, 0.06, Wave::Square, 0.12, ToneOpts { glide_to: Some(120.0), filter: Some(1400.0), ..opts() });
+        }
         _ => {}
     }
     let mut out = m.finish(1.0);

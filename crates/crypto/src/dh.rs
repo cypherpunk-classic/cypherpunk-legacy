@@ -156,6 +156,24 @@ impl Bsgs {
         self.phase == BsgsPhase::Done
     }
 
+    /// Search for another number with the table already built: only the
+    /// giant steps are left to do, because the table depends on g and m and
+    /// never on the number being searched for.
+    pub fn retarget(&mut self, y: u64) {
+        self.gamma = y % self.group.p;
+        self.i = 0;
+        self.result = None;
+        self.phase = if self.j >= self.m { BsgsPhase::Giant } else { BsgsPhase::Baby };
+    }
+
+    /// The element the search is looking at: the last baby step, or the current hop.
+    pub fn position(&self) -> u64 {
+        match self.phase {
+            BsgsPhase::Baby => self.e,
+            _ => self.gamma,
+        }
+    }
+
     pub fn baby_fraction(&self) -> f32 {
         (self.j as f64 / self.m as f64).min(1.0) as f32
     }

@@ -93,10 +93,14 @@ impl HudState {
         // pips + buttons
         egui::Area::new(egui::Id::new("hud-right")).anchor(Align2::RIGHT_TOP, egui::vec2(-12.0, 12.0)).show(ctx, |ui| {
             ui.horizontal(|ui| {
-                let wharf = state.data.scene == crate::state::MapId::Wharf;
+                let wharf = matches!(state.data.scene, crate::state::MapId::Wharf | crate::state::MapId::Exchange);
                 if wharf {
-                    let cards = state.data.cards.len();
-                    ui.label(RichText::new(format!("{cards} {}", if cards == 1 { "card" } else { "cards" })).font(mono(13.0)).color(theme::GOLD)).on_hover_text("punched cards in your pocket");
+                    if state.data.scene == crate::state::MapId::Wharf {
+                        let cards = state.data.cards.len();
+                        ui.label(RichText::new(format!("{cards} {}", if cards == 1 { "card" } else { "cards" })).font(mono(13.0)).color(theme::GOLD)).on_hover_text("punched cards in your pocket");
+                    } else if state.flag(crate::lines::exchange::RELAY) {
+                        ui.label(RichText::new("relay").font(mono(13.0)).color(theme::CYAN)).on_hover_text("Felix's relay: two scramblers back to back");
+                    }
                     ui.add_space(4.0);
                     if ui.add(egui::Button::new(RichText::new("MAP").font(retro(18.0)).color(theme::GOLD)).fill(theme::PANEL)).on_hover_text("District map (M)").clicked() {
                         clicks.map = true;

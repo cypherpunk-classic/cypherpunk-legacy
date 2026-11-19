@@ -13,6 +13,7 @@ pub mod epilogue;
 pub mod missions;
 pub mod prologue;
 pub mod side;
+pub mod exchange;
 pub mod wharf;
 
 use crate::script::{BoxFut, Ctx};
@@ -96,6 +97,11 @@ pub const INTERACTIONS: &[&str] = &[
 pub fn interaction(c: Ctx, id: &str) -> BoxFut {
     if (id.starts_with("w.") || id == "nonce") && c.current_map() == MapId::Wharf
         && let Some(f) = wharf::interaction(c.clone(), id)
+    {
+        return f;
+    }
+    if (id.starts_with("x.") || id == "nonce") && c.current_map() == MapId::Exchange
+        && let Some(f) = exchange::interaction(c.clone(), id)
     {
         return f;
     }
@@ -205,6 +211,9 @@ pub fn flagged(c: Ctx, x: f32, y: f32) -> BoxFut {
     if c.current_map() == MapId::Wharf {
         return Box::pin(wharf::flagged(c));
     }
+    if c.current_map() == MapId::Exchange {
+        return Box::pin(exchange::flagged(c));
+    }
     Box::pin(dragnet::flagged(c, x, y))
 }
 
@@ -212,6 +221,9 @@ pub fn flagged(c: Ctx, x: f32, y: f32) -> BoxFut {
 pub fn zone(c: Ctx, id: &str) -> BoxFut {
     if id.starts_with("w.") {
         return Box::pin(wharf::zone(c, id.to_string()));
+    }
+    if id.starts_with("x.") {
+        return Box::pin(exchange::zone(c, id.to_string()));
     }
     Box::pin(city::city_zone(c, id.to_string()))
 }
@@ -222,5 +234,6 @@ pub fn ready(c: Ctx, map: MapId) -> BoxFut {
         MapId::Cabin => Box::pin(prologue::cabin_ready(c)),
         MapId::City => Box::pin(city::city_ready(c)),
         MapId::Wharf => Box::pin(wharf::ready(c)),
+        MapId::Exchange => Box::pin(exchange::ready(c)),
     }
 }

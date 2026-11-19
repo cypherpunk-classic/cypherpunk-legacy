@@ -1324,9 +1324,61 @@ pub fn wharf_objects() -> Vec<(&'static str, ObjectArt)> {
     ]
 }
 
+/// A street junction box: a patch panel behind a grey door, cords hanging out.
+fn jackbox(g: &mut Canvas, f: i32) {
+    g.rect(2, 22, 2, 4, "#262a36"); // legs
+    g.rect(12, 22, 2, 4, "#262a36");
+    g.rect(0, 2, 16, 21, "#566c86");
+    g.rect(0, 2, 16, 2, "#94b0c2");
+    g.rect(1, 5, 14, 16, "#2a1d14"); // the panel inside
+    for row in 0..3 {
+        for col in 0..4 {
+            g.px(3 + col * 3, 7 + row * 4, "#050403");
+            g.px(3 + col * 3, 6 + row * 4, if (row + col + f) % 5 == 0 { "#ffe08a" } else { "#3a2a14" });
+        }
+    }
+    // two cords looping between jacks
+    g.rect(3, 12, 1, 4, "#ffb347");
+    g.rect(4, 16, 5, 1, "#ffb347");
+    g.rect(9, 12, 1, 4, "#ffb347");
+    g.rect(6, 16, 1, 3, "#3ef0ff");
+    g.rect(6, 19, 6, 1, "#3ef0ff");
+    g.rect(12, 16, 1, 3, "#3ef0ff");
+    g.rect(14, 9, 1, 3, "#c7d3dc"); // the door's hinge side
+}
+
+/// The Exchange's old switchboard, wheeled out to its back door.
+fn switchboard(g: &mut Canvas, f: i32) {
+    g.rect(0, 0, 30, 30, "#4a2c1a");
+    g.rect(1, 1, 28, 2, "#7a4a28");
+    g.rect(2, 4, 26, 14, "#2a1d14"); // the jack field
+    for row in 0..4 {
+        for col in 0..8 {
+            let lit = (row * 3 + col + f * 5) % 7 == 0;
+            g.px(4 + col * 3, 5 + row * 3, if lit { "#ffe08a" } else { "#3a2a14" });
+            g.px(4 + col * 3, 6 + row * 3, "#050403");
+        }
+    }
+    g.rect(0, 18, 30, 4, "#7a4a28"); // the shelf with the cord plugs
+    for (i, c) in ["#ffb347", "#3ef0ff", "#ff3e9a", "#ffb347", "#3ef0ff"].iter().enumerate() {
+        g.rect(3 + i as i32 * 5, 17, 2, 2, "#c7d3dc");
+        g.rect(4 + i as i32 * 5, 19, 1, 3, *c);
+    }
+    // two cords patched up into the field
+    g.rect(6, 9, 1, 9, "#ffb347");
+    g.rect(16, 12, 1, 6, "#3ef0ff");
+    g.rect(2, 22, 26, 7, "#3e2614");
+    g.rect(13, 24, 4, 2, "#ffcd75"); // the drawer's pull
+}
+
+/// Exchange-only props (`obj-<key>`).
+pub fn exchange_objects() -> Vec<(&'static str, ObjectArt)> {
+    vec![("jackbox", art(16, 26, 2, true, jackbox)), ("switchboard", art(30, 30, 2, true, switchboard))]
+}
+
 /// Every sprite sheet keyed the way maps refer to them: `obj-*`, `bld-*`, `sign-*`.
 pub fn all_sprites() -> Vec<(String, ObjectArt)> {
-    let mut v: Vec<(String, ObjectArt)> = objects().into_iter().chain(wharf_objects()).map(|(k, a)| (format!("obj-{k}"), a)).collect();
+    let mut v: Vec<(String, ObjectArt)> = objects().into_iter().chain(wharf_objects()).chain(exchange_objects()).map(|(k, a)| (format!("obj-{k}"), a)).collect();
     v.extend(buildings().into_iter().map(|(k, a)| (format!("bld-{k}"), a)));
     v.extend(signs().into_iter().map(|(k, a)| (format!("sign-{k}"), a)));
     v
@@ -1373,6 +1425,8 @@ pub fn anim_rate(key: &str) -> Option<f32> {
         "rigmonitor" => 2.0,
         "console_green" | "console_blue" | "console_white" | "console_orange" => 1.2,
         "checkpoint" => 2.0,
+        "jackbox" => 1.5,
+        "switchboard" => 2.0,
         _ => return None,
     })
 }

@@ -171,21 +171,26 @@ pub async fn mast_freed(c: Ctx) {
             c,
             (Mara, "There. Every board on the wharf just started saying your grandfather's name, and not one of them was ever told his key."),
             (Mara, "Their pads were perfect, you know. Nobody beats a one-time pad. You beat the people using it."),
-            (Mara, "The road north into the city is open. That is as far as this build goes. Walk out through the market gate when you are ready."),
+            (Mara, "The road north into the city is open. Felix runs the Exchange up there; he will want to meet you. Walk out through the market gate when you are ready."),
         )
         .await;
-        c.objective("The Wharf is free. Walk out through the north gate of the fish market.");
+        c.objective("The Wharf is free. Walk out through the north gate of the fish market, to the Exchange.");
     })
     .await;
 }
 
+/// Out through the market's north gate, and up the road to the Exchange.
 async fn walk_out(c: Ctx) {
     if !c.flag(MAST) || c.flag(END) {
         return;
     }
     c.set(END);
-    c.state().save();
-    c.credits();
+    c.cutscene(async {
+        c.location("THE WHARF, FREE", "the road north, to the Exchange");
+        c.wait(1600.0).await;
+        c.goto(MapId::Exchange, Some("start")).await;
+    })
+    .await;
 }
 
 /// The end card: what the player did on the Wharf.

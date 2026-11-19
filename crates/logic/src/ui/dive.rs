@@ -85,6 +85,7 @@ pub fn show(ctx: &egui::Context, v: &mut DiveView, d: &dyn Dive, input: &mut Inp
         ui.horizontal(|ui| {
             let help = match d.id() {
                 "interceptor" => "drag a handle (Shift: fine)  ·  ← → pick a handle, ↑ ↓ move it  ·  click nodes on the mod-31 levels  ·  SPACE fire",
+                "logjam" => "← → the size of the table (or click ◀ ▶)  ·  SPACE crank, or run the table",
                 _ => "↑ ↓ choose a word  ·  ← → slide it  ·  TAB the other broadcast  ·  click a cell to drop it there  ·  SPACE commit",
             };
             ui.label(RichText::new(help).font(mono(11.5)).color(FAINT));

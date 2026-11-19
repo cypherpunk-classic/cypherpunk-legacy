@@ -6,6 +6,8 @@ use std::collections::VecDeque;
 
 use crate::codex::codex_by_id;
 use crate::district::{AutoAction, DiveView, District};
+use crate::lines::LineEvent;
+use crate::lines::exchange::{self as xch, XMove};
 use crate::signals::wharf::{MAST, Move};
 use crate::signals::{Event as SigEvent, Outcome};
 use crate::items::item_def;
@@ -25,6 +27,7 @@ fn dive_id(name: &str) -> Option<&'static str> {
     match name {
         "interceptor" => Some("interceptor"),
         "static" => Some("static"),
+        "logjam" => Some("logjam"),
         _ => None,
     }
 }
@@ -92,6 +95,8 @@ pub struct Game {
     pub stored_wharf: Option<SaveData>,
     /// Go straight to the Wharf on the first frame (`CPL_WHARF=1`, `?wharf`).
     pub launch_wharf: bool,
+    /// Or to the Exchange (`CPL_EXCHANGE=1`, `?exchange`).
+    pub launch_exchange: bool,
 }
 
 impl Game {
@@ -123,6 +128,7 @@ impl Game {
             district: None,
             stored_wharf: None,
             launch_wharf: false,
+            launch_exchange: false,
         }
     }
 
@@ -134,7 +140,7 @@ impl Game {
 
     /// Only a signal board's close-up is open: the street outside keeps watching you.
     pub fn at_board_only(&self) -> bool {
-        self.dialogue.is_empty() && self.terminal.is_none() && self.menu.is_none() && self.mode == Mode::World && self.district.as_ref().is_some_and(|d| d.board.is_some() && d.map.is_none() && d.locker.is_none() && d.dive.is_none())
+        self.dialogue.is_empty() && self.terminal.is_none() && self.menu.is_none() && self.mode == Mode::World && self.district.as_ref().is_some_and(|d| d.at_board())
     }
 
     /// Player control is suspended (interaction running, cutscene, or a window open).
@@ -239,9 +245,9 @@ impl Game {
             s.state.data.scene = map;
         }
         self.mode = Mode::World;
-        if map == MapId::Wharf {
-            if self.district.is_none() {
-                let d = District::new(&mut self.ctx.state());
+        if matches!(map, MapId::Wharf | MapId::Exchange) {
+            if self.district.as_ref().is_none_or(|d| d.which != map) {
+                let d = District::new(&mut self.ctx.state(), map);
                 self.district = Some(d);
             }
         } else {
@@ -282,13 +288,13 @@ impl Game {
         true
     }
 
-    /// The Wharf preview: carry on where you left it, or start fresh there.
-    /// A seed phrase always starts fresh (tests, the demo).
+    /// v4: carry on where you left it (the Wharf or the Exchange), or start
+    /// fresh on the Wharf. A seed phrase always starts fresh (tests, the demo).
     pub fn start_wharf(&mut self, seed_phrase: Option<&str>) {
         self.reset_session();
-        // a finished preview starts over; an unfinished one carries on
-        let finished = self.stored_wharf.as_ref().is_some_and(|d| d.flags.get(crate::signals::wharf::END).is_some_and(|f| f.truthy()));
-        let resumed = seed_phrase.is_none() && !finished && self.stored_wharf.clone().is_some_and(|d| d.scene == MapId::Wharf && self.ctx.state().load(d));
+        // a finished run starts over; an unfinished one carries on
+        let finished = self.stored_wharf.as_ref().is_some_and(|d| d.flags.get(xch::END).is_some_and(|f| f.truthy()));
+        let resumed = seed_phrase.is_none() && !finished && self.stored_wharf.clone().is_some_and(|d| matches!(d.scene, MapId::Wharf | MapId::Exchange) && self.ctx.state().load(d));
         if !resumed {
             let (handle, look) = self.stored_save.as_ref().map(|s| (s.handle.clone(), s.look)).unwrap_or_else(|| ("nightjar".to_string(), 0));
             let mut s = self.ctx.state();
@@ -300,20 +306,40 @@ impl Game {
         self.engine.push(EngineReq::StartWorld);
     }
 
-    /// Walk (well, fade) to a spawn on the Wharf.
+    /// Go straight to the Exchange with the Wharf behind you (tests, the
+    /// demo, `CPL_EXCHANGE=1`).
+    pub fn start_exchange(&mut self, seed_phrase: Option<&str>) {
+        self.reset_session();
+        let (handle, look) = self.stored_save.as_ref().map(|s| (s.handle.clone(), s.look)).unwrap_or_else(|| ("nightjar".to_string(), 0));
+        {
+            let mut s = self.ctx.state();
+            s.new_game(&handle, look, seed_phrase);
+            for f in [crate::signals::wharf::MAST, crate::signals::wharf::END, "w.intro", "w.started"] {
+                s.set(f, true);
+            }
+            s.data.scene = MapId::Exchange;
+            s.save();
+        }
+        self.engine.push(EngineReq::PersistSave);
+        self.engine.push(EngineReq::StartWorld);
+    }
+
+    /// Walk (well, fade) to a spawn in the district.
     pub fn travel(&mut self, spawn: &'static str) {
         let c = self.ctx.clone();
-        self.runner.spawn(format!("travel:{spawn}"), true, Box::pin(async move { c.goto(MapId::Wharf, Some(spawn)).await }));
+        let map = self.district.as_ref().map(|d| d.which).unwrap_or(MapId::Wharf);
+        self.runner.spawn(format!("travel:{spawn}"), true, Box::pin(async move { c.goto(map, Some(spawn)).await }));
         self.pump();
     }
 
-    /// Step away from the open signal board.
+    /// Step away from the open signal board or patch panel.
     pub fn close_board(&mut self) {
-        if let Some(d) = self.district.as_mut()
-            && let Some(v) = d.board.take()
-        {
-            self.ctx.shared().reply(v.reply, Reply::Done);
-            self.close_modal();
+        if let Some(d) = self.district.as_mut() {
+            let reply = d.board.take().map(|v| v.reply).or_else(|| d.panel.take().map(|v| v.reply));
+            if let Some(r) = reply {
+                self.ctx.shared().reply(r, Reply::Done);
+                self.close_modal();
+            }
         }
     }
 
@@ -391,6 +417,10 @@ impl Game {
             self.launch_wharf = false;
             self.start_wharf(None);
         }
+        if self.launch_exchange && self.mode == Mode::Title {
+            self.launch_exchange = false;
+            self.start_exchange(None);
+        }
         self.update_district(dt);
     }
 
@@ -403,7 +433,7 @@ impl Game {
         let seed = self.ctx.state_ref().data.seed.clone();
         {
             let mut st = self.ctx.state();
-            d.sig.tick(&mut st, dt);
+            d.tick(&mut st, dt);
         }
         // a dive runs on the game clock: the player's input, or its own bot
         if let Some(v) = d.dive.as_mut() {
@@ -440,7 +470,8 @@ impl Game {
                     }
                 }
             } else {
-                let _ = d.dive_mut(id, seed.as_bytes());
+                let st = self.ctx.state_ref();
+                let _ = d.dive_mut(id, seed.as_bytes(), &st);
             }
             if let Some(c) = closing {
                 self.close_dive(c);
@@ -505,9 +536,98 @@ impl Game {
                 }
             }
         }
+        self.line_events();
         self.pump();
         if self.auto {
             self.wharf_auto(dt);
+        }
+    }
+
+    /// What the Exchange's lines did: rings in the street, toasts, sounds.
+    fn line_events(&mut self) {
+        let Some(d) = self.district.as_mut() else { return };
+        let Some(lines) = d.lines.as_mut() else { return };
+        let events: Vec<LineEvent> = std::mem::take(&mut lines.events);
+        let open = d.panel.as_ref().map(|v| v.panel);
+        for e in events {
+            match e {
+                LineEvent::Ring { panel, party } => {
+                    let def = self.ctx.shared().map_def();
+                    if let Some(o) = def.object(&format!("x-box-{party}")) {
+                        self.engine.push(EngineReq::World { id: 0, cmd: Cmd::Burst { x: o.x, y: o.y - 18.0, color: 0xffcd75, n: 8 } });
+                    }
+                    if open == Some(panel) {
+                        self.audio.push(AudioReq::Sfx("ring"));
+                    }
+                }
+                LineEvent::Plug { .. } => {}
+                LineEvent::Solved { panel, flag } => {
+                    d.shots.push(flag.trim_start_matches("x.").replace('.', "-"));
+                    let (title, body) = match flag {
+                        xch::GATE_SQUARE => ("GATE OPEN", "The square gate's latch holds."),
+                        xch::POST2 => ("NEW ORDERS", "Post two walks off west."),
+                        xch::POST3 => ("NEW ORDERS", "Post three goes in through the back door."),
+                        xch::CAM_OFF => ("CAMERA", "Asleep. The tower gate opens with it."),
+                        xch::FREE => ("THE EXCHANGE", "A call nobody else can hear."),
+                        _ => ("DONE", ""),
+                    };
+                    self.hud.toast(title, body, ToastKind::Item);
+                    // the HUD's one line says where things stand, never what to press
+                    let next = match flag {
+                        xch::GATE_SQUARE => Some("The square gate is open. In call box row a guard takes his orders by phone."),
+                        xch::POST2 => Some("Post two has gone west, and his boom is up. Felix is waiting in the yard behind the Exchange."),
+                        xch::POST3 => Some("Post three has gone inside. In camera street the camera's line reads a word off its key."),
+                        xch::CAM_OFF => Some("The camera sleeps and the tower yard is open. The desk calls the tower there, sealed and export grade."),
+                        _ => None,
+                    };
+                    if let Some(t) = next {
+                        self.ctx.state().set_objective(t);
+                    }
+                    if matches!(flag, xch::GATE_SQUARE | xch::POST2 | xch::POST3 | xch::CAM_OFF) {
+                        self.audio.push(AudioReq::Sfx("door"));
+                        let def = self.ctx.shared().map_def();
+                        let want = format!("!{flag}");
+                        for o in def.objects.iter().filter(|o| o.show_if == Some(want.as_str()) && o.tex.starts_with("obj-barrier")) {
+                            self.engine.push(EngineReq::World { id: 0, cmd: Cmd::Burst { x: o.x, y: o.y - 8.0, color: 0x5dff9a, n: 18 } });
+                        }
+                    } else if open != Some(panel) {
+                        self.audio.push(AudioReq::Sfx("success"));
+                    }
+                    if flag == xch::FREE {
+                        let c = self.ctx.clone();
+                        self.runner.spawn("free", false, Box::pin(crate::story::exchange::freed(c)));
+                    }
+                }
+                LineEvent::Alarm { .. } | LineEvent::Tamper { .. } => {
+                    self.engine.push(EngineReq::World { id: 0, cmd: Cmd::Flash { ms: 260.0, color: 0xff3355 } });
+                    self.audio.push(AudioReq::Sfx("alarm"));
+                }
+                LineEvent::NoCarrier { panel } => {
+                    if open == Some(panel) {
+                        self.audio.push(AudioReq::Sfx("error"));
+                    }
+                }
+                LineEvent::Heard { .. } => {
+                    self.audio.push(AudioReq::Sfx("blip"));
+                }
+                LineEvent::Taped { .. } => {
+                    d.shots.push("tape".into());
+                    self.hud.toast("TAPE", "Both numbers of the tower's key exchange, and the noise after.", ToastKind::Codex);
+                    self.ctx.state().set_objective("You have the tower line on tape. The cabinet in the tower yard, LOGJAM, can take its numbers apart.");
+                    self.audio.push(AudioReq::Sfx("pickup"));
+                }
+                LineEvent::TapeRead => {
+                    let code: String = xch::code(&self.ctx.state_ref()).iter().map(|d| d.to_string()).collect();
+                    self.hud.toast("THE TAPE PLAYS", &format!("TOWER, MAINTENANCE {code}"), ToastKind::Item);
+                    self.ctx.state().set_objective(&format!("The tape says TOWER, MAINTENANCE {code}. The tower door is beside the tower."));
+                    self.audio.push(AudioReq::Sfx("success"));
+                }
+                LineEvent::Escrow { .. } => {
+                    self.engine.push(EngineReq::World { id: 0, cmd: Cmd::Flash { ms: 220.0, color: 0xff3355 } });
+                    self.ctx.state().set_objective("The escrow desk reads your key out of every call's LEAF. The receiving phone only checks sixteen bits of it.");
+                }
+                LineEvent::Forged { .. } => {}
+            }
         }
     }
 
@@ -576,6 +696,24 @@ impl Game {
             AutoAction::CloseBoard => {
                 d.auto.wait = pace * 0.5;
                 self.close_board();
+            }
+            AutoAction::Line(m) => {
+                d.auto.wait = pace * if matches!(m, XMove::Turn(_)) { 0.25 } else { 1.0 };
+                let mut st = self.ctx.state();
+                if let Some(l) = d.lines.as_mut()
+                    && l.apply(&mut st, &m)
+                {
+                    let sfx = match m {
+                        XMove::Plug(..) | XMove::Pull(..) => "plug",
+                        XMove::Turn(_) | XMove::Rewrite(..) | XMove::Forge(..) => "tick",
+                        XMove::Dial(_) => "ring",
+                        _ => "confirm",
+                    };
+                    self.audio.push(AudioReq::Sfx(sfx));
+                    if let Some(v) = d.panel.as_mut() {
+                        v.pick = None;
+                    }
+                }
             }
             AutoAction::Apply(m) => {
                 d.auto.wait = pace;
@@ -659,6 +797,12 @@ impl Game {
             Cmd::Wait(s) => self.waits.push((id, s)),
             Cmd::Board(b) => {
                 let opened = self.district.as_mut().and_then(|d| {
+                    if let Some(p) = d.lines.as_ref().and_then(|l| l.panel(&b)) {
+                        let (pid, len) = (p.id, p.log.len());
+                        d.panel = Some(crate::ui::patch::PanelView::new(pid, id, len));
+                        d.shots.push(format!("panel-{pid}"));
+                        return Some(());
+                    }
                     let bid = d.sig.board(&b)?.id;
                     let mut st = self.ctx.state();
                     d.sig.visit(&mut st, bid);
@@ -687,11 +831,14 @@ impl Game {
             }
             Cmd::Dive(name) => {
                 let seed = self.ctx.state_ref().data.seed.clone();
-                let opened = self.district.as_mut().and_then(|d| {
-                    let did = d.dive_mut(dive_id(&name)?, seed.as_bytes())?.id();
-                    d.dive = Some(DiveView { id: did, reply: id, age: 0.0, shake: 0.0, cleared_for: None });
-                    Some(())
-                });
+                let opened = {
+                    let st = self.ctx.state_ref();
+                    self.district.as_mut().and_then(|d| {
+                        let did = d.dive_mut(dive_id(&name)?, seed.as_bytes(), &st)?.id();
+                        d.dive = Some(DiveView { id: did, reply: id, age: 0.0, shake: 0.0, cleared_for: None });
+                        Some(())
+                    })
+                };
                 if opened.is_none() {
                     self.ctx.shared().reply(id, Reply::Bool(false));
                 } else {
@@ -704,6 +851,9 @@ impl Game {
                     match what.as_str() {
                         "flagged" => {
                             d.sig.reset_boards(&mut st);
+                            if let Some(l) = d.lines.as_mut() {
+                                l.reset();
+                            }
                             d.auto.at = Some("start");
                         }
                         w if w.starts_with("pick:") => {
@@ -722,6 +872,8 @@ impl Game {
                 self.credits = CreditsState::default();
                 if self.ctx.state_ref().flag("end.done") {
                     self.credits.ending = Some(crate::ending::summary(&self.ctx.state_ref()));
+                } else if self.ctx.state_ref().flag(xch::END) {
+                    self.credits.ending = Some(crate::story::exchange::summary(&self.ctx.state_ref()));
                 } else if self.ctx.state_ref().flag(crate::signals::wharf::END) {
                     self.credits.ending = Some(crate::story::wharf::summary(&self.ctx.state_ref()));
                 }
@@ -759,7 +911,7 @@ impl Game {
                 }
                 StateEvent::Saved => {
                     let d = self.ctx.state_ref().data.clone();
-                    if d.scene == MapId::Wharf {
+                    if matches!(d.scene, MapId::Wharf | MapId::Exchange) {
                         self.stored_wharf = Some(d);
                     } else {
                         self.stored_save = Some(d);
@@ -829,6 +981,10 @@ impl Game {
             if let Some(v) = d.board.as_mut() {
                 let mut st = self.ctx.state();
                 let r = crate::ui::board::show(ui_ctx, v, &mut d.sig, &mut st, dt, (d.seen, d.footsteps), sfx);
+                close_board = r.close;
+            } else if let (Some(v), Some(lines)) = (d.panel.as_mut(), d.lines.as_mut()) {
+                let mut st = self.ctx.state();
+                let r = crate::ui::patch::show(ui_ctx, v, lines, &d.sig, &mut st, dt, (d.seen, d.footsteps), sfx);
                 close_board = r.close;
             } else if let Some(v) = d.locker.as_mut() {
                 let mut st = self.ctx.state();

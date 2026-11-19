@@ -4,6 +4,7 @@
 //! tests and the demo drive it with the same inputs a player would.
 
 pub mod interceptor;
+pub mod logjam;
 pub mod static_;
 
 use egui::{Color32, Pos2, Rect, Stroke, Vec2};
@@ -190,6 +191,8 @@ pub fn make(id: &str, seed: &[u8]) -> Option<Box<dyn Dive>> {
     match id {
         "interceptor" => Some(Box::new(interceptor::Interceptor::new(seed))),
         "static" => Some(Box::new(static_::Static::new(seed))),
+        // the tower's numbers come from the district (see `District::dive_mut`)
+        "logjam" => Some(Box::new(logjam::Logjam::new(seed, Vec::new()))),
         _ => None,
     }
 }

@@ -20,16 +20,24 @@ with between puzzles: a surveillance Dragnet, a web of trust, a wallet of
 blind-signed eCash, side quests, and choices that lead to three endings. See
 [`docs/GAMEPLAY.md`](docs/GAMEPLAY.md).
 
-**v4: the Wharf.** Playtesting 3.1 showed that honest cryptography had not
-made a fun game: too much walking between terminals, too much text, puzzles
-that read like exercises. v4 rebuilds the city one district at a time around
-puzzles that stand in the street. The first is the title screen's first
-button (or `CPL_WHARF=1` / `?wharf`): a
-harbour where every gate, patrol and camera is a lamp board speaking in
-one-time-pad pictures, and you carry punched cards that flip the lamps behind
-their holes. No quest givers, a map with one-key travel, a guard and a camera
-that keep watching while you work, and two cyberspace dives. Why, and where
-it goes next: [`docs/V4.md`](docs/V4.md).
+**v4: the Wharf and the Exchange.** Playtesting 3.1 showed that honest
+cryptography had not made a fun game: too much walking between terminals,
+too much text, puzzles that read like exercises. v4 rebuilds the city one
+district at a time around puzzles that stand in the street, each district
+with one physical rule you learn by playing. It is the title screen's first
+button (or `CPL_WHARF=1` / `?wharf`). On **the Wharf** every gate, patrol and
+camera is a lamp board speaking in one-time-pad pictures, and you carry
+punched cards that flip the lamps behind their holes. Up the road, at **the
+Exchange**, every gate, guard, camera and the tower take their orders over
+telephone lines, and you work the junction boxes: a cord joins two jacks and
+whatever one end says, the other end hears. You answer a guard as the
+Directorate's desk, stand in the middle of a scrambled Diffie-Hellman line
+with a relay, turn its knob until a short authentication word agrees, meet a
+sealed handshake you cannot turn, record the tower's export-grade key
+exchange and take it apart with baby-step giant-step, and make the last call
+over a Clipper phone with a forged LEAF. No quest givers, a map with one-key
+travel, guards and cameras that keep watching while you work, and three
+cyberspace dives. Why, and where it goes next: [`docs/V4.md`](docs/V4.md).
 
 ---
 
@@ -56,8 +64,11 @@ on the left half to walk and tap the E button to interact.
 
 **The Wharf (v4):** click a card to put it in a board's reader, right-click
 (or drag) it onto the light table, M for the map, `?` on a board for
-Grandpa's notes. `CPL_WHARF=1 CPL_AUTOPLAY=1 CPL_PACE=0.6 cargo run --release`
-(or `?wharf&autoplay=demo`) shows it played.
+Grandpa's notes. **The Exchange (v4):** click a jack to take up a cord and
+another jack to plug it in; click a plugged jack to pull its cord.
+`CPL_WHARF=1 CPL_AUTOPLAY=1 CPL_PACE=0.6 cargo run --release` (or
+`?wharf&autoplay=demo`) shows v4 played from the Wharf on; `CPL_EXCHANGE=1`
+(`?exchange`) starts at the Exchange with the Wharf done.
 
 **Watch it play itself:** `CPL_AUTOPLAY=1 cargo run --release` natively, or
 `?autoplay=demo` on the web build. The autopilot walks the city, talks to
