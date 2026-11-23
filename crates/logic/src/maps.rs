@@ -727,6 +727,9 @@ fn city() -> MapDef {
     spawns.insert("start", Spawn { x: t(30.0), y: t(35.0) + 12.0, facing: Facing::Down });
     spawns.insert("gateway", Spawn { x: t(30.0), y: t(35.0) + 12.0, facing: Facing::Down });
     spawns.insert("vault", Spawn { x: t(30.0), y: t(25.0) + 4.0, facing: Facing::Up });
+    // back up from the v4 districts, in front of whoever sent you
+    spawns.insert("mara", Spawn { x: t(13.0) + 4.0, y: t(36.0) + 10.0, facing: Facing::Up });
+    spawns.insert("felix", Spawn { x: t(13.0), y: t(24.0) + 14.0, facing: Facing::Up });
     for (name, x, y) in crate::story::dragnet::SAFE_HOUSES.iter().map(|(n, _, x, y)| (*n, *x, *y)) {
         spawns.insert(name, Spawn { x, y, facing: Facing::Down });
     }

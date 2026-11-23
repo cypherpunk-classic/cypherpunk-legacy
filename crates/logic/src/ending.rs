@@ -94,6 +94,18 @@ pub fn summary(s: &GameState) -> (String, Vec<String>) {
     lines.push(format!("{} Hashcash stamps minted", st.stamps_minted));
     lines.push(format!("{} deep dives", st.deep_dives));
     lines.push(format!("{} of {} floppies found", crate::quests::floppies_found(s), crate::quests::FLOPPIES));
+    let cards = s.data.cards.len();
+    if cards > 0 {
+        lines.push(format!("{cards} punched cards and rubbings made on the harbour"));
+    }
+    let dives: Vec<&str> = [(crate::signals::wharf::DIVE_INTERCEPTOR, "INTERCEPTOR"), (crate::signals::wharf::DIVE_STATIC, "STATIC"), (crate::lines::exchange::DIVE_LOGJAM, "LOGJAM")]
+        .iter()
+        .filter(|(f, _)| s.flag(f))
+        .map(|(_, n)| *n)
+        .collect();
+    if !dives.is_empty() {
+        lines.push(format!("cyberspace dives broken: {}", dives.join(", ")));
+    }
     (e.title().to_string(), lines)
 }
 

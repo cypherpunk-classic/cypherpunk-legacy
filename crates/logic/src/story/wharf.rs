@@ -3,7 +3,7 @@
 
 use crate::say;
 use crate::script::{BoxFut, Ctx};
-use crate::signals::wharf::{self as w, END, MAST, sites};
+use crate::signals::wharf::{END, MAST, sites};
 use crate::speakers::Sp;
 use crate::state::{GameState, MapId};
 
@@ -23,9 +23,8 @@ pub async fn ready(c: Ctx) {
     c.wait(900.0).await;
     say!(
         c,
-        (Mara, "So you're his grandkid. He said you'd turn up with a card in your pocket."),
-        (Mara, "Every lamp board on this wharf talks for the Directorate: the gates, the patrols, the camera, the mast. They speak in pictures, and they hide the pictures under noise."),
-        (Mara, "A card flips the lamps behind its holes. That is all it does. Try it on the lamps out on the piers."),
+        (Mara, "The harbour. Every lamp board down here talks for the Directorate: the gates, the patrols, the camera, the mast. They speak in pictures, and they hide the pictures under noise."),
+        (Mara, "Your grandfather's card first. Try it on the lamps out on the piers, and watch what it does."),
     )
     .await;
 }
@@ -65,7 +64,7 @@ pub fn interaction(c: Ctx, id: &str) -> Option<BoxFut> {
     }
     Some(match id.as_str() {
         "w.gate.ice" => Box::pin(async move { c.say1(Sp::Narrator, "Chained from the inside. The chain runs back to a locker in the market, the one with signs painted on it.").await }),
-        "w.gate.city" => Box::pin(async move { c.say1(Sp::Narrator, "The road into Cryptopolis. The mast reports everyone who passes under it. Not yet.").await }),
+        "w.gate.city" => Box::pin(async move { c.say1(Sp::Narrator, "The steps back up to the radio shack. The mast reports everyone who passes under it. Not while it is theirs.").await }),
         "w.pick.gull" => Box::pin(async move {
             c.signal("pick:gull");
             c.sfx("pickup");
@@ -171,49 +170,25 @@ pub async fn mast_freed(c: Ctx) {
             c,
             (Mara, "There. Every board on the wharf just started saying your grandfather's name, and not one of them was ever told his key."),
             (Mara, "Their pads were perfect, you know. Nobody beats a one-time pad. You beat the people using it."),
-            (Mara, "The road north into the city is open. Felix runs the Exchange up there; he will want to meet you. Walk out through the market gate when you are ready."),
+            (Mara, "Walk back up through the market's north gate when you are ready. I'll meet you at the radio shack."),
         )
         .await;
-        c.objective("The Wharf is free. Walk out through the north gate of the fish market, to the Exchange.");
+        c.objective("The harbour is free. Walk out through the north gate of the fish market, back up to Mara at the radio shack.");
     })
     .await;
 }
 
-/// Out through the market's north gate, and up the road to the Exchange.
+/// Out through the market's north gate, and back up to the radio shack.
 async fn walk_out(c: Ctx) {
     if !c.flag(MAST) || c.flag(END) {
         return;
     }
     c.set(END);
     c.cutscene(async {
-        c.location("THE WHARF, FREE", "the road north, to the Exchange");
+        c.location("THE HARBOUR, FREE", "back up to the radio shack");
         c.wait(1600.0).await;
-        c.goto(MapId::Exchange, Some("start")).await;
+        c.goto(MapId::City, Some("mara")).await;
     })
     .await;
-}
-
-/// The end card: what the player did on the Wharf.
-pub fn summary(st: &GameState) -> (String, Vec<String>) {
-    let cuts = st.data.cards.iter().filter(|c| c.kind == crate::signals::CardKind::Cut).count();
-    let rubbings = st.data.cards.iter().filter(|c| c.kind == crate::signals::CardKind::Copy).count();
-    let mins = (st.data.play_ms / 60_000.0).round() as u64;
-    let mut lines = vec![
-        format!("{} cards cut on the light table, {} rubbings taken.", cuts, rubbings),
-        format!("Flagged {} {}.", st.data.stats.flagged, if st.data.stats.flagged == 1 { "time" } else { "times" }),
-    ];
-    if mins > 0 {
-        lines.push(format!("{mins} minutes on the Wharf."));
-    }
-    for (flag, what) in [(w::DIVE_INTERCEPTOR, "INTERCEPTOR: every core broken."), (w::DIVE_STATIC, "STATIC: the station read.")] {
-        if st.flag(flag) {
-            lines.push(what.to_string());
-        }
-    }
-    lines.push(String::new());
-    lines.push("Every lock on the Wharf used a perfect cipher, and you never broke one.".to_string());
-    lines.push("You broke how it was used: a pad used twice, a message nobody sealed, a seal that could not tell yesterday from today.".to_string());
-    lines.push(String::new());
-    lines.push("Cypherpunk Legacy v4. The rest of the city is being rebuilt the same way.".to_string());
-    ("THE WHARF, FREE".to_string(), lines)
+    c.objective("The harbour is free. Tell Mara.");
 }

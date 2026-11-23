@@ -76,13 +76,13 @@ pub struct Autopilot {
     step_start: (u64, f64, f64),
     /// Set once the run has failed: the app exits after the last screenshot.
     fail_at: Option<f64>,
-    /// Play v4 instead of the story (`CPL_WHARF=1`: the Wharf, then the
-    /// Exchange; `CPL_EXCHANGE=1`: the Exchange alone).
+    /// Skip ahead to a v4 district and play on from there (`CPL_WHARF=1`:
+    /// chapter 1's harbour; `CPL_EXCHANGE=1`: chapter 2's street).
     wharf: bool,
     exchange: bool,
 }
 
-/// All of v4 (the Wharf with every dive, then the Exchange) should be done in this much game time.
+/// A v4 district (every board or panel, every dive) should be done in this much game time.
 const WHARF_LIMIT: f64 = 1500.0;
 
 impl Autopilot {
@@ -324,10 +324,10 @@ pub fn drive(
                 ap.started = true;
                 let seed = ap.seed.clone().unwrap_or_else(|| "autopilot".into());
                 if ap.exchange {
-                    info!("[autopilot] the Exchange, seed {seed:?}");
+                    info!("[autopilot] skipping ahead to the Exchange's street, seed {seed:?}");
                     game.start_exchange(Some(seed.as_str()));
                 } else if ap.wharf {
-                    info!("[autopilot] v4 from the Wharf, seed {seed:?}");
+                    info!("[autopilot] skipping ahead to the harbour, seed {seed:?}");
                     game.start_wharf(Some(seed.as_str()));
                 } else {
                     info!("[autopilot] new game, seed {seed:?}");
@@ -359,11 +359,11 @@ pub fn drive(
         }
         let shots: Vec<String> = game.district.as_mut().map(|d| std::mem::take(&mut d.shots)).unwrap_or_default();
         for name in shots {
-            info!("[autopilot] wharf: {name} at {now:.0} s");
+            info!("[autopilot] district: {name} at {now:.0} s");
             ap.shot_later(now, 0.35, &name);
         }
         if ap.exit_at_end && now - ap.step_start.2 > WHARF_LIMIT {
-            error!("[autopilot] giving up: v4 is not done after {:.0} s ({})", now - ap.step_start.2, game.busy_reason());
+            error!("[autopilot] giving up: the district is not done after {:.0} s ({})", now - ap.step_start.2, game.busy_reason());
             ap.shot_later(now, 0.0, "stuck");
             ap.fail_at = Some(now + 1.0);
         }

@@ -2,6 +2,10 @@
 //! Markup: **bold**, *em*, `code`, {term}. Paragraphs separated by blank lines.
 //! (Generated from the v2 TypeScript source, then maintained here.)
 
+use crate::lines::exchange as xch;
+use crate::signals::wharf;
+use crate::state::GameState;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CodexGroup {
     History,
@@ -520,8 +524,118 @@ Stuart Haber and W. Scott Stornetta proposed exactly this in 1991. From 1995 the
 In 2016 researchers scanned the internet and found TLS servers repeating GCM nonces. When two parties share a key, each direction needs its own nonce space."#,
         ingame: None,
     },
+    CodexEntry {
+        id: "known-plaintext",
+        title: r#"Known plaintext"#,
+        group: CodexGroup::Attacks,
+        era: r#"classic"#,
+        body: r#"If you know what a ciphertext says, an XOR cipher gives up its key on the spot: K = C ⊕ M. With a one-time pad that costs only the one message the pad was meant for, unless the pad is used again, and then every other message under it reads as well.
+
+Bletchley Park called the guessed plaintext a *crib*. Routine traffic was full of them: weather reports at the same hour every day, the same addresses and sign-offs, and units that sent "nothing to report" when they had nothing to report. The bombes that broke Enigma's daily settings were set up from cribs."#,
+        ingame: Some(r#"The notice board in the fish market shows the Directorate's crest every day they have nothing to say."#),
+    },
+    CodexEntry {
+        id: "mac",
+        title: r#"Message authentication codes"#,
+        group: CodexGroup::BuildingBlocks,
+        era: r#"1996"#,
+        body: r#"A MAC is a short tag computed from a message and a secret key. Anyone holding the key can check it; without the key you cannot make a valid tag for a message you changed. HMAC (Bellare, Canetti and Krawczyk, 1996; RFC 2104) builds one from a hash function such as SHA-256 and is the most widely used.
+
+Tags are often truncated to save space. A t-bit tag can still be guessed with probability 1 in 2^t per try, so how short a tag may be depends on how many tries an attacker gets. And a MAC says who made a message and that it was not altered. It says nothing about *when*."#,
+        ingame: Some(r#"The seal row along the bottom of the mole gate's board is an HMAC-SHA256 tag cut to eight bits. Change a single lamp of the picture and the seal no longer matches."#),
+    },
+    CodexEntry {
+        id: "replay",
+        title: r#"Replay"#,
+        group: CodexGroup::Attacks,
+        era: r#"classic"#,
+        body: r#"Record a genuine, correctly authenticated message and send it again later. Its MAC or signature still verifies, because it is still exactly what the sender sent. Authentication alone cannot tell yesterday's OPEN from today's.
+
+Early remote car locks and garage doors sent a fixed code, and anyone with a recorder could reuse it. *Rolling codes* (KeeLoq, for one) fixed that with a counter inside the authenticated message. Protocols today put a sequence number, a timestamp or the other side's fresh challenge under the MAC, and refuse anything they have already seen."#,
+        ingame: Some(r#"The supply drone opens the mole gate with the same sealed signal every half minute."#),
+    },
+    CodexEntry {
+        id: "blue-box",
+        title: r#"Blue boxes and in-band signalling"#,
+        group: CodexGroup::History,
+        era: r#"1960s – 1980s"#,
+        body: r#"The Bell System's long-distance trunks used a 2600 Hz tone to mean "this line is idle", and further tones to route a call, all sent down the same channel as the caller's voice. Anyone who could make the tones could take a trunk and dial wherever they liked. John Draper took his nickname, Captain Crunch, from a toy whistle in cereal boxes that happened to blow 2600 Hz. Phreaks built *blue boxes* to play the rest; Steve Wozniak and Steve Jobs sold some in the early 1970s, after Ron Rosenbaum's 1971 *Esquire* story "Secrets of the Little Blue Box".
+
+The fix was to take control off the voice channel. Common-channel signalling, and later SS7, carried the network's own messages on separate links the caller could not reach. The general lesson outlived the tones: never let the data channel carry its own instructions."#,
+        ingame: Some(r#"The gates in the Exchange obey whoever says OPEN on their line, and the cords in the junction box decide who that is."#),
+    },
+    CodexEntry {
+        id: "sas",
+        title: r#"Short authentication strings"#,
+        group: CodexGroup::Protocols,
+        era: r#"1995 – 2011"#,
+        body: r#"Diffie–Hellman agrees a key with whoever is at the other end. A *short authentication string* lets two people check that it was each other: each phone derives a few characters or words from the key, and they read them aloud. A man in the middle has agreed two different keys, so the two phones show two different strings.
+
+Short strings are easy to read and easy to grind: if an attacker can try different values of their own, they can keep trying until the strings happen to match. ZRTP, Phil Zimmermann's protocol for encrypted calls (RFC 6189, 2011), stops that with a commitment. The caller sends a hash of its public value before seeing the other side's, so neither side can choose its number after seeing the other's. With that, four base-32 characters (20 bits) or two words from the PGP word list (16 bits) are enough."#,
+        ingame: Some(r#"The camera street scramblers read out a five-bit word, short enough to grind with a relay's knob. The tower line is sealed with a commitment, and its knob does not turn."#),
+    },
+    CodexEntry {
+        id: "logjam",
+        title: r#"Logjam"#,
+        group: CodexGroup::History,
+        era: r#"2015"#,
+        body: r#"In 2015 a team of researchers (Adrian, Bhargavan, Durumeric, Gaudry, Green, Halderman, Heninger and others) published *Imperfect Forward Secrecy*. Many TLS servers still accepted "export-grade" Diffie–Hellman, a 512-bit option left over from the 1990s export rules, and a man in the middle could push a connection down to it.
+
+Worse, most of those servers shared a handful of primes. The expensive part of the number field sieve depends only on the prime, not on any one connection, so after about a week of precomputation per prime each individual key exchange fell in about a minute. The authors estimated that the same precomputation for one widely used 1024-bit prime was within reach of a nation-state's budget, and noted how much of the internet's traffic that one prime protected."#,
+        ingame: Some(r#"The tower line runs in an export-grade group, and LOGJAM's second key exchange falls fast because the table it built for the first one still applies."#),
+    },
 ];
 
 pub fn codex_by_id(id: &str) -> Option<&'static CodexEntry> {
     CODEX.iter().find(|e| e.id == id)
+}
+
+/// What the v4 districts earn: a district flag, and the entries it unlocks.
+/// (The rest of the story unlocks its entries in its scripts.)
+pub const UNLOCKS: &[(&str, &[&str])] = &[
+    // chapter 1, the harbour
+    (wharf::KIT, &["otp"]),
+    (wharf::GATE_C0, &["malleability"]),
+    (wharf::DIVE_INTERCEPTOR, &["shamir"]),
+    (wharf::DIVE_STATIC, &["two-time-pad"]),
+    (wharf::C1, &["known-plaintext"]),
+    (wharf::SIGIL, &["venona"]),
+    (wharf::GATE_W, &["mac", "replay"]),
+    // chapter 2, the Exchange's street
+    (xch::GATE_SQUARE, &["blue-box"]),
+    (xch::POST3, &["mitm"]),
+    (xch::CAM_OFF, &["sas"]),
+    (xch::DIVE_LOGJAM, &["dlog", "logjam"]),
+    (xch::ESCROW_SEEN, &["clipper"]),
+];
+
+/// Unlock every district entry the save has earned and does not have yet.
+pub fn unlock_due(st: &mut GameState) {
+    for (flag, ids) in UNLOCKS {
+        if st.flag(flag) {
+            for id in *ids {
+                if !st.data.codex.iter().any(|c| c == id) {
+                    st.unlock_codex(id);
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unlocks_name_real_entries_and_ids_are_unique() {
+        for (_, ids) in UNLOCKS {
+            for id in *ids {
+                assert!(codex_by_id(id).is_some(), "unknown codex entry {id}");
+            }
+        }
+        let mut ids: Vec<&str> = CODEX.iter().map(|e| e.id).collect();
+        ids.sort();
+        ids.dedup();
+        assert_eq!(ids.len(), CODEX.len(), "duplicate ids");
+    }
 }

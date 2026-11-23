@@ -59,8 +59,13 @@ fn format_time(ms: f64) -> String {
 /// Codex browser (also used on the About page).
 pub fn codex_view(ui: &mut egui::Ui, state: &GameState, sel: &mut Option<String>, sfx: &mut Vec<&'static str>, height: f32) {
     let unlocked: Vec<&str> = state.data.codex.iter().map(|s| s.as_str()).collect();
+    // Both columns stack top to bottom. Without the explicit layouts they
+    // inherit the row's left-to-right direction: the list then runs off
+    // sideways in one endless line, the window grows wider than the screen,
+    // and the page shows as a dark panel with its text clipped away.
+    let top_down = Layout::top_down(Align::Min);
     ui.horizontal_top(|ui| {
-        ui.allocate_ui(egui::vec2(230.0, height), |ui| {
+        ui.allocate_ui_with_layout(egui::vec2(230.0, height), top_down, |ui| {
             egui::ScrollArea::vertical().id_salt("codex-list").max_height(height).auto_shrink([false, false]).show(ui, |ui| {
                 ui.set_width(220.0);
                 for g in CODEX_GROUPS {
@@ -80,10 +85,15 @@ pub fn codex_view(ui: &mut egui::Ui, state: &GameState, sel: &mut Option<String>
                 }
             });
         });
-        ui.separator();
-        ui.vertical(|ui| {
+        // a divider exactly as tall as the columns: egui's own separator in a
+        // row takes all the height left below it, and since the window is
+        // centred on its last size, that grew it a little every frame
+        let (line, _) = ui.allocate_exact_size(egui::vec2(9.0, height), egui::Sense::hover());
+        ui.painter().vline(line.center().x, line.y_range(), Stroke::new(1.0, LINE));
+        let right = (ui.available_width() - 8.0).max(160.0);
+        ui.allocate_ui_with_layout(egui::vec2(right, height), top_down, |ui| {
             egui::ScrollArea::vertical().id_salt("codex-entry").max_height(height).auto_shrink([false, false]).show(ui, |ui| {
-                ui.set_width((ui.available_width() - 8.0).max(160.0));
+                ui.set_width(right - 12.0);
                 match sel.as_deref().and_then(codex_by_id) {
                     Some(e) => {
                         ui.label(RichText::new(e.title).font(retro(28.0)).color(CYAN));

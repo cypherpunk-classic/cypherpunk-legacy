@@ -1,9 +1,14 @@
-//! Chapter 2 · Strangers agree. Felix, the Exchange, Diffie–Hellman and its limits.
+//! Chapter 2 · Strangers agree. Felix, the Exchange, Diffie–Hellman and its
+//! limits, and then the Exchange's own street, where every gate, guard and
+//! camera takes its orders over a line (`story::exchange`). Freeing it ends
+//! the chapter.
 
 use crate::puzzles::{DhBasics, Logjam, MitmRelay};
 use crate::say;
 use crate::script::Ctx;
+use crate::lines::exchange::END as STREET_DONE;
 use crate::speakers::Sp;
+use crate::state::MapId;
 
 async fn run_dh(c: &Ctx) {
     if !c.puzzle(Box::new(DhBasics::new(c.world()))).await {
@@ -55,6 +60,28 @@ async fn run_logjam(c: &Ctx) {
     c.objective("Use Felix's press at the Exchange.");
 }
 
+/// Set when Felix has sent the player out onto the Exchange's lines.
+pub const STREET_SENT: &str = "ch2.street";
+
+/// Out onto the street: the Exchange district, where every order comes down a wire.
+async fn to_street(c: &Ctx) {
+    if !c.flag(STREET_SENT) {
+        c.set(STREET_SENT);
+        say!(
+            c,
+            (Felix, "The book is out, and they cannot unprint it. Now my share. Not yet."),
+            (Felix, "Everything you just did on my terminals, the Directorate does for real out there: every gate, every guard, every camera and the tower take their orders over a telephone line, through junction boxes in the street."),
+            (Felix, "The rule is older than any of us: a cord joins two jacks, and whatever one end says, the other end hears. Nobody on a line can see who is at the other end of it."),
+            (Felix, "Free the lines, and make me one call the desk cannot hear. Then the share is yours. I'll meet you out there."),
+        )
+        .await;
+    } else {
+        c.say1(Sp::Felix, "Back to the lines with you. The desk is still listening.").await;
+    }
+    c.objective("Every line in the Exchange's street runs through the Directorate's desk. Make one say something it was never told. (M: map)");
+    c.goto(MapId::Exchange, Some("start")).await;
+}
+
 pub async fn felix(c: Ctx) {
     if !c.flag("ch2.met") {
         c.set("ch2.met");
@@ -82,6 +109,9 @@ pub async fn felix(c: Ctx) {
         c.say1(Sp::Felix, "The press, by the window. The scan came back from across the water with mistakes in it.").await;
         return;
     }
+    if !c.flag(STREET_DONE) {
+        return to_street(&c).await;
+    }
     if c.flag("vault.opened") && !c.flag("party.done") {
         return super::missions::party(&c).await;
     }
@@ -92,7 +122,8 @@ pub async fn felix(c: Ctx) {
         c.sfx("unlock");
         say!(
             c,
-            (Felix, "Thirty-one bits. Seconds. \"Export-grade\" is just a polite word for \"we can read it\". In the nineties they made everyone use weak crypto on purpose, for export. People are still being bitten by that today."),
+            (Felix, "You stood in the middle of their lines all afternoon, and the desk never knew who was on them. Neither, for once, did I."),
+            (Felix, "\"Export-grade\" is just a polite word for \"we can read it\". In the nineties they made everyone use weak crypto on purpose, for export. People are still being bitten by that today."),
             (Felix, "You earned this. Share two of five."),
             (Felix, "Four things you now know: strangers can agree on a secret in the open; an unsigned exchange has no defence against a relay; a weak group is no group at all; and a book is harder to ban than a disk."),
             (Felix, "Go see Juno in the Commons. She splits secrets for a living. Tell her the switchboard says hello. I've opened the gate, east side."),

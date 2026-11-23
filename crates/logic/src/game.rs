@@ -89,13 +89,12 @@ pub struct Game {
     style_scale: Option<f32>,
     auto_timer: f32,
     auto_term: f32,
-    /// The Wharf preview, while the player is on it.
+    /// The v4 district the player is in (the harbour in chapter 1, the
+    /// Exchange's street in chapter 2), while they are in it.
     pub district: Option<District>,
-    /// The Wharf preview keeps a save of its own.
-    pub stored_wharf: Option<SaveData>,
-    /// Go straight to the Wharf on the first frame (`CPL_WHARF=1`, `?wharf`).
+    /// Go straight to chapter 1's harbour on the first frame (`CPL_WHARF=1`, `?wharf`).
     pub launch_wharf: bool,
-    /// Or to the Exchange (`CPL_EXCHANGE=1`, `?exchange`).
+    /// Or to chapter 2's street (`CPL_EXCHANGE=1`, `?exchange`).
     pub launch_exchange: bool,
 }
 
@@ -126,7 +125,6 @@ impl Game {
             auto_timer: 0.0,
             auto_term: 0.0,
             district: None,
-            stored_wharf: None,
             launch_wharf: false,
             launch_exchange: false,
         }
@@ -288,36 +286,41 @@ impl Game {
         true
     }
 
-    /// v4: carry on where you left it (the Wharf or the Exchange), or start
-    /// fresh on the Wharf. A seed phrase always starts fresh (tests, the demo).
+    /// A new game that skips ahead to chapter 1's harbour (the Wharf
+    /// district), with the prologue and the first half of the chapter done
+    /// (development, the tests, `CPL_WHARF=1`).
     pub fn start_wharf(&mut self, seed_phrase: Option<&str>) {
-        self.reset_session();
-        // a finished run starts over; an unfinished one carries on
-        let finished = self.stored_wharf.as_ref().is_some_and(|d| d.flags.get(xch::END).is_some_and(|f| f.truthy()));
-        let resumed = seed_phrase.is_none() && !finished && self.stored_wharf.clone().is_some_and(|d| matches!(d.scene, MapId::Wharf | MapId::Exchange) && self.ctx.state().load(d));
-        if !resumed {
-            let (handle, look) = self.stored_save.as_ref().map(|s| (s.handle.clone(), s.look)).unwrap_or_else(|| ("nightjar".to_string(), 0));
-            let mut s = self.ctx.state();
-            s.new_game(&handle, look, seed_phrase);
-            s.data.scene = MapId::Wharf;
-            s.save();
-        }
-        self.engine.push(EngineReq::PersistSave);
-        self.engine.push(EngineReq::StartWorld);
+        self.skip_to(seed_phrase, MapId::Wharf);
     }
 
-    /// Go straight to the Exchange with the Wharf behind you (tests, the
-    /// demo, `CPL_EXCHANGE=1`).
+    /// The same, skipping ahead to chapter 2's street (the Exchange
+    /// district), the harbour behind you (`CPL_EXCHANGE=1`).
     pub fn start_exchange(&mut self, seed_phrase: Option<&str>) {
+        self.skip_to(seed_phrase, MapId::Exchange);
+    }
+
+    fn skip_to(&mut self, seed_phrase: Option<&str>, district: MapId) {
         self.reset_session();
         let (handle, look) = self.stored_save.as_ref().map(|s| (s.handle.clone(), s.look)).unwrap_or_else(|| ("nightjar".to_string(), 0));
         {
             let mut s = self.ctx.state();
             s.new_game(&handle, look, seed_phrase);
-            for f in [crate::signals::wharf::MAST, crate::signals::wharf::END, "w.intro", "w.started"] {
+            let mut flags = vec!["pro.intro", "pro.letter", "pro.note", "pro.booted", "pro.seed", "pro.login", "pro.done", "pro.toCity", "pro.metCat", "city.arrived", "warden.on", "ch1.met", "ch1.otp", "ch1.ctr", crate::story::ch1::HARBOUR_SENT];
+            let mut items = vec!["letter", "descriptor", "gateway-key", "share1"];
+            let mut chapter = 1;
+            if district == MapId::Exchange {
+                flags.extend([MAST, crate::signals::wharf::END, "w.intro", "w.started", "ch1.done", "ch2.met", "ch2.dh", "ch2.mitm", "ch2.logjam", "ch2.bookIntro", "ch2.book", "book.out", crate::story::ch2::STREET_SENT]);
+                items.push("sealed-messenger");
+                chapter = 2;
+            }
+            for f in flags {
                 s.set(f, true);
             }
-            s.data.scene = MapId::Exchange;
+            for i in items {
+                s.give(i);
+            }
+            s.set_chapter(chapter);
+            s.data.scene = district;
             s.save();
         }
         self.engine.push(EngineReq::PersistSave);
@@ -327,7 +330,7 @@ impl Game {
     /// Walk (well, fade) to a spawn in the district.
     pub fn travel(&mut self, spawn: &'static str) {
         let c = self.ctx.clone();
-        let map = self.district.as_ref().map(|d| d.which).unwrap_or(MapId::Wharf);
+        let map = self.district.as_ref().map(|d| d.which).unwrap_or(MapId::City);
         self.runner.spawn(format!("travel:{spawn}"), true, Box::pin(async move { c.goto(map, Some(spawn)).await }));
         self.pump();
     }
@@ -424,7 +427,8 @@ impl Game {
         self.update_district(dt);
     }
 
-    /// The Wharf's clock, its dives, what its signals did, and the autoplayer.
+    /// The district's clock, its dives, what its signals and lines did, the
+    /// codex entries they earned, and the autoplayer.
     fn update_district(&mut self, dt: f32) {
         let Some(d) = self.district.as_mut() else { return };
         if self.mode != Mode::World {
@@ -537,6 +541,7 @@ impl Game {
             }
         }
         self.line_events();
+        crate::codex::unlock_due(&mut self.ctx.state());
         self.pump();
         if self.auto {
             self.wharf_auto(dt);
@@ -872,10 +877,6 @@ impl Game {
                 self.credits = CreditsState::default();
                 if self.ctx.state_ref().flag("end.done") {
                     self.credits.ending = Some(crate::ending::summary(&self.ctx.state_ref()));
-                } else if self.ctx.state_ref().flag(xch::END) {
-                    self.credits.ending = Some(crate::story::exchange::summary(&self.ctx.state_ref()));
-                } else if self.ctx.state_ref().flag(crate::signals::wharf::END) {
-                    self.credits.ending = Some(crate::story::wharf::summary(&self.ctx.state_ref()));
                 }
                 self.audio.push(AudioReq::Music(Some("finale")));
             }
@@ -910,12 +911,7 @@ impl Game {
                     self.audio.push(AudioReq::Sfx("unlock"));
                 }
                 StateEvent::Saved => {
-                    let d = self.ctx.state_ref().data.clone();
-                    if matches!(d.scene, MapId::Wharf | MapId::Exchange) {
-                        self.stored_wharf = Some(d);
-                    } else {
-                        self.stored_save = Some(d);
-                    }
+                    self.stored_save = Some(self.ctx.state_ref().data.clone());
                     self.engine.push(EngineReq::PersistSave);
                 }
                 _ => {}
@@ -1042,7 +1038,6 @@ impl Game {
                 self.continue_game();
             }
             TitleAction::NewGame { handle, look } => self.new_game(&handle, look, None),
-            TitleAction::Wharf => self.start_wharf(None),
             TitleAction::Settings(s) => {
                 self.ctx.state().update_settings(s);
                 self.engine.push(EngineReq::PersistSettings);
@@ -1138,7 +1133,7 @@ impl Game {
                 self.close_modal();
             }
         }
-        // the Wharf: a board, a locker, the map, a dive
+        // a v4 district: a board or a panel, a locker, the map, a dive
         self.draw_district(ui_ctx, dt, sfx);
         // menu
         if let Some(m) = self.menu.as_mut() {

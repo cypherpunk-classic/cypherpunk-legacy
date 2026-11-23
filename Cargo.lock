@@ -2392,18 +2392,18 @@ dependencies = [
 
 [[package]]
 name = "cpl-art"
-version = "4.1.0"
+version = "4.2.0"
 dependencies = [
  "png",
 ]
 
 [[package]]
 name = "cpl-audio"
-version = "4.1.0"
+version = "4.2.0"
 
 [[package]]
 name = "cpl-crypto"
-version = "4.1.0"
+version = "4.2.0"
 dependencies = [
  "aes",
  "aes-gcm",
@@ -2425,7 +2425,7 @@ dependencies = [
 
 [[package]]
 name = "cpl-logic"
-version = "4.1.0"
+version = "4.2.0"
 dependencies = [
  "cpl-art",
  "cpl-crypto",
@@ -2558,7 +2558,7 @@ checksum = "f27ae1dd37df86211c42e150270f82743308803d90a6f6e6651cd730d5e1732f"
 
 [[package]]
 name = "cypherpunk-legacy"
-version = "4.1.0"
+version = "4.2.0"
 dependencies = [
  "bevy",
  "bevy_egui",

@@ -63,6 +63,13 @@ pub async fn city_zone(c: Ctx, id: String) {
 
 pub fn hint(c: &Ctx) -> &'static str {
     let f = |k: &str| c.flag(k);
+    if f("ch1.ctr") && !f("ch1.done") {
+        return if f(crate::signals::wharf::END) {
+            "Mara, at the radio shack. The harbour is free; she will want to hear it."
+        } else {
+            "Mara will send you down to the harbour. Every lock down there is a lamp board, and a card flips the lamps behind its holes."
+        };
+    }
     if !f("ch1.done") {
         return if f("ch1.met") {
             "Mara's terminal is the kiosk by her radio. The boathouse gate is at the east end of the Wharf."
@@ -76,8 +83,11 @@ pub fn hint(c: &Ctx) -> &'static str {
     if !f("ch2.book") {
         return "Felix's press, in the Exchange. Grandpa's code is on paper; the scan needs fixing before it can be printed.";
     }
+    if !f(crate::lines::exchange::END) {
+        return "Back to Felix. The book is out, and he has one more job: the Exchange's own street, where every order comes down a wire.";
+    }
     if !f("ch2.done") {
-        return "Back to Felix. The book is out; he will want to hear it.";
+        return "Felix, at the switchboard. The lines are free; he owes you a share.";
     }
     if !f("ch3.feldman") {
         return "The Commons, east of the plaza. Juno is in the park. Shares hide in dead drops: a loose brick, a hollow tree.";

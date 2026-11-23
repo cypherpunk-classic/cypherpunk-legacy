@@ -42,6 +42,16 @@ fn full_playthrough() {
     assert!(state.has("identity"));
     assert_eq!(state.data.scene, MapId::City);
     assert!(h.report.gotos.contains(&MapId::City));
+    // chapters 1 and 2 end in their v4 districts: the harbour and the Exchange's street
+    for (m, done) in [(MapId::Wharf, cpl_logic::signals::wharf::END), (MapId::Exchange, cpl_logic::lines::exchange::END)] {
+        assert!(h.report.gotos.contains(&m), "never went to {}", m.name());
+        assert!(state.flag(done), "{} never finished", m.name());
+    }
+    let order: Vec<MapId> = h.report.gotos.iter().copied().filter(|m| matches!(m, MapId::Wharf | MapId::Exchange)).collect();
+    assert_eq!(order.first(), Some(&MapId::Wharf), "the harbour comes first: {order:?}");
+    for id in cpl_logic::codex::UNLOCKS.iter().flat_map(|(_, ids)| ids.iter()) {
+        assert!(state.data.codex.iter().any(|c| c == id), "the districts never unlocked {id}");
+    }
     // the main story alone, with the principled answers, just reaches the best ending
     assert_eq!(ending::ending(&state), Ending::OpenSociety, "tally: {:?}", ending::tally(&state));
     assert_eq!(state.get("end.kind"), Some(&FlagValue::Str("open".into())));
@@ -176,7 +186,7 @@ fn playthrough_with_keyboard() {
 #[test]
 fn route_targets_exist() {
     let story: Vec<&str> = cpl_logic::story::INTERACTIONS.to_vec();
-    for s in ROUTE {
+    for s in ROUTE.iter().filter(|s| s.target != cpl_logic::walkthrough::DISTRICT) {
         assert!(story.contains(&s.target), "{} is not a story interaction", s.target);
         let m = cpl_logic::maps::map(s.map);
         assert!(m.interactions().contains(&s.target), "{} is not placed on {}", s.target, s.map.name());

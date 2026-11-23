@@ -22,9 +22,8 @@ pub async fn ready(c: Ctx) {
     c.wait(900.0).await;
     say!(
         c,
-        (Felix, "Mara rang ahead. Well, she tried. Every call in this district goes through their desk, so I knew you were coming before she did."),
-        (Felix, "I ran this exchange when it was switchboards and courage. The rule hasn't changed: a cord joins two jacks, and whatever one end says, the other end hears."),
-        (Felix, "Nobody on a line can see who is at the other end of it. Start with the junction box by the square gate."),
+        (Felix, "The tram square. Every call in this district goes through their desk, and the desk never asks who is calling."),
+        (Felix, "Start with the junction box by the square gate. Watch what the depot says, and to whom."),
     )
     .await;
 }
@@ -64,7 +63,7 @@ pub fn interaction(c: Ctx, id: &str) -> Option<BoxFut> {
         "x.gate.boom2" => Box::pin(async move { c.say1(Sp::Narrator, "Post two's boom. He lifts it when the desk tells him to go somewhere else.").await }),
         "x.gate.boom3" => Box::pin(async move { c.say1(Sp::Narrator, "Post three's boom. His call box hisses: a scrambled line.").await }),
         "x.gate.tower" => Box::pin(async move { c.say1(Sp::Narrator, "The tower gate is slaved to the camera on the corner: shut for as long as it watches.").await }),
-        "x.gate.north" => Box::pin(async move { c.say1(Sp::Narrator, "The road north, into the rest of the city. Not while every call still goes through their desk.").await }),
+        "x.gate.north" => Box::pin(async move { c.say1(Sp::Narrator, "The road north, back to Felix's switchboard. Not while every call still goes through their desk.").await }),
         "x.citizen.1" => Box::pin(async move {
             c.say1(Sp::Narrator, "*(a tram conductor, on her break)* The depot rings the tram gate every few seconds: OPEN, then SHUT. The gate never asks who is calling. Gates never do.").await;
         }),
@@ -171,10 +170,10 @@ pub async fn freed(c: Ctx) {
             c,
             (Felix, "Do you know how long it has been since a call left this building without the desk keeping a copy?"),
             (Felix, "Their mathematics was fine. Every line ran an honest key exchange. They never checked who they were talking to, they put the tower in a group small enough to count, and they trusted a sixteen-bit checksum to keep the escrow honest."),
-            (Felix, "The road north is open, past the tower. That is as far as this build goes."),
+            (Felix, "Take the road north, past the tower, and I'll meet you back at the switchboard. There's a share with your name on it."),
         )
         .await;
-        c.objective("The Exchange is free. Take the road north, past the tower.");
+        c.objective("The Exchange is free. Take the road north, past the tower, back to Felix.");
     })
     .await;
 }
@@ -184,29 +183,11 @@ async fn walk_out(c: Ctx) {
         return;
     }
     c.set(END);
-    c.state().save();
-    c.credits();
-}
-
-/// The end card: what the player did in the Exchange (and on the Wharf before it).
-pub fn summary(st: &GameState) -> (String, Vec<String>) {
-    let mins = (st.data.play_ms / 60_000.0).round() as u64;
-    let mut lines = vec![
-        "The Wharf: every lock used a perfect cipher, and you never broke one.".to_string(),
-        "The Exchange: every line agreed its key honestly, and you never broke one of those either.".to_string(),
-        String::new(),
-        "You answered for the desk because nobody can see who answers.".to_string(),
-        "You stood in the middle of a scrambled line because nothing said who was at its ends.".to_string(),
-        "You turned a relay's knob until a five-bit word agreed, and found a sealed line you could not turn.".to_string(),
-        "You counted your way through a group that was small because a law said it had to be.".to_string(),
-        "You forged a LEAF because sixteen bits is not a lock.".to_string(),
-        String::new(),
-        format!("Flagged {} {}.", st.data.stats.flagged, if st.data.stats.flagged == 1 { "time" } else { "times" }),
-    ];
-    if mins > 0 {
-        lines.push(format!("{mins} minutes in v4."));
-    }
-    lines.push(String::new());
-    lines.push("Cypherpunk Legacy v4. The rest of the city is being rebuilt the same way.".to_string());
-    ("THE EXCHANGE, FREE".to_string(), lines)
+    c.cutscene(async {
+        c.location("THE LINES, FREE", "back to the switchboard");
+        c.wait(1600.0).await;
+        c.goto(MapId::City, Some("felix")).await;
+    })
+    .await;
+    c.objective("The Exchange is free. Felix is waiting at the switchboard.");
 }

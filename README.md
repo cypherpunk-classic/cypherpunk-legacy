@@ -24,8 +24,7 @@ blind-signed eCash, side quests, and choices that lead to three endings. See
 cryptography had not made a fun game: too much walking between terminals,
 too much text, puzzles that read like exercises. v4 rebuilds the city one
 district at a time around puzzles that stand in the street, each district
-with one physical rule you learn by playing. It is the title screen's first
-button (or `CPL_WHARF=1` / `?wharf`). On **the Wharf** every gate, patrol and
+with one physical rule you learn by playing. On **the Wharf** every gate, patrol and
 camera is a lamp board speaking in one-time-pad pictures, and you carry
 punched cards that flip the lamps behind their holes. Up the road, at **the
 Exchange**, every gate, guard, camera and the tower take their orders over
@@ -38,6 +37,18 @@ exchange and take it apart with baby-step giant-step, and make the last call
 over a Clipper phone with a forged LEAF. No quest givers, a map with one-key
 travel, guards and cameras that keep watching while you work, and three
 cyberspace dives. Why, and where it goes next: [`docs/V4.md`](docs/V4.md).
+
+**v4.2: one game.** v4.0 and v4.1 shipped the two districts as a separate
+game behind their own title button. v4.2 merges them into the story: one NEW
+GAME, one save. Chapter 1 still opens with Mara's radio log and the boathouse
+gate, then she sends you down to the harbour proper, the Wharf district, and
+the chapter ends when its mast answers to you. Chapter 2 still opens with
+Felix's terminals and the press, then the Exchange district is its climax, and
+Felix hands over his share when its lines are free. Chapters 3 to 6, the
+Dragnet, the wallet, the web of trust, the side quests and the endings are
+all as they were. The districts' puzzles unlock six new codex entries (known
+plaintext, MACs, replay, blue boxes, short authentication strings, Logjam),
+and the end credits count your cards and dives.
 
 ---
 
@@ -62,13 +73,14 @@ python3 -m http.server -d dist 8080                # then open http://localhost:
 Enter to interact · C for the codex · Esc for the menu. On a touch screen, drag
 on the left half to walk and tap the E button to interact.
 
-**The Wharf (v4):** click a card to put it in a board's reader, right-click
-(or drag) it onto the light table, M for the map, `?` on a board for
-Grandpa's notes. **The Exchange (v4):** click a jack to take up a cord and
-another jack to plug it in; click a plugged jack to pull its cord.
-`CPL_WHARF=1 CPL_AUTOPLAY=1 CPL_PACE=0.6 cargo run --release` (or
-`?wharf&autoplay=demo`) shows v4 played from the Wharf on; `CPL_EXCHANGE=1`
-(`?exchange`) starts at the Exchange with the Wharf done.
+**In the two districts:** click a card to put it in a board's reader,
+right-click (or drag) it onto the light table, M for the district map, `?` on
+a board for Grandpa's notes; at a junction box, click a jack to take up a
+cord and another jack to plug it in, and click a plugged jack to pull its
+cord. To skip ahead for development, `CPL_WHARF=1` (`?wharf`) starts a game at
+chapter 1's harbour and `CPL_EXCHANGE=1` (`?exchange`) at chapter 2's street;
+add `CPL_AUTOPLAY=1 CPL_PACE=0.6` (`&autoplay=demo`) to watch it play on from
+there.
 
 **Watch it play itself:** `CPL_AUTOPLAY=1 cargo run --release` natively, or
 `?autoplay=demo` on the web build. The autopilot walks the city, talks to
@@ -85,8 +97,8 @@ Seven acts, each built on a working implementation you drive yourself:
 | Act | Place | Cryptography |
 |----|-------|--------------|
 | **Prologue** | The Cabin | BIP-39 seed recovery (checksum + master fingerprint), a BIP-340 Schnorr login whose response you build yourself |
-| **1 · One time only** | The Wharf | One-time pad reuse (crib dragging), AES-CTR malleability vs AES-GCM authentication |
-| **2 · Strangers agree** | The Exchange | Diffie–Hellman, man-in-the-middle on an unauthenticated exchange, baby-step giant-step on an export-grade group, and Grandpa's code smuggled out as a printed book (OCR repair against CRC-16) |
+| **1 · One time only** | The Wharf, then the harbour district | One-time pad reuse (crib dragging), AES-CTR malleability vs AES-GCM authentication; then the harbour's lamp boards: malleability without the key, known plaintext, the two-time pad, HMAC seals and replay, and two dives (Shamir as a shooting gallery, crib dragging live) |
+| **2 · Strangers agree** | The Exchange, then its street | Diffie–Hellman, man-in-the-middle on an unauthenticated exchange, baby-step giant-step on an export-grade group, and Grandpa's code smuggled out as a printed book (OCR repair against CRC-16); then the street's lines: in-band trust, a relay in a scrambled line, short authentication strings ground and sealed, LOGJAM, and a Clipper LEAF forged |
 | **3 · Threshold** | The Commons | Shamir secret sharing over GF(31) and secp256k1, Feldman verifiable secret sharing, Chaumian eCash with blind Diffie–Hellman at the Commons Mint |
 | *Interlude* | The Exchange | A key-signing party: fingerprints, IDs and a colliding short key ID (PGP's web of trust) |
 | **4 · Signatures** | The Mint | Nonce-reuse key recovery, rogue-key attack vs BIP-327 MuSig2, BIP-341 Taproot script trees, Matt Blaze's attack on the Clipper chip's LEAF |
@@ -113,7 +125,7 @@ Between the puzzles:
 Every terminal lists its steps (with hints in *Guided* mode), and most offer a
 **deep dive**: the same idea worked by hand in a toy group, against a clock.
 
-A **Codex** of 48 entries unlocks as you play, covering both the mathematics
+A **Codex** of 54 entries unlocks as you play, covering both the mathematics
 and the history: the Crypto Wars, PGP, Clipper, Bernstein v. US, Venona,
 DigiCash, the remailers, Hashcash, Dual_EC_DRBG, the NIST post-quantum
 standards, and more.

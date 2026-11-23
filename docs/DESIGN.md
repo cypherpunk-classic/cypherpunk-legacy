@@ -139,6 +139,25 @@ Each of the six friends teaches one idea and hands over one piece (a Shamir
 share, a key, access), so the mechanics and the plot advance together: you learn
 MuSig2 *because* the Directorate offered you a rigged joint-custody contract.
 
+## The v4 districts inside the story (v4.2)
+
+Chapters 1 and 2 each end in a district of their own map (`MapId::Wharf`,
+`MapId::Exchange`), rebuilt the v4 way: one physical rule, puzzles standing
+where they act, an opponent on a clock (see [`V4.md`](V4.md)). The story
+reaches them with an ordinary `goto`: Mara (`ch1.harbour`) and Felix
+(`ch2.street`) send you in once the v3 half of their chapter is done, and the
+district's walk-out sends you back to a spawn in front of them (`mara`,
+`felix`), where the next conversation closes the chapter and hands over the
+share. While a district is loaded, `Game::district` holds its state and its
+autoplayer; leaving it drops both. The save is the one save throughout; the
+districts' flags (`w.*`, `x.*`) live beside the story's. The district's
+puzzles unlock their codex entries through `codex::UNLOCKS`, and the ending's
+tally counts cards and dives.
+
+In the route (`walkthrough::ROUTE`) each district is one step with the target
+`DISTRICT`: the headless driver and the autopilot let the district's own
+autoplayer work it until its walk-out flag is set, then carry on in the city.
+
 ## Testing strategy
 
 Three layers, all real:

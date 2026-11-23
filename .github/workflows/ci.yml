@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, 'v3**']
+    branches: [main, 'v3**', 'v4**']
   pull_request:
 
 env:
@@ -32,21 +32,16 @@ jobs:
           sudo apt-get install -y --no-install-recommends libasound2-dev libudev-dev libx11-dev libxcursor-dev libxrandr-dev libxi-dev libxkbcommon-x11-0 mesa-vulkan-drivers xvfb
       - name: Build
         run: cargo build --release
-      - name: Play the whole game through the real world (software Vulkan under Xvfb)
+      - name: Play the whole game through the real world, both v4 districts included (software Vulkan under Xvfb)
         run: |
           mkdir -p shots
           xvfb-run -s "-screen 0 1280x720x24" env WGPU_BACKEND=vulkan CPL_AUTOPLAY=1 CPL_SPEED=3 CPL_EXIT_AT_END=1 \
-            CPL_SHOTS=shots CPL_DATA_DIR="$RUNNER_TEMP/cpl" CPL_SEED=ci timeout 1800 ./target/release/cypherpunk-legacy
+            CPL_SHOTS=shots CPL_DATA_DIR="$RUNNER_TEMP/cpl" CPL_SEED=ci timeout 2700 ./target/release/cypherpunk-legacy
       - name: Again, with every side quest, shop, floppy and recruit on the way
         run: |
           mkdir -p shots-side
           xvfb-run -s "-screen 0 1280x720x24" env WGPU_BACKEND=vulkan CPL_AUTOPLAY=1 CPL_SIDE=1 CPL_SPEED=3 CPL_EXIT_AT_END=1 \
-            CPL_SHOTS=shots-side CPL_DATA_DIR="$RUNNER_TEMP/cpl-side" CPL_SEED=ci-side timeout 1800 ./target/release/cypherpunk-legacy
-      - name: v4, the Wharf and then the Exchange, every board, panel, dial and dive
-        run: |
-          mkdir -p shots-wharf
-          xvfb-run -s "-screen 0 1280x720x24" env WGPU_BACKEND=vulkan CPL_AUTOPLAY=1 CPL_WHARF=1 CPL_PACE=0.2 CPL_EXIT_AT_END=1 \
-            CPL_SHOTS=shots-wharf CPL_DATA_DIR="$RUNNER_TEMP/cpl-wharf" CPL_SEED=ci-wharf timeout 1800 ./target/release/cypherpunk-legacy
+            CPL_SHOTS=shots-side CPL_DATA_DIR="$RUNNER_TEMP/cpl-side" CPL_SEED=ci-side timeout 2700 ./target/release/cypherpunk-legacy
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -54,7 +49,6 @@ jobs:
           path: |
             shots
             shots-side
-            shots-wharf
 
   web:
     name: Web build

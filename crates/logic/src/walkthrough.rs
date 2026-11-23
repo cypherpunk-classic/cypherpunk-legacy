@@ -7,6 +7,11 @@
 //! with every puzzle solved by its own `autoplay`. The in-game autoplay mode
 //! walks the same route through the real world.
 //!
+//! The two v4 districts (the harbour in chapter 1, the Exchange's street in
+//! chapter 2) are one step each, with the target [`DISTRICT`]: the district's
+//! own autoplayer works every board, panel, dial and dive until the step's
+//! flag is set, the player walks out, and the route carries on in the city.
+//!
 //! Steps marked `side` are the optional ones (side quests, floppies, shops,
 //! citizens who join you). They sit right after the step that unlocks them,
 //! and are skipped unless asked for (`CPL_SIDE=1` for the in-game autoplay).
@@ -31,6 +36,13 @@ const fn step(target: &'static str, until: &'static str, map: MapId) -> Step {
     Step { target, until, map, side: false }
 }
 
+/// The target of a step played inside a v4 district by its own autoplayer.
+pub const DISTRICT: &str = "district";
+
+const fn district(until: &'static str, map: MapId) -> Step {
+    Step { target: DISTRICT, until, map, side: false }
+}
+
 const fn side(target: &'static str, until: &'static str) -> Step {
     Step { target, until, map: MapId::City, side: true }
 }
@@ -43,11 +55,15 @@ pub const ROUTE: &[Step] = &[
     side("floppy.1", "floppy.1"),
     side("floppy.4", "floppy.4"),
     step("wharf.boathouse", "ch1.ctr", MapId::City),
+    step("mara.talk", "ch1.harbour", MapId::City),
+    district("w.end", MapId::Wharf),
     step("mara.talk", "ch1.done", MapId::City),
     side("theo.talk", "q.dots.done"),
     side("floppy.2", "floppy.2"),
     step("felix.talk", "ch2.logjam", MapId::City),
     step("exchange.press", "ch2.book", MapId::City),
+    step("felix.talk", "ch2.street", MapId::City),
+    district("x.end", MapId::Exchange),
     step("felix.talk", "ch2.done", MapId::City),
     side("wen.talk", "q.ledger.done"),
     side("floppy.3", "floppy.3"),
@@ -314,6 +330,10 @@ impl Headless {
                 if self.game.current_map() != s.map {
                     return Err(format!("{} is on {}, but the game is on {}", s.target, s.map.name(), self.game.current_map().name()));
                 }
+                if s.target == DISTRICT {
+                    self.play_district(s.until, stop)?;
+                    continue;
+                }
                 tries += 1;
                 if tries > 8 {
                     return Err(format!("{} never set {} (objective: {:?})", s.target, s.until, self.game.ctx.state_ref().data.objective));
@@ -323,6 +343,34 @@ impl Headless {
                 }
             }
         }
+        Ok(())
+    }
+
+    /// Let a v4 district's autoplayer work the street until `until` is set
+    /// (it drives the windows itself, so manual runs hand it the controls for
+    /// the length of the district).
+    fn play_district(&mut self, until: &str, stop: Option<&str>) -> Result<(), String> {
+        let manual = !self.game.auto;
+        self.game.auto = true;
+        let limit = 30 * 60 * 40; // forty minutes of game time
+        let mut frames = 0;
+        while !self.game.ctx.state_ref().flag(until) && !stop.is_some_and(|f| self.game.ctx.state_ref().flag(f)) {
+            self.frame();
+            frames += 1;
+            if frames > limit {
+                self.game.auto = !manual;
+                let st = self.game.ctx.state_ref();
+                return Err(format!("the district on {} never set {until} (objective: {:?}, trace {})", self.game.current_map().name(), st.data.objective, st.trace));
+            }
+        }
+        // out of the district and back in the city
+        for _ in 0..30 * 20 {
+            if self.game.current_map() == MapId::City && self.game.idle() {
+                break;
+            }
+            self.frame();
+        }
+        self.game.auto = !manual;
         Ok(())
     }
 }

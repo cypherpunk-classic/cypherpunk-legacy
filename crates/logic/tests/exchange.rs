@@ -1,7 +1,7 @@
-//! The Exchange, end to end: the autoplayer arrives in the tram square with
-//! the Wharf behind it, works every panel through the real game (scripts,
-//! windows, egui), breaks LOGJAM, makes the call nobody else hears and walks
-//! out north.
+//! Chapter 2's street, end to end: Felix has sent the player out onto the
+//! Exchange's lines; the autoplayer works every panel through the real game
+//! (scripts, windows, egui), breaks LOGJAM, makes the call nobody else hears,
+//! walks out north to Felix, and he hands over his share.
 
 use cpl_logic::game::Mode;
 use cpl_logic::lines::exchange::{self as xch, sites};
@@ -13,7 +13,7 @@ fn play(seed: &str) -> Headless {
     let limit = 40 * 60 * 30; // forty minutes of game time at 30 fps
     for _ in 0..limit {
         h.frame();
-        if h.game.mode == Mode::Credits {
+        if h.game.ctx.state_ref().flag(xch::END) && h.game.current_map() == MapId::City && h.game.district.is_none() && h.game.idle() {
             break;
         }
     }
@@ -29,18 +29,24 @@ fn the_autoplayer_frees_the_exchange_and_walks_out() {
     assert!(open.is_empty(), "{open:?}");
     assert!(st.flag(xch::DIVE_LOGJAM) && st.flag(xch::CODE) && st.flag(xch::ESCROW_SEEN));
     assert!(st.flag(xch::END));
-    assert_eq!(h.game.mode, Mode::Credits);
-    assert_eq!(st.data.scene, MapId::Exchange);
-    assert!(h.game.credits.ending.as_ref().is_some_and(|(t, _)| t.contains("EXCHANGE")));
-    assert!(h.report.gotos.iter().all(|m| *m == MapId::Exchange), "{:?}", h.report.gotos);
+    assert_eq!(h.game.mode, Mode::World);
+    assert_eq!(st.data.scene, MapId::City);
+    let (last, rest) = h.report.gotos.split_last().expect("some travel");
+    assert_eq!(*last, MapId::City);
+    assert!(rest.iter().all(|m| *m == MapId::Exchange), "{:?}", h.report.gotos);
+    assert_eq!(h.report.spawns.last().map(String::as_str), Some("felix"));
     let secs = h.report.frames as f32 / 30.0;
     assert!(secs < 20.0 * 60.0, "took {secs:.0} s of game time");
 }
 
 #[test]
-fn another_seed_plays_through_too() {
-    let h = play("a different exchange");
+fn felix_hands_over_his_share_after_the_street() {
+    let mut h = play("a different exchange");
     assert!(h.game.ctx.state_ref().flag(xch::END));
+    assert!(h.interact("felix.talk"));
+    let st = h.game.ctx.state_ref();
+    assert!(st.flag("ch2.done") && st.has("share2"), "objective {:?}", st.data.objective);
+    assert_eq!(st.data.chapter, 3);
 }
 
 #[test]
