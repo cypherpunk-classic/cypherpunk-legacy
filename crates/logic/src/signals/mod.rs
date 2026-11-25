@@ -526,7 +526,7 @@ impl Signals {
             // a broken seal trips the lock and the console repaints the board
             b.hand = 0;
             if st.settings.dragnet {
-                st.trace = (st.trace + SEAL_BROKEN).min(100.0);
+                st.trace = (st.trace + crate::campaign::penalty(st, SEAL_BROKEN)).min(100.0);
             }
             self.events.push(Event::SealBroken { board: id });
             self.after_change(st, id);
@@ -537,7 +537,7 @@ impl Signals {
         match hit {
             None => {
                 if st.settings.dragnet {
-                    st.trace = (st.trace + BUZZ).min(100.0);
+                    st.trace = (st.trace + crate::campaign::penalty(st, BUZZ)).min(100.0);
                 }
                 self.events.push(Event::Buzz { board: id });
                 Outcome::NotASignal
@@ -545,7 +545,7 @@ impl Signals {
             Some((g, Effect::Nothing)) => Outcome::Idle(g),
             Some((g, Effect::Alarm)) => {
                 if st.settings.dragnet {
-                    st.trace = (st.trace + ALARM).min(100.0);
+                    st.trace = (st.trace + crate::campaign::penalty(st, ALARM)).min(100.0);
                 }
                 self.events.push(Event::Alarm { board: id });
                 Outcome::Alarm(g)

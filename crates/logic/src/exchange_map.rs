@@ -120,6 +120,10 @@ fn callbox(id: &'static str, tx: f32, ty: f32) -> MapObject {
 
 pub fn exchange() -> MapDef {
     let objects = vec![
+        {
+            let (x, y) = on(29.5, 34.6);
+            MapObject::new("x-lantern", "obj-lantern", x, y).anim().interact("rest.exchange", "Rest at the lantern").radius(18.0).light(Light::new("glow-warm", 0.9, 0.55, -14.0).pulse())
+        },
         // --- the north side, out of reach ---------------------------------------------
         MapObject::new("x-annex", "bld-block_a", t(7.0) + 8.0, t(12.0)).anim().body(112.0, 30.0),
         MapObject::new("x-exchange", "bld-exchange", t(25.0) + 8.0, t(12.0)).anim().body(160.0, 30.0),

@@ -17,6 +17,12 @@ pub const SAFE_HOUSES: &[(&str, &str, f32, f32)] = &[
 
 /// The nearest open safe house to (x, y).
 pub fn nearest_safe_house(c: &Ctx, x: f32, y: f32) -> &'static str {
+    // the lantern you last rested at, if it is a safe house that is open
+    if let Some(crate::state::FlagValue::Str(at)) = c.state_ref().get(crate::campaign::REST_AT)
+        && let Some(h) = SAFE_HOUSES.iter().find(|(n, cond, _, _)| *n == at.as_str() && c.flag(cond))
+    {
+        return h.0;
+    }
     SAFE_HOUSES
         .iter()
         .filter(|(_, cond, _, _)| c.flag(cond))

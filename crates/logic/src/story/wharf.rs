@@ -42,6 +42,16 @@ pub fn interaction(c: Ctx, id: &str) -> Option<BoxFut> {
     if let Some(d) = id.strip_prefix("w.dive.") {
         let d = d.to_string();
         return Some(Box::pin(async move {
+            if d == "lamplighter" && !c.flag("w.lamplighter.met") {
+                c.set("w.lamplighter.met");
+                say!(
+                    c,
+                    (Narrator, "*(a drone the size of a dinghy hangs over the mole, a floodlight under it like a lamp on a pole)* LAMPLIGHTER UNIT 7. RESTORING DIRECTORATE SIGNAL TO THE MAST."),
+                    (Mara, "They want it back. Its light takes three lanes and leaves one dark. Which one is two bits of its keystream, every beat."),
+                    (Nonce, "Dodge it and you live. Call the dark lane before the light shows and the light comes back at it. A call is a prediction. You will have to earn it."),
+                )
+                .await;
+            }
             c.sfx("power");
             if c.dive(&d).await {
                 c.sfx("success");
@@ -136,14 +146,15 @@ pub async fn zone(c: Ctx, id: String) {
 }
 
 /// The trace hit 100 on the Wharf.
-pub async fn flagged(c: Ctx) {
+pub async fn flagged(c: Ctx, x: f32, y: f32) {
     c.cutscene(async {
         c.flash(350.0, 0xff3355);
         c.sfx("warden");
-        let times = {
+        let (times, dropped, lost) = {
             let mut s = c.state();
             s.data.stats.flagged += 1;
-            s.data.stats.flagged
+            let (d, l) = crate::campaign::drop_loose(&mut s, MapId::Wharf, x, y);
+            (s.data.stats.flagged, d, l)
         };
         say!(
             c,
@@ -151,6 +162,16 @@ pub async fn flagged(c: Ctx) {
             (Nonce, if times == 1 { "They emptied every reader on the wharf and sent you back to the boathouse. Your cards are still yours. Watch the TRACE bar: the guard, the camera, and every lock that does not like what it reads." } else { "Again. The boathouse, then." }),
         )
         .await;
+        if dropped > 0 || lost > 0 {
+            let mut line = String::new();
+            if dropped > 0 {
+                line.push_str(&format!("You dropped {dropped} {} where they caught you: everything you had rubbed or cut since you last rested at a lantern. Walk back and pick {} up. Get caught again first and {} gone.", if dropped == 1 { "card" } else { "cards" }, if dropped == 1 { "it" } else { "them" }, if dropped == 1 { "it's" } else { "they're" }));
+            }
+            if lost > 0 {
+                line.push_str(&format!(" The {lost} you dropped last time are gone for good."));
+            }
+            c.say1(Sp::Nonce, line.trim()).await;
+        }
         c.state().trace = 0.0;
         c.signal("flagged");
         c.goto(MapId::Wharf, Some("start")).await;
@@ -184,6 +205,12 @@ async fn walk_out(c: Ctx) {
         return;
     }
     c.set(END);
+    if c.state_ref().data.replay_of.is_some() {
+        // a replay from the campaign map: back to the real save, stars and all
+        c.sfx("door");
+        c.signal("replay.end");
+        return;
+    }
     c.cutscene(async {
         c.location("THE HARBOUR, FREE", "back up to the radio shack");
         c.wait(1600.0).await;

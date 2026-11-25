@@ -48,7 +48,7 @@ pub fn gather_bodies(mut level: ResMut<Level>, q: Query<(Entity, &Pos, &Walker, 
     level.actors = actors;
 }
 
-pub fn move_player(time: Res<Time>, control: Res<Control>, pace: Res<Pace>, game: NonSend<GameRes>, director: Res<Director>, level: Res<Level>, mut sfx: ResMut<SfxQueue>, mut q: Query<(Entity, &mut Pos, &mut Walker), With<Player>>, mut step: Local<f32>) {
+pub fn move_player(time: Res<Time>, control: Res<Control>, pace: Res<Pace>, mut game: NonSendMut<GameRes>, director: Res<Director>, level: Res<Level>, mut sfx: ResMut<SfxQueue>, mut q: Query<(Entity, &mut Pos, &mut Walker), With<Player>>, mut step: Local<f32>) {
     let Ok((e, mut pos, mut w)) = q.single_mut() else { return };
     let dt = time.delta_secs().min(MAX_DT);
     let frozen = game.mode != Mode::World || game.busy() || director.transition.is_some();
@@ -56,8 +56,13 @@ pub fn move_player(time: Res<Time>, control: Res<Control>, pace: Res<Pace>, game
     if axis.length() > 1.0 {
         axis = axis.normalize();
     }
+    // a dodge: a short burst the sensors cannot fix on (F, while moving)
+    if control.dodge && !frozen && axis.length() > 0.1 {
+        game.dodge();
+    }
+    let dashing = game.ctx.state_ref().dodge > 0.0;
     let auto = control.override_axis.is_some();
-    let stride = player_stride(dt, control.run, if auto { pace.0 } else { 1.0 });
+    let stride = player_stride(dt, control.run, if auto { pace.0 } else { 1.0 }) * if dashing { 3.2 } else { 1.0 };
     w.running = control.run;
     // a dead zone for sticks and touch; the autopilot may ask for a short, exact step
     let dead = if auto { 1e-3 } else { 0.1 };
@@ -364,6 +369,8 @@ pub fn zones(mut game: NonSendMut<GameRes>, level: Res<Level>, player: Query<&Po
         *last_map = Some(map.id);
     }
     let Ok(p) = player.single() else { return };
+    // walking over what you dropped picks it up
+    game.pick_up_at(p.p.x, p.p.y);
     for z in &map.zones {
         let is_in = z.rect.contains(p.p.x, p.p.y);
         let was = inside.contains(&z.id);

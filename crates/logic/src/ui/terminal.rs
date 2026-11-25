@@ -18,13 +18,15 @@ pub struct ActivePuzzle {
     pub deep_available: bool,
     /// Whether the puzzle has a deep dive (asked once, after solving).
     has_deep: Option<bool>,
+    /// Deep-dive clocks run this much longer (the Terminal kit upgrade).
+    pub deep_scale: f32,
 }
 
 impl ActivePuzzle {
     pub fn new(reply: u64, puzzle: Box<dyn Puzzle>, handle: &str, hints: bool, deep_available: bool) -> Self {
         let mut host = Host::new(handle);
         host.hints = hints;
-        Self { reply, puzzle, host, opened: false, deep: None, deep_available, has_deep: None }
+        Self { reply, puzzle, host, opened: false, deep: None, deep_available, has_deep: None, deep_scale: 1.0 }
     }
 
     pub fn ensure_open(&mut self) {
@@ -38,7 +40,7 @@ impl ActivePuzzle {
     pub fn start_deep(&mut self) -> bool {
         match self.puzzle.deep_sheet() {
             Some(s) => {
-                let t = s.seconds;
+                let t = s.seconds * self.deep_scale;
                 self.deep = Some((s, t));
                 self.host.status("Deep dive: work it by hand before the clock runs out.", Tone::Info);
                 true

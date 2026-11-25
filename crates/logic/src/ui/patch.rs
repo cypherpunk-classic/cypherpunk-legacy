@@ -140,8 +140,11 @@ pub fn show(ctx: &egui::Context, v: &mut PanelView, lines: &mut Lines, sig: &Sig
                     }
                     if !notes.is_empty() {
                         let label = if v.notes == 0 { "?".to_string() } else { format!("? {}/{}", v.notes, notes.len()) };
-                        if button(ui, &label, Kind::Ghost).on_hover_text("Grandpa's notebook: a nudge, then a push, then the answer.").clicked() && v.notes < notes.len() {
+                        let costs = v.notes < notes.len() && v.notes + 1 > crate::campaign::free_hint_pages(st);
+                        let tip = if costs { "Grandpa's notebook: a nudge, then a push, then the answer.\nThe next page costs this run its hint star." } else { "Grandpa's notebook: a nudge, then a push, then the answer." };
+                        if button(ui, &label, Kind::Ghost).on_hover_text(tip).clicked() && v.notes < notes.len() {
                             v.notes += 1;
+                            crate::campaign::hint_read(st, crate::state::MapId::Exchange, v.notes);
                             sfx.push("blip");
                         }
                     }

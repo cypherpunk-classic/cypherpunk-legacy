@@ -215,7 +215,7 @@ impl GameState {
         if self.wallet_open() {
             f *= 0.85;
         }
-        f * (1.0 - 0.02 * self.ally_count() as f32).max(0.75)
+        f * (1.0 - 0.02 * self.ally_count() as f32).max(0.75) * crate::campaign::gain_factor(self)
     }
 
     /// Fingerprint of a key, formatted (for dialogue and terminals).

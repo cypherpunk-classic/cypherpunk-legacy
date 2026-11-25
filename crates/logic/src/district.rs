@@ -73,6 +73,7 @@ pub struct District {
 
 impl District {
     pub fn new(st: &mut GameState, which: MapId) -> Self {
+        crate::campaign::begin_run(st, which);
         let (sig, lines) = if which == MapId::Exchange {
             (Signals::exchange(st), Some(Lines::exchange(st)))
         } else {
@@ -95,12 +96,18 @@ impl District {
 
     /// The dive for `id`, made on first use from the save's seed.
     pub fn dive_mut(&mut self, id: &'static str, seed: &[u8], st: &GameState) -> Option<&mut Box<dyn Dive>> {
+        // a boss you have beaten comes back for a rematch, on a fresh register
+        if id == "lamplighter" && self.dives.get(id).is_some_and(|d| d.status() == dive::Status::Cleared) {
+            self.dives.remove(id);
+        }
         if !self.dives.contains_key(id) {
-            let d: Box<dyn Dive> = match (id, &self.lines) {
+            let mut d: Box<dyn Dive> = match (id, &self.lines) {
                 // LOGJAM breaks the numbers on your tape
                 ("logjam", Some(l)) => Box::new(dive::logjam::Logjam::new(seed, l.logjam_targets(st))),
+                ("lamplighter", _) => Box::new(dive::lamplighter::Lamplighter::new(seed, st.data.stages.get("lamplighter").map(|r| r.clears + r.replays).unwrap_or(0))),
                 _ => dive::make(id, seed)?,
             };
+            d.set_merciful(!st.settings.dragnet);
             self.dives.insert(id, d);
         }
         self.dives.get_mut(id)

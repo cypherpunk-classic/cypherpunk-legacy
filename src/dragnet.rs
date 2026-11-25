@@ -134,6 +134,8 @@ pub fn update(
     // the fields
     let state = game.ctx.state_ref();
     let calm = state.settings.reduced_motion;
+    // chaff in the air: the fields go faint, they cannot pick you out
+    let jam = if state.chaff > 0.0 { 0.3 } else { 1.0 };
     for (mut f, mut tf, mut vis) in fields.iter_mut() {
         let Some(s) = map.sensors.get(f.sensor) else { continue };
         let active = state.cond(s.show_if);
@@ -177,6 +179,7 @@ pub fn update(
                 }
             }
         };
+        let alpha = alpha * jam;
         if let SensorKind::Camera { .. } = s.kind {
             // the mesh points along +y; the map's angle is clockwise from east (y down)
             tf.rotation = Quat::from_rotation_z(-s.facing(t) - FRAC_PI_2);
@@ -195,5 +198,37 @@ pub struct DragnetPlugin;
 impl Plugin for DragnetPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<DragnetView>();
+    }
+}
+
+/// Where the player dropped their cards: a gold glow on the ground.
+#[derive(Component)]
+pub struct Stain {
+    at: (i32, i32),
+    material: Handle<GlowMaterial>,
+}
+
+/// Show what the player dropped on this map, and nothing once it is picked up.
+pub fn stains(mut commands: Commands, time: Res<Time>, game: NonSend<GameRes>, level: Res<Level>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<GlowMaterial>>, q: Query<(Entity, &Stain)>) {
+    let Some(map) = level.map.as_ref() else { return };
+    let want = {
+        let st = game.ctx.state_ref();
+        st.data.dropped.as_ref().filter(|d| d.map == map.id && game.mode == Mode::World).map(|d| (d.x.round() as i32, d.y.round() as i32))
+    };
+    let mut have = false;
+    for (e, s) in q.iter() {
+        if Some(s.at) == want {
+            have = true;
+            let a = 0.35 + 0.25 * (time.elapsed_secs() * 3.0).sin().abs();
+            if let Some(mut m) = materials.get_mut(&s.material) {
+                m.base.color = Color::srgba(1.0, 0.8, 0.45, a);
+            }
+        } else {
+            commands.entity(e).despawn();
+        }
+    }
+    if let (Some(at), false) = (want, have) {
+        let m = materials.add(GlowMaterial { base: ColorMaterial { color: Color::srgba(1.0, 0.8, 0.45, 0.5), ..default() }, extension: Additive {} });
+        commands.spawn((MapEntity, Stain { at, material: m.clone() }, Mesh2d(meshes.add(Circle::new(9.0).mesh().resolution(24).build())), MeshMaterial2d(m), Transform::from_translation(to_world(at.0 as f32, at.1 as f32, Z_FIELDS + 0.1))));
     }
 }

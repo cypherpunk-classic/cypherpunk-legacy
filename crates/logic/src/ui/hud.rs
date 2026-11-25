@@ -47,6 +47,10 @@ pub struct HudClicks {
     pub menu: bool,
     pub codex: bool,
     pub map: bool,
+    /// the campaign map
+    pub campaign: bool,
+    /// throw chaff
+    pub chaff: bool,
 }
 
 impl HudState {
@@ -104,6 +108,28 @@ impl HudState {
                     ui.add_space(4.0);
                     if ui.add(egui::Button::new(RichText::new("MAP").font(retro(18.0)).color(theme::GOLD)).fill(theme::PANEL)).on_hover_text("District map (M)").clicked() {
                         clicks.map = true;
+                    }
+                }
+                if state.flag("pro.done") {
+                    let stars = crate::campaign::stars_earned(state);
+                    let tip = if wharf { "Campaign map: every stage, your stars, upgrades" } else { "Campaign map (M): every stage, your stars, upgrades" };
+                    if ui.add(egui::Button::new(RichText::new(format!("★ {stars}")).font(retro(18.0)).color(theme::GOLD)).fill(theme::PANEL)).on_hover_text(tip).clicked() {
+                        clicks.campaign = true;
+                    }
+                }
+                if let Some(d) = state.data.dropped.as_ref().filter(|d| d.map == state.data.scene) {
+                    ui.label(RichText::new(format!("◎ {} dropped", d.cards.len())).font(mono(13.0)).color(theme::AMBER)).on_hover_text("Cards you dropped where they caught you: the gold glow on the ground. Get caught again before you pick them up and they are gone.");
+                }
+                if crate::campaign::chaff_spec(state).is_some() {
+                    let (label, c) = if state.chaff > 0.0 {
+                        (format!("CHAFF {:.0}", state.chaff.ceil()), CYAN)
+                    } else if state.chaff_cd > 0.0 {
+                        (format!("Q {:.0}s", state.chaff_cd.ceil()), DIM)
+                    } else {
+                        ("Q CHAFF".to_string(), CYAN)
+                    };
+                    if ui.add(egui::Button::new(RichText::new(label).font(retro(18.0)).color(c)).fill(theme::PANEL)).on_hover_text("Chaff (Q): a few seconds of noise the sensors cannot tell from you").clicked() {
+                        clicks.chaff = true;
                     }
                 }
                 for (i, label) in CHAPTER_LABELS.iter().enumerate().filter(|_| !wharf) {

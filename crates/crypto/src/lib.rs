@@ -27,6 +27,7 @@ pub mod hashchain;
 pub mod knapsack;
 pub mod lamps;
 pub mod lattice;
+pub mod lfsr;
 pub mod lwe;
 pub mod musig;
 pub mod ocr;

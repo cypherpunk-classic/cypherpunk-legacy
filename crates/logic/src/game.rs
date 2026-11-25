@@ -14,6 +14,7 @@ use crate::items::item_def;
 use crate::script::{Cmd, Ctx, Reply, Runner};
 use crate::state::{GameState, MapId, SaveData, StateEvent};
 use crate::story;
+use crate::ui::campaign::{CampaignAction, CampaignView};
 use crate::ui::dialogue::{self, DialogueEnv, DialogueItem};
 use crate::ui::hud::{HudState, ToastKind};
 use crate::ui::menu::{self, MenuAction, MenuState, Tab};
@@ -22,12 +23,17 @@ use crate::ui::terminal::{self, ActivePuzzle};
 use crate::ui::theme;
 use crate::ui::title::{self, CreditsState, TitleAction, TitleState};
 
+/// When the result card's first star lands, and the gap to the next.
+const STAR_AT: f32 = 0.45;
+const STAR_GAP: f32 = 0.4;
+
 /// The static id of a dive named in a script.
 fn dive_id(name: &str) -> Option<&'static str> {
     match name {
         "interceptor" => Some("interceptor"),
         "static" => Some("static"),
         "logjam" => Some("logjam"),
+        "lamplighter" => Some("lamplighter"),
         _ => None,
     }
 }
@@ -96,6 +102,14 @@ pub struct Game {
     pub launch_wharf: bool,
     /// Or to chapter 2's street (`CPL_EXCHANGE=1`, `?exchange`).
     pub launch_exchange: bool,
+    /// The campaign map (M outside a district), while it is open.
+    pub campaign: Option<CampaignView>,
+    /// The card that shows how a stage went, and how long it has been up.
+    pub stage_card: Option<(crate::campaign::Result, f32)>,
+    /// A replay's district was walked out of: go back to the real save next frame.
+    end_replay_pending: bool,
+    /// A gauntlet to start once its quarter has loaded.
+    pending_gauntlet: Option<&'static str>,
 }
 
 impl Game {
@@ -127,13 +141,17 @@ impl Game {
             district: None,
             launch_wharf: false,
             launch_exchange: false,
+            campaign: None,
+            stage_card: None,
+            end_replay_pending: false,
+            pending_gauntlet: None,
         }
     }
 
     // --- queries --------------------------------------------------------------------
 
     pub fn modal_open(&self) -> bool {
-        !self.dialogue.is_empty() || self.terminal.is_some() || self.menu.is_some() || self.mode != Mode::World || self.district.as_ref().is_some_and(|d| d.modal())
+        !self.dialogue.is_empty() || self.terminal.is_some() || self.menu.is_some() || self.campaign.is_some() || self.mode != Mode::World || self.district.as_ref().is_some_and(|d| d.modal())
     }
 
     /// Only a signal board's close-up is open: the street outside keeps watching you.
@@ -255,6 +273,10 @@ impl Game {
         self.audio.push(AudioReq::Music(Some(m.music)));
         let fut = story::ready(self.ctx.clone(), map);
         self.runner.spawn(format!("ready:{}", map.name()), false, fut);
+        if let Some(node) = self.pending_gauntlet.take() {
+            let fut = story::gauntlet::run(self.ctx.clone(), node);
+            self.runner.spawn(format!("gauntlet:{node}"), true, Box::pin(fut));
+        }
         self.pump();
     }
 
@@ -305,14 +327,7 @@ impl Game {
         {
             let mut s = self.ctx.state();
             s.new_game(&handle, look, seed_phrase);
-            let mut flags = vec!["pro.intro", "pro.letter", "pro.note", "pro.booted", "pro.seed", "pro.login", "pro.done", "pro.toCity", "pro.metCat", "city.arrived", "warden.on", "ch1.met", "ch1.otp", "ch1.ctr", crate::story::ch1::HARBOUR_SENT];
-            let mut items = vec!["letter", "descriptor", "gateway-key", "share1"];
-            let mut chapter = 1;
-            if district == MapId::Exchange {
-                flags.extend([MAST, crate::signals::wharf::END, "w.intro", "w.started", "ch1.done", "ch2.met", "ch2.dh", "ch2.mitm", "ch2.logjam", "ch2.bookIntro", "ch2.book", "book.out", crate::story::ch2::STREET_SENT]);
-                items.push("sealed-messenger");
-                chapter = 2;
-            }
+            let (flags, items, chapter) = crate::campaign::entry_state(district);
             for f in flags {
                 s.set(f, true);
             }
@@ -361,10 +376,17 @@ impl Game {
         {
             if cleared {
                 let flag = d.dives.get(v.id).map(|x| x.done_flag());
+                let tally = d.dives.get(v.id).and_then(|x| x.tally());
                 if let Some(f) = flag {
                     let mut st = self.ctx.state();
                     if !st.flag(f) {
                         st.set(f, true);
+                    }
+                    // a boss: stars for how it went
+                    if let Some((deaths, hits)) = tally
+                        && let Some(r) = crate::campaign::settle_boss(&mut st, v.id, deaths, hits)
+                    {
+                        self.stage_card = Some((r, 0.0));
                     }
                 }
                 d.shots.push(format!("dive-{}", v.id));
@@ -373,6 +395,287 @@ impl Game {
             self.close_modal();
             self.audio.push(AudioReq::Music(Some("city")));
         }
+    }
+
+    // --- the campaign map ---------------------------------------------------------------
+
+    pub fn open_campaign(&mut self) {
+        if self.mode != Mode::World || self.busy() {
+            return;
+        }
+        self.campaign = Some(CampaignView::new(&self.ctx.state_ref()));
+        self.audio.push(AudioReq::Sfx("blip"));
+    }
+
+    /// Go to a campaign node: a quarter of the city, the cabin, or a district
+    /// the story has sent you into (a finished one is replayed instead).
+    pub fn campaign_go(&mut self, id: &str) {
+        let Some(n) = crate::campaign::node(id) else { return };
+        if self.ctx.state_ref().data.replay_of.is_some() || !crate::campaign::open(&self.ctx.state_ref(), n) {
+            return;
+        }
+        // a finished district is replayed; a quarter is travelled to (its gauntlet has its own button)
+        if matches!(n.kind, crate::campaign::NodeKind::District(_) | crate::campaign::NodeKind::Dive { .. } | crate::campaign::NodeKind::Boss { .. }) && crate::campaign::can_replay(&self.ctx.state_ref(), n) {
+            self.replay_node(n.id);
+            return;
+        }
+        let here = self.current_map();
+        let (map, spawn): (MapId, &'static str) = match n.kind {
+            crate::campaign::NodeKind::City { spawn } => (MapId::City, spawn),
+            crate::campaign::NodeKind::Cabin => (MapId::Cabin, "computer"),
+            crate::campaign::NodeKind::District(d) => (d, "start"),
+            crate::campaign::NodeKind::Boss { district, spawn, .. } => (district, spawn),
+            crate::campaign::NodeKind::Dive { district, spawn, .. } => {
+                // straight to the dive if its site is open in the district you are in
+                let open = self.district.as_ref().filter(|d| d.which == district).is_some_and(|d| {
+                    let st = self.ctx.state_ref();
+                    d.sig.sites.iter().any(|s| matches!(s.kind, crate::signals::SiteKind::Dive(x) if x == n.id) && d.sig.site_open(&st, s.id))
+                });
+                (district, if open { spawn } else { "start" })
+            }
+        };
+        if map == here && self.district.is_some() {
+            if let Some(d) = self.district.as_mut() {
+                d.auto.at = Some(spawn);
+            }
+            self.travel(spawn);
+            return;
+        }
+        let c = self.ctx.clone();
+        self.runner.spawn(format!("campaign:{id}"), true, Box::pin(async move { c.goto(map, Some(spawn)).await }));
+        self.pump();
+    }
+
+    /// Replay a node from the campaign map: a district on fresh pads, or a
+    /// quarter's terminals as a gauntlet on fresh numbers.
+    pub fn replay_node(&mut self, id: &str) {
+        let Some(n) = crate::campaign::node(id) else { return };
+        if !crate::campaign::can_replay(&self.ctx.state_ref(), n) {
+            return;
+        }
+        match n.kind {
+            crate::campaign::NodeKind::District(d) | crate::campaign::NodeKind::Dive { district: d, .. } => self.start_replay(d),
+            crate::campaign::NodeKind::Boss { .. } => self.start_boss(n.id),
+            _ => self.start_gauntlet(n.id),
+        }
+    }
+
+    /// A rematch with a boss, in a sandbox of its district with every lock open.
+    pub fn start_boss(&mut self, id: &'static str) {
+        let Some(sandbox) = crate::campaign::boss_save(&self.ctx.state_ref().data, id) else { return };
+        self.reset_session();
+        {
+            let mut st = self.ctx.state();
+            if !st.load(sandbox) {
+                return;
+            }
+            st.trace = 0.0;
+            st.save();
+        }
+        self.engine.push(EngineReq::PersistSave);
+        self.engine.push(EngineReq::StartWorld);
+    }
+
+    /// Run a quarter's terminals back to back, in a sandbox on a fresh seed.
+    pub fn start_gauntlet(&mut self, id: &'static str) {
+        let Some(sandbox) = crate::campaign::gauntlet_save(&self.ctx.state_ref().data, id) else { return };
+        self.reset_session();
+        {
+            let mut st = self.ctx.state();
+            if !st.load(sandbox) {
+                return;
+            }
+            st.trace = 0.0;
+            st.save();
+        }
+        self.pending_gauntlet = Some(id);
+        self.engine.push(EngineReq::PersistSave);
+        self.engine.push(EngineReq::StartWorld);
+    }
+
+    /// Replay a finished district on fresh pads, in a sandbox save that
+    /// carries the real one inside it.
+    pub fn start_replay(&mut self, d: MapId) {
+        if !crate::campaign::replayable(&self.ctx.state_ref(), d) {
+            return;
+        }
+        let sandbox = crate::campaign::replay_save(&self.ctx.state_ref().data, d);
+        self.reset_session();
+        {
+            let mut st = self.ctx.state();
+            if !st.load(sandbox) {
+                return;
+            }
+            st.trace = 0.0;
+            st.save();
+        }
+        self.engine.push(EngineReq::PersistSave);
+        self.engine.push(EngineReq::StartWorld);
+    }
+
+    /// Out of a replay: the real save comes back, with the stars the replay
+    /// won, standing in front of whoever sent you into that district.
+    pub fn end_replay(&mut self) {
+        let (real, which, gauntlet) = {
+            let st = self.ctx.state_ref();
+            (crate::campaign::restore(&st.data), st.data.scene, crate::campaign::gauntlet_node(&st).is_some())
+        };
+        let Some(mut real) = real else { return };
+        if !gauntlet {
+            // out of a district: in front of whoever sent you into it
+            let spawn = if which == MapId::Exchange { "felix" } else { "mara" };
+            let sp = crate::maps::map(MapId::City).spawn(spawn);
+            real.scene = MapId::City;
+            real.pos = Some(crate::state::Pos { x: sp.x, y: sp.y, facing: sp.facing });
+        }
+        let card = self.stage_card.take();
+        self.reset_session();
+        self.stage_card = card;
+        {
+            let mut st = self.ctx.state();
+            if !st.load(real) {
+                return;
+            }
+            st.trace = 0.0;
+            st.save();
+        }
+        self.engine.push(EngineReq::PersistSave);
+        self.engine.push(EngineReq::StartWorld);
+    }
+
+    fn draw_campaign(&mut self, ui_ctx: &egui::Context, dt: f32, sfx: &mut Vec<&'static str>) {
+        let Some(v) = self.campaign.as_mut() else { return };
+        if !self.dialogue.is_empty() || self.terminal.is_some() || self.menu.is_some() {
+            return;
+        }
+        let here = self.ctx.0.borrow().map;
+        let action = {
+            let st = self.ctx.state_ref();
+            let city = crate::maps::map(MapId::City);
+            crate::ui::campaign::show(ui_ctx, v, &st, &city, here, dt, sfx)
+        };
+        match action {
+            CampaignAction::None => {}
+            CampaignAction::Close => {
+                self.campaign = None;
+                self.close_modal();
+            }
+            CampaignAction::Go(id) => {
+                self.campaign = None;
+                self.close_modal();
+                self.campaign_go(id);
+            }
+            CampaignAction::Replay(id) => {
+                self.campaign = None;
+                self.close_modal();
+                self.replay_node(id);
+            }
+            CampaignAction::LeaveReplay => {
+                self.campaign = None;
+                self.close_modal();
+                self.end_replay();
+            }
+            CampaignAction::Buy(id) => {
+                let resting = self.campaign.as_ref().is_some_and(|v| v.at_rest);
+                let mut st = self.ctx.state();
+                if resting && st.data.replay_of.is_none() && crate::campaign::buy(&mut st, id) {
+                    st.save();
+                    sfx.push("unlock");
+                } else {
+                    sfx.push("error");
+                }
+            }
+            CampaignAction::Refund => {
+                let resting = self.campaign.as_ref().is_some_and(|v| v.at_rest);
+                let mut st = self.ctx.state();
+                if resting && st.data.replay_of.is_none() {
+                    crate::campaign::refund(&mut st);
+                    st.save();
+                    sfx.push("blip");
+                }
+            }
+        }
+    }
+
+    /// A dodge: a burst of speed the sensors cannot fix on. True if it started.
+    pub fn dodge(&mut self) -> bool {
+        if self.mode != Mode::World || self.busy() {
+            return false;
+        }
+        let ok = crate::campaign::try_dodge(&mut self.ctx.state());
+        if ok {
+            self.audio.push(AudioReq::Sfx("blip"));
+        }
+        ok
+    }
+
+    /// The player is standing at (x, y): pick up what they dropped, if it is here.
+    pub fn pick_up_at(&mut self, x: f32, y: f32) {
+        let map = self.current_map();
+        let got = {
+            let mut st = self.ctx.state();
+            if st.data.dropped.is_none() {
+                return;
+            }
+            crate::campaign::pick_up(&mut st, map, x, y)
+        };
+        if let Some(n) = got {
+            self.audio.push(AudioReq::Sfx("pickup"));
+            self.hud.toast("RECOVERED", &format!("{n} {} back in your pocket.", if n == 1 { "card" } else { "cards" }), ToastKind::Item);
+            self.ctx.state().save();
+        }
+    }
+
+    /// Throw chaff, if it has been bought and has recharged.
+    pub fn chaff(&mut self) {
+        if self.mode != Mode::World {
+            return;
+        }
+        let ok = crate::campaign::throw_chaff(&mut self.ctx.state());
+        if ok {
+            self.audio.push(AudioReq::Sfx("power"));
+            self.engine.push(EngineReq::World { id: 0, cmd: Cmd::Flash { ms: 220.0, color: 0x9ff7ff } });
+            self.hud.toast("CHAFF", "Noise in the air. The sensors cannot pick you out of it.", ToastKind::Info);
+        } else if crate::campaign::chaff_spec(&self.ctx.state_ref()).is_some() {
+            self.audio.push(AudioReq::Sfx("error"));
+        }
+    }
+
+    /// The card that says how a stage went (under the location banner, for a few seconds).
+    fn draw_stage_card(&mut self, ui_ctx: &egui::Context) {
+        let Some((r, age)) = &self.stage_card else { return };
+        let replaying = self.ctx.state_ref().data.replay_of.is_some();
+        let fade = (1.0 - (age - 8.0).max(0.0)).clamp(0.0, 1.0) * (age * 3.0).min(1.0);
+        let gold = theme::GOLD.gamma_multiply(fade);
+        egui::Area::new(egui::Id::new("stage-card")).anchor(egui::Align2::CENTER_TOP, egui::vec2(0.0, 150.0)).interactable(false).show(ui_ctx, |ui| {
+            egui::Frame::NONE.fill(theme::PANEL.gamma_multiply(0.95 * fade)).stroke(egui::Stroke::new(1.0, gold)).corner_radius(egui::CornerRadius::same(6)).inner_margin(egui::Margin::symmetric(22, 12)).show(ui, |ui| {
+                ui.vertical_centered(|ui| {
+                    ui.label(egui::RichText::new(format!("{} {}", r.name.to_uppercase(), r.headline)).font(theme::retro(26.0)).color(gold));
+                    // three slots; each earned star drops in, overshoots and settles
+                    let (row, _) = ui.allocate_exact_size(egui::vec2(170.0, 56.0), egui::Sense::hover());
+                    for i in 0..3u8 {
+                        let c = row.center() + egui::vec2((i as f32 - 1.0) * 52.0, 0.0);
+                        let at = STAR_AT + STAR_GAP * i as f32;
+                        let earned = i < r.score.stars() && *age >= at;
+                        let (glyph, size, col) = if earned {
+                            let k = ((*age - at) / 0.25).min(1.0);
+                            ("★", 40.0 * (1.0 + 0.6 * (1.0 - k) * (1.0 - k)), gold)
+                        } else {
+                            ("☆", 40.0, theme::FAINT.gamma_multiply(fade))
+                        };
+                        ui.painter().text(c, egui::Align2::CENTER_CENTER, glyph, theme::retro(size), col);
+                    }
+                    for (what, ok) in r.score.labels.iter().copied().zip(r.score.ok) {
+                        let c = if ok { theme::TEXT } else { theme::FAINT };
+                        ui.label(egui::RichText::new(format!("{} {what}", if ok { "★" } else { "☆" })).font(theme::mono(12.5)).color(c.gamma_multiply(fade)));
+                    }
+                    let tail = if r.improved { format!("new best: {} of 3", r.best) } else { format!("best stays {} of 3", r.best) };
+                    ui.label(egui::RichText::new(tail).font(theme::mono(12.0)).color(theme::CYAN.gamma_multiply(fade)));
+                    let how = if replaying && r.headline == "FREED" { "walk out, or the ★ button, top right: leave the replay" } else { "spend them on the campaign map: the ★ button, top right" };
+                    ui.label(egui::RichText::new(how).font(theme::mono(11.5)).color(theme::DIM.gamma_multiply(fade)));
+                });
+            });
+        });
     }
 
     pub fn quit_to_title(&mut self) {
@@ -392,6 +695,9 @@ impl Game {
         self.hud = HudState::default();
         self.credits = CreditsState::default();
         self.district = None;
+        self.campaign = None;
+        self.stage_card = None;
+        self.end_replay_pending = false;
         let mut s = self.ctx.shared();
         s.queue.clear();
         s.cutscene = 0;
@@ -424,6 +730,30 @@ impl Game {
             self.launch_exchange = false;
             self.start_exchange(None);
         }
+        if self.end_replay_pending && self.runner.idle() {
+            self.end_replay_pending = false;
+            self.end_replay();
+        }
+        if let Some((r, age)) = self.stage_card.as_mut() {
+            // the stars land one at a time
+            for i in 0..r.score.stars() {
+                let at = STAR_AT + STAR_GAP * i as f32;
+                if *age < at && *age + dt >= at {
+                    self.audio.push(AudioReq::Sfx(if i == 2 { "success" } else { "pickup" }));
+                }
+            }
+            *age += dt;
+            if *age > 9.0 {
+                self.stage_card = None;
+            }
+        }
+        if self.mode == Mode::World {
+            let mut st = self.ctx.state();
+            crate::campaign::tick_chaff(&mut st, dt);
+            if let Some(r) = crate::campaign::settle_city(&mut st).pop() {
+                self.stage_card = Some((r, 0.0));
+            }
+        }
         self.update_district(dt);
     }
 
@@ -438,6 +768,14 @@ impl Game {
         {
             let mut st = self.ctx.state();
             d.tick(&mut st, dt);
+            // stars: a district the moment it is freed, a dive the moment it falls
+            if let Some(r) = crate::campaign::settle(&mut st, d.which) {
+                d.shots.push(format!("stage-{}", r.stage));
+                self.stage_card = Some((r, 0.0));
+            }
+            for name in crate::campaign::settle_dives(&mut st) {
+                self.hud.toast("★ DIVE", &format!("{name} broken: one star."), ToastKind::Item);
+            }
         }
         // a dive runs on the game clock: the player's input, or its own bot
         if let Some(v) = d.dive.as_mut() {
@@ -792,11 +1130,13 @@ impl Game {
             Cmd::Choose { sp, question, options } => self.dialogue.push_back(DialogueItem::choice(id, sp, question, options)),
             Cmd::Puzzle(p) => {
                 self.audio.push(AudioReq::Sfx("power"));
-                let (handle, hints, deep) = {
+                let (handle, hints, deep, scale) = {
                     let s = self.ctx.state_ref();
-                    (s.handle().to_string(), s.settings.hints, !s.data.badges.iter().any(|b| b == p.id()))
+                    (s.handle().to_string(), s.settings.hints, !s.data.badges.iter().any(|b| b == p.id()), crate::campaign::deep_scale(&s))
                 };
-                self.terminal = Some(ActivePuzzle::new(id, p, &handle, hints, deep));
+                let mut ap = ActivePuzzle::new(id, p, &handle, hints, deep);
+                ap.deep_scale = scale;
+                self.terminal = Some(ap);
                 self.auto_term = 0.0;
             }
             Cmd::Wait(s) => self.waits.push((id, s)),
@@ -848,6 +1188,19 @@ impl Game {
                     self.ctx.shared().reply(id, Reply::Bool(false));
                 } else {
                     self.audio.push(AudioReq::Music(Some("tension")));
+                }
+            }
+            Cmd::Signal(what) if what == "replay.end" => {
+                self.end_replay_pending = true;
+            }
+            Cmd::Signal(what) if what == "rest" => {
+                // the kit is bought here
+                let mut v = CampaignView::new(&self.ctx.state_ref());
+                v.at_rest = true;
+                v.tab = crate::ui::campaign::Tab::Upgrades;
+                self.campaign = Some(v);
+                if let Some(d) = self.district.as_mut() {
+                    d.auto.at = None;
                 }
             }
             Cmd::Signal(what) => {
@@ -972,6 +1325,7 @@ impl Game {
         let mut close_locker = false;
         let mut close_dive = false;
         let mut travel: Option<&'static str> = None;
+        let mut open_campaign = false;
         let Some(d) = self.district.as_mut() else { return };
         if self.dialogue.is_empty() && self.terminal.is_none() && self.menu.is_none() {
             if let Some(v) = d.board.as_mut() {
@@ -997,6 +1351,10 @@ impl Game {
                 match crate::ui::citymap::show(ui_ctx, v, &d.sig, &st, &def, dt, sfx) {
                     crate::ui::citymap::MapAction::None => {}
                     crate::ui::citymap::MapAction::Close => d.map = None,
+                    crate::ui::citymap::MapAction::Campaign => {
+                        d.map = None;
+                        open_campaign = true;
+                    }
                     crate::ui::citymap::MapAction::Travel(spawn) => {
                         d.map = None;
                         travel = Some(spawn);
@@ -1024,6 +1382,9 @@ impl Game {
             }
             self.travel(spawn);
         }
+        if open_campaign {
+            self.campaign = Some(CampaignView::new(&self.ctx.state_ref()));
+        }
     }
 
     fn draw_title(&mut self, ui_ctx: &egui::Context, sfx: &mut Vec<&'static str>) {
@@ -1047,7 +1408,7 @@ impl Game {
 
     fn draw_world_ui(&mut self, ui_ctx: &egui::Context, dt: f32, sfx: &mut Vec<&'static str>) {
         // HUD
-        let hidden = self.terminal.is_some() || self.ctx.0.borrow().cutscene > 0 && self.dialogue.is_empty() || self.district.as_ref().is_some_and(|d| d.dive.is_some() || d.map.is_some());
+        let hidden = self.terminal.is_some() || self.campaign.is_some() || self.ctx.0.borrow().cutscene > 0 && self.dialogue.is_empty() || self.district.as_ref().is_some_and(|d| d.dive.is_some() || d.map.is_some());
         if !hidden {
             let clicks = {
                 let state = self.ctx.state_ref();
@@ -1060,13 +1421,23 @@ impl Game {
                     self.open_menu(Tab::Keyring, None);
                 } else if clicks.codex || (c_key && self.input_ready() && !ui_ctx.egui_wants_keyboard_input()) {
                     self.open_menu(Tab::Codex, None);
-                } else if (clicks.map || (m_key && self.input_ready() && !ui_ctx.egui_wants_keyboard_input()))
-                    && let Some(d) = self.district.as_mut()
-                {
-                    d.map = Some(crate::ui::citymap::MapView::new(&d.sig, &self.ctx.state_ref()));
-                    self.audio.push(AudioReq::Sfx("blip"));
+                } else if clicks.map || (m_key && self.input_ready() && !ui_ctx.egui_wants_keyboard_input()) {
+                    if let Some(d) = self.district.as_mut() {
+                        d.map = Some(crate::ui::citymap::MapView::new(&d.sig, &self.ctx.state_ref()));
+                        self.audio.push(AudioReq::Sfx("blip"));
+                    } else {
+                        self.open_campaign();
+                    }
+                } else if clicks.campaign {
+                    self.open_campaign();
+                } else if clicks.chaff {
+                    self.chaff();
                 }
             }
+        }
+        // chaff works at a board too: that is when the street is closing in
+        if (self.input_ready() || self.at_board_only()) && ui_ctx.input(|i| i.key_pressed(egui::Key::Q)) && !ui_ctx.egui_wants_keyboard_input() {
+            self.chaff();
         }
         // dialogue (one item at a time, in order)
         if self.terminal.is_none() && self.menu.is_none() {
@@ -1118,7 +1489,7 @@ impl Game {
             if let Some(ok) = result {
                 let ap = self.terminal.take().unwrap();
                 if ok {
-                    self.ctx.state().mark_solved(ap.puzzle.id(), ap.host.attempts + 1);
+                    self.ctx.state().mark_solved(ap.puzzle.id(), ap.host.attempts + 1, ap.host.hints);
                 }
                 if ap.host.deep_done {
                     let mut s = self.ctx.state();
@@ -1135,6 +1506,8 @@ impl Game {
         }
         // a v4 district: a board or a panel, a locker, the map, a dive
         self.draw_district(ui_ctx, dt, sfx);
+        self.draw_campaign(ui_ctx, dt, sfx);
+        self.draw_stage_card(ui_ctx);
         // menu
         if let Some(m) = self.menu.as_mut() {
             let action = {

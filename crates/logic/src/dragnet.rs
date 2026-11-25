@@ -47,10 +47,12 @@ impl GameState {
             // the first time a sensor logs you, the codex explains what it took
             self.unlock_codex("metadata");
         }
-        if gain > 0.0 && self.settings.dragnet {
+        // chaff in the air: the sensors still see something, but not you
+        // and a dodge gives them nothing to fix on for its few tenths of a second
+        if gain > 0.0 && self.settings.dragnet && self.chaff <= 0.0 && self.dodge <= 0.0 {
             self.trace += gain * self.opsec_factor() * dt;
         } else {
-            self.trace = (self.trace - DECAY * dt).max(0.0);
+            self.trace = (self.trace - crate::campaign::decay(self, DECAY) * dt).max(0.0);
         }
         let flagged = self.trace >= FLAG_AT;
         if flagged {

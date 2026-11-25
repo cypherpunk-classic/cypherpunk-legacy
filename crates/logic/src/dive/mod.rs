@@ -4,6 +4,7 @@
 //! tests and the demo drive it with the same inputs a player would.
 
 pub mod interceptor;
+pub mod lamplighter;
 pub mod logjam;
 pub mod static_;
 
@@ -67,6 +68,12 @@ pub trait Dive {
     fn status(&self) -> Status;
     /// What a player who knows the answer would press this frame.
     fn bot(&mut self, dt: f32) -> Input;
+    /// The *Story only* setting: hits are counted but never trace you out.
+    fn set_merciful(&mut self, _on: bool) {}
+    /// A fight's record once it is over: (times traced out, hits taken).
+    fn tally(&self) -> Option<(u32, u32)> {
+        None
+    }
 }
 
 /// Maps field units to the screen.
@@ -191,6 +198,7 @@ pub fn make(id: &str, seed: &[u8]) -> Option<Box<dyn Dive>> {
     match id {
         "interceptor" => Some(Box::new(interceptor::Interceptor::new(seed))),
         "static" => Some(Box::new(static_::Static::new(seed))),
+        "lamplighter" => Some(Box::new(lamplighter::Lamplighter::new(seed, 0))),
         // the tower's numbers come from the district (see `District::dive_mut`)
         "logjam" => Some(Box::new(logjam::Logjam::new(seed, Vec::new()))),
         _ => None,

@@ -172,7 +172,7 @@ impl Signals {
             Board {
                 accepts: vec![(Glyph::Sigil, Effect::Flag(MAST)), (Glyph::Tower, Effect::Nothing)],
                 legend: vec![Glyph::Tower],
-                ..board("mast", "mast", "Mast control", "mast", s.mast, Feed::Rotating { seq: s.mast_seq.clone(), period: MAST_PERIOD })
+                ..board("mast", "mast", "Mast control", "mast", s.mast, Feed::Rotating { seq: s.mast_seq.clone(), period: crate::campaign::mast_period(st) })
             },
         ];
         for b in &mut boards {
@@ -293,7 +293,7 @@ impl Signals {
             return Vec::new();
         }
         let (x, y, ..) = self.guard_at(st);
-        vec![Watcher { id: "w-guard", x, y, radius: GUARD_RADIUS, gain: GUARD_GAIN }]
+        vec![Watcher { id: "w-guard", x, y, radius: crate::campaign::guard_radius(st, crate::state::MapId::Wharf, GUARD_RADIUS), gain: GUARD_GAIN }]
     }
 
     /// Is the guard close and coming closer?
@@ -656,7 +656,7 @@ impl Signals {
                     if let Some(i) = b.cards.iter().position(|c| matches!(c, CardRef::Own(_)) && *c != p) {
                         return Some(Move::Unslot("mast", i));
                     }
-                    return Some(if left > MAST_PERIOD * 0.6 { Move::Copy("mast") } else { Move::Wait });
+                    return Some(if left > crate::campaign::mast_period(st) * 0.6 { Move::Copy("mast") } else { Move::Wait });
                 };
                 Some(self.arrange("mast", &[c, p, CardRef::Glyph(Glyph::Sigil)]).unwrap_or(Move::Pull("mast")))
             }

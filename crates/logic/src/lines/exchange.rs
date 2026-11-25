@@ -233,12 +233,12 @@ impl Lines {
             return Vec::new();
         }
         let (x, y, ..) = agent_walk().at(t_now);
-        let mut v = vec![Watcher { id: "x-agent", x, y, radius: GUARD_RADIUS, gain: GUARD_GAIN }];
+        let mut v = vec![Watcher { id: "x-agent", x, y, radius: crate::campaign::guard_radius(st, crate::state::MapId::Exchange, GUARD_RADIUS), gain: GUARD_GAIN }];
         if !st.flag(POST2) {
-            v.push(Watcher { id: "x-post2", x: POST2_AT.0, y: POST2_AT.1, radius: POST_RADIUS, gain: POST_GAIN });
+            v.push(Watcher { id: "x-post2", x: POST2_AT.0, y: POST2_AT.1, radius: crate::campaign::post_radius(st, POST_RADIUS), gain: POST_GAIN });
         }
         if !st.flag(POST3) {
-            v.push(Watcher { id: "x-post3", x: POST3_AT.0, y: POST3_AT.1, radius: POST_RADIUS, gain: POST_GAIN });
+            v.push(Watcher { id: "x-post3", x: POST3_AT.0, y: POST3_AT.1, radius: crate::campaign::post_radius(st, POST_RADIUS), gain: POST_GAIN });
         }
         v
     }

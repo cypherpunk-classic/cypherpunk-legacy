@@ -138,6 +138,10 @@ fn banner(n: usize, tx: f32, ty: f32) -> [MapObject; 2] {
 
 pub fn wharf() -> MapDef {
     let mut objects = vec![
+        {
+            let (x, y) = on(12.0, 19.0);
+            MapObject::new("w-lantern", "obj-lantern", x, y).anim().interact("rest.wharf", "Rest at the lantern").radius(18.0).light(Light::new("glow-warm", 0.9, 0.55, -14.0).pulse())
+        },
         // --- boathouse and piers (start) ----------------------------------------------
         MapObject::new("w-boathouse", "bld-boathouse", t(5.0) + 8.0, t(17.0)).anim().body(128.0, 34.0),
         prop("w-cabinet", "obj-cabinet", 12.0, 13.0, 16.0, 6.0).anim().interact("w.dive.interceptor", "Play INTERCEPTOR").light(Light::new("glow-violet", 0.7, 0.5, -24.0).pulse()),
@@ -160,6 +164,10 @@ pub fn wharf() -> MapDef {
         // --- quay plaza -----------------------------------------------------------------
         MapObject::new("w-radioshack", "bld-radioshack", t(23.0) + 8.0, t(17.0)).anim().body(80.0, 30.0),
         prop("w-antenna", "obj-antenna", 20.5, 16.0, 8.0, 6.0).anim(),
+        {
+            let (x, y) = on(47.0, 30.0);
+            MapObject::new("w-lamplighter", "obj-drone", x, y).anim().show_if("w.mast").interact("w.dive.lamplighter", "Face the Lamplighter").radius(24.0).light(Light::new("glow-magenta", 0.8, 0.6, -18.0).pulse())
+        },
         prop("w-radio", "obj-radio", 27.0, 17.0, 24.0, 8.0).anim().interact("w.dive.static", "Tune the radio").light(Light::new("glow-green", 0.5, 0.4, -12.0).pulse()),
         board("sig-b0", "w.board.b0", "obj-sig_teal_l", 30.5, 16.0, "Look at the training rig"),
         prop("w-rigmonitor", "obj-rigmonitor", 29.0, 16.0, 10.0, 4.0).anim().light(Light::new("glow-cyan", 0.4, 0.35, -14.0)),

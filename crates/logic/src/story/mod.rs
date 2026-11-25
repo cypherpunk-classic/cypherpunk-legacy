@@ -10,8 +10,10 @@ pub mod ch6;
 pub mod city;
 pub mod dragnet;
 pub mod epilogue;
+pub mod gauntlet;
 pub mod missions;
 pub mod prologue;
+pub mod rest;
 pub mod side;
 pub mod exchange;
 pub mod wharf;
@@ -22,6 +24,14 @@ use crate::state::MapId;
 
 /// Every interaction id the story knows about.
 pub const INTERACTIONS: &[&str] = &[
+    "rest.wharf",
+    "rest.exchange",
+    "rest.safe-wharf",
+    "rest.safe-exchange",
+    "rest.safe-commons",
+    "rest.safe-mint",
+    "rest.safe-masks",
+    "rest.safe-obs",
     "cabin.dresser",
     "cabin.computer",
     "cabin.bookshelf",
@@ -104,6 +114,9 @@ pub fn interaction(c: Ctx, id: &str) -> BoxFut {
         && let Some(f) = exchange::interaction(c.clone(), id)
     {
         return f;
+    }
+    if let Some(at) = id.strip_prefix("rest.") {
+        return Box::pin(rest::rest(c, at.to_string()));
     }
     match id {
         "cabin.dresser" => Box::pin(prologue::dresser(c)),
@@ -209,7 +222,7 @@ pub fn interaction(c: Ctx, id: &str) -> BoxFut {
 /// The Dragnet flagged the player at (x, y).
 pub fn flagged(c: Ctx, x: f32, y: f32) -> BoxFut {
     if c.current_map() == MapId::Wharf {
-        return Box::pin(wharf::flagged(c));
+        return Box::pin(wharf::flagged(c, x, y));
     }
     if c.current_map() == MapId::Exchange {
         return Box::pin(exchange::flagged(c));

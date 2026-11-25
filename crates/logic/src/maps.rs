@@ -549,7 +549,17 @@ fn npc(id: &'static str, char: &'static str, x: f32, y: f32, facing: Facing, int
 }
 
 fn city() -> MapDef {
+    // a lantern at every safe house: rest, bank your work, spend your stars
+    let lantern = |id: &'static str, act: &'static str, x: f32, y: f32, cond: &'static str| {
+        MapObject::new(id, "obj-lantern", x + 20.0, y - 2.0).anim().show_if(cond).interact(act, "Rest at the lantern").radius(18.0).light(Light::new("glow-warm", 0.9, 0.55, -14.0).pulse())
+    };
     let objects = vec![
+        lantern("lantern-wharf", "rest.safe-wharf", 232.0, 560.0, "city.arrived"),
+        lantern("lantern-exchange", "rest.safe-exchange", 192.0, 400.0, "ch1.done"),
+        lantern("lantern-commons", "rest.safe-commons", 800.0, 352.0, "ch2.done"),
+        lantern("lantern-mint", "rest.safe-mint", 800.0, 168.0, "party.done"),
+        lantern("lantern-masks", "rest.safe-masks", 192.0, 168.0, "ch4.done"),
+        lantern("lantern-obs", "rest.safe-obs", 480.0, 172.0, "ch5.done"),
         // --- The Wharf ---------------------------------------------------------
         MapObject::new("gatepad", "obj-gatepad", t(30.0), t(35.0) + 4.0).floor().anim().light(Light::new("glow-cyan", 1.0, 0.5, -10.0).pulse()).interact("wharf.gatepad", "Step on the pad").iy(-8.0),
         MapObject::new("sign-wharf", "sign-wharf", t(30.0), t(32.0) + 2.0).anim().light(Light::new("glow-cyan", 0.7, 0.35, -6.0)),

@@ -3,6 +3,7 @@
 //! egui interfaces. The Bevy app renders the world and runs this.
 
 pub mod allies;
+pub mod campaign;
 pub mod codex;
 pub mod district;
 pub mod dive;

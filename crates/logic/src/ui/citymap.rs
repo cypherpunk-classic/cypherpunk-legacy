@@ -27,6 +27,8 @@ pub enum MapAction {
     Close,
     /// go to this site (spawn name)
     Travel(&'static str),
+    /// open the campaign map (the whole city)
+    Campaign,
 }
 
 fn tile_color(name: &str) -> Color32 {
@@ -45,7 +47,7 @@ fn tile_color(name: &str) -> Color32 {
     }
 }
 
-fn minimap(ctx: &egui::Context, map: &MapDef) -> egui::TextureHandle {
+pub(crate) fn minimap(ctx: &egui::Context, map: &MapDef) -> egui::TextureHandle {
     let mut img = egui::ColorImage::filled([map.w, map.h], Color32::BLACK);
     for (y, row) in map.tiles.iter().enumerate() {
         for (x, t) in row.iter().enumerate() {
@@ -64,6 +66,9 @@ pub fn show(ctx: &egui::Context, v: &mut MapView, sig: &Signals, st: &GameState,
     let (up, down, enter, close) = ctx.input(|i| {
         (i.key_pressed(Key::ArrowUp) || i.key_pressed(Key::W), i.key_pressed(Key::ArrowDown) || i.key_pressed(Key::S), i.key_pressed(Key::Enter) || i.key_pressed(Key::E), i.key_pressed(Key::Escape) || (i.key_pressed(Key::M) && v.age > 0.2))
     });
+    if ctx.input(|i| i.key_pressed(Key::Tab)) && v.age > 0.2 {
+        return MapAction::Campaign;
+    }
     if up {
         v.cursor = (v.cursor + n - 1) % n;
         sfx.push("blip");
@@ -85,6 +90,9 @@ pub fn show(ctx: &egui::Context, v: &mut MapView, sig: &Signals, st: &GameState,
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if button(ui, "M ✕", Kind::Ghost).clicked() {
                     action = MapAction::Close;
+                }
+                if button(ui, "CITY ▸", Kind::Normal).on_hover_text("The campaign map: every stage, your stars, upgrades (Tab)").clicked() {
+                    action = MapAction::Campaign;
                 }
             });
         });
@@ -183,7 +191,7 @@ pub fn show(ctx: &egui::Context, v: &mut MapView, sig: &Signals, st: &GameState,
             });
         });
         ui.add_space(4.0);
-        ui.label(RichText::new("↑ ↓ choose   ·   Enter: go there   ·   M: close   ·   walking works too").font(mono(12.0)).color(FAINT));
+        ui.label(RichText::new("↑ ↓ choose   ·   Enter: go there   ·   Tab: the city   ·   M: close   ·   walking works too").font(mono(12.0)).color(FAINT));
     });
     if enter && matches!(action, MapAction::None) {
         let s = &sig.sites[v.cursor];

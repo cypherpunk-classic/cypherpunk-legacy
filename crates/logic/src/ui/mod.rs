@@ -2,6 +2,7 @@
 //! top of the world (dialogue, HUD, terminals, menus, title, credits).
 
 pub mod board;
+pub mod campaign;
 pub mod citymap;
 pub mod dialogue;
 pub mod dive;

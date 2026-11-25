@@ -50,6 +50,39 @@ all as they were. The districts' puzzles unlock six new codex entries (known
 plaintext, MACs, replay, blue boxes, short authentication strings, Logjam),
 and the end credits count your cards and dives.
 
+**v4.3: the campaign map.** You no longer walk from one quarter of the city
+to the next: M (or the ★ button) opens a map of Cryptopolis with every stage
+on it, joined by roads the story opens one at a time, and picking a stage
+takes you there. Each district scores up to three stars (freed; never
+flagged on the way; no paid notebook pages), each dive one. A finished
+district can be replayed from the map on fresh pads, in a sandbox that leaves
+the story alone and brings back only better stars. Stars buy kit in a
+four-line upgrade tree (opsec, the Wharf kit, the lineman's set, Grandpa's
+notebook) that makes the street kinder and never the cryptography easier.
+
+**v4.4: every chapter is a stage.** The quarters of the v3 city score stars
+too, from the terminals you solved there: every terminal solved, steady
+hands (a wrong move per terminal at most), and step hints off. A finished
+quarter can be replayed as a **gauntlet**, its terminals back to back on fresh
+numbers. Thirty stars in all, and two new lines in the tree: **Chaff** (Q:
+a few seconds of noise the sensors cannot tell from you, after Rivest's
+*chaffing and winnowing*, 1998) and the **Terminal kit**.
+
+**v4.5: souls in the street.** Once the mast is yours, **the Lamplighter**
+comes back for it: a boss you beat by cryptanalysis. Its floodlight leaves
+one lane dark each beat, chosen by a shift register; dodge to live, but only
+a call made *before* the light shows hurts it, and a call is a prediction.
+Phase I is one LFSR (fit its taps to ten bits), phase II two XORed (run
+Berlekamp–Massey on at least 2L bits), phase III reboots with phase II's
+seed (line the new beats up against your log). Trace out and the phase starts
+over, but what you worked out stays: knowledge is the one thing you keep.
+Around it, the souls loop: **lanterns** at every safe house and district start
+are bonfires (rest to clear your trace, recharge chaff, bank your cards, set
+where you wake up, and spend stars, which you can do nowhere else); a fall in
+the Wharf **drops** the rubbings and cuts you made since your last rest where
+they caught you, gone for good if you fall again first; and **F** is a dodge
+the sensors cannot fix on.
+
 ---
 
 ## Play
@@ -70,8 +103,10 @@ python3 -m http.server -d dist 8080                # then open http://localhost:
 ```
 
 **Controls:** WASD / arrow keys to move · Shift to walk faster · E / Space /
-Enter to interact · C for the codex · Esc for the menu. On a touch screen, drag
-on the left half to walk and tap the E button to interact.
+Enter to interact · C for the codex · Esc for the menu · M (or the ★ button)
+for the campaign map · Q to throw chaff, once you have it · F to dodge while
+moving. On a touch screen, drag on the left half to walk and tap
+the E button to interact.
 
 **In the two districts:** click a card to put it in a board's reader,
 right-click (or drag) it onto the light table, M for the district map, `?` on

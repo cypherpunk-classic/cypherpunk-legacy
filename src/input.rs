@@ -14,6 +14,8 @@ pub struct Control {
     pub run: bool,
     /// Interact pressed this frame.
     pub act: bool,
+    /// Dodge pressed this frame (F).
+    pub dodge: bool,
     /// Set by the autopilot: ignore the keyboard.
     pub override_axis: Option<Vec2>,
     pub override_act: bool,
@@ -53,6 +55,7 @@ pub fn gather(keys: Res<ButtonInput<KeyCode>>, touches: Res<Touches>, wants: Opt
     }
     let mut act = !typing && keys.any_just_pressed([KeyCode::KeyE, KeyCode::Space, KeyCode::Enter]);
     let run = !typing && keys.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
+    c.dodge = !typing && keys.any_just_pressed([KeyCode::KeyF]);
 
     // touch: drag on the left of the screen to walk, tap the button (or the right side) to act
     let width = windows.single().map(|w| w.width()).unwrap_or(1280.0);

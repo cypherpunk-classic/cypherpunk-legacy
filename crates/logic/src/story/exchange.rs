@@ -183,6 +183,12 @@ async fn walk_out(c: Ctx) {
         return;
     }
     c.set(END);
+    if c.state_ref().data.replay_of.is_some() {
+        // a replay from the campaign map: back to the real save, stars and all
+        c.sfx("door");
+        c.signal("replay.end");
+        return;
+    }
     c.cutscene(async {
         c.location("THE LINES, FREE", "back to the switchboard");
         c.wait(1600.0).await;

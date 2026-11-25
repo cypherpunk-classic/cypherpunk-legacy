@@ -777,7 +777,7 @@ impl Lines {
                     let cost = caller_party.as_ref().map(|x| x.tamper).unwrap_or(WRONG);
                     p.line(&caller_name, "The words differ. Line dropped; tampering reported.", Tone::Bad);
                     if st.settings.dragnet {
-                        st.trace = (st.trace + cost).min(100.0);
+                        st.trace = (st.trace + crate::campaign::penalty(st, cost)).min(100.0);
                     }
                     self.events.push(LineEvent::Tamper { panel: panel_id });
                     c.step = Step::Done;
@@ -901,7 +901,7 @@ impl Lines {
                         if cs.is_none() || cs != want {
                             self.panels[pi].line(&caller_name, "Wrong countersign. Reporting this line.", Tone::Bad);
                             if st.settings.dragnet {
-                                st.trace = (st.trace + WRONG).min(100.0);
+                                st.trace = (st.trace + crate::campaign::penalty(st, WRONG)).min(100.0);
                             }
                             self.events.push(LineEvent::Alarm { panel: panel_id });
                         } else {
@@ -937,7 +937,7 @@ impl Lines {
                     }
                     p.line("MARA", "They have the key. Every one of these phones hands its key to the escrow desk. Not a word on this line.", Tone::Plain);
                     if st.settings.dragnet {
-                        st.trace = (st.trace + 15.0).min(100.0);
+                        st.trace = (st.trace + crate::campaign::penalty(st, 15.0)).min(100.0);
                     }
                     if !st.flag(exchange::ESCROW_SEEN) {
                         st.set(exchange::ESCROW_SEEN, true);
@@ -1014,7 +1014,7 @@ impl Lines {
                 let t = heard(Tone::Bad);
                 self.say(pi, c, who, &format!("{order}? That makes no sense. Reporting this line."), t);
                 if st.settings.dragnet {
-                    st.trace = (st.trace + WRONG).min(100.0);
+                    st.trace = (st.trace + crate::campaign::penalty(st, WRONG)).min(100.0);
                 }
                 self.events.push(LineEvent::Alarm { panel: id });
             }

@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::Facing;
 use crate::world::World;
 
-pub const SAVE_VERSION: u32 = 4;
+pub const SAVE_VERSION: u32 = 6;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(rename_all = "lowercase")]
@@ -98,6 +98,13 @@ mod facing_serde {
 pub struct Solved {
     pub at: f64,
     pub attempts: u32,
+    /// solved with the step hints showing (the *Guided* setting)
+    #[serde(default = "yes")]
+    pub guided: bool,
+}
+
+fn yes() -> bool {
+    true
 }
 
 /// An eCash token in the wallet (see `cpl_crypto::ecash::Token`).
@@ -186,6 +193,22 @@ pub struct SaveData {
     pub glyphs: Vec<String>,
     #[serde(default)]
     pub stats: Stats,
+    /// Best stars per campaign stage (see [`crate::campaign`]).
+    #[serde(default)]
+    pub stages: BTreeMap<String, crate::campaign::StageRecord>,
+    /// Upgrade levels bought with stars, by upgrade id.
+    #[serde(default)]
+    pub upgrades: BTreeMap<String, u8>,
+    /// While replaying a district from the campaign map: the real save,
+    /// which comes back (with any stars won) when the replay ends.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub replay_of: Option<Box<SaveData>>,
+    /// Cards (by id) that were in your pocket when you last rested: safe from a fall.
+    #[serde(default)]
+    pub banked: Vec<u32>,
+    /// What you dropped where they caught you, waiting to be picked up.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dropped: Option<crate::campaign::Dropped>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -241,6 +264,12 @@ pub struct GameState {
     pub dirty_settings: bool,
     /// The Dragnet's trace on you, 0 to 100 (set by the engine, not saved).
     pub trace: f32,
+    /// Seconds of chaff left in the air, and until it can be thrown again (not saved).
+    pub chaff: f32,
+    pub chaff_cd: f32,
+    /// A dodge in progress (seconds left: the sensors cannot fix on you) and its cooldown.
+    pub dodge: f32,
+    pub dodge_cd: f32,
 }
 
 impl Default for GameState {
@@ -253,7 +282,7 @@ impl GameState {
     pub fn new() -> Self {
         let data = Self::blank("anon", 0, None);
         let world = Rc::new(World::new(&data));
-        Self { data, settings: Settings::default(), events: Vec::new(), world, session_start: now_ms(), dirty_save: false, dirty_settings: false, trace: 0.0 }
+        Self { data, settings: Settings::default(), events: Vec::new(), world, session_start: now_ms(), dirty_save: false, dirty_settings: false, trace: 0.0, chaff: 0.0, chaff_cd: 0.0, dodge: 0.0, dodge_cd: 0.0 }
     }
 
     pub fn blank(handle: &str, look: usize, seed: Option<String>) -> SaveData {
@@ -286,6 +315,11 @@ impl GameState {
             cards: Vec::new(),
             glyphs: Vec::new(),
             stats: Stats::default(),
+            stages: BTreeMap::new(),
+            upgrades: BTreeMap::new(),
+            replay_of: None,
+            banked: Vec::new(),
+            dropped: None,
         }
     }
 
@@ -305,6 +339,7 @@ impl GameState {
         if from_hex(&d.seed).map(|b| b.len() != 32).unwrap_or(true) {
             return false;
         }
+        crate::campaign::migrate(&mut d);
         d.version = SAVE_VERSION;
         self.data = d;
         self.world = Rc::new(World::new(&self.data));
@@ -409,8 +444,8 @@ impl GameState {
         self.events.push(StateEvent::Chapter(n));
     }
 
-    pub fn mark_solved(&mut self, id: &str, attempts: u32) {
-        self.data.solved.entry(id.to_string()).or_insert(Solved { at: now_ms(), attempts });
+    pub fn mark_solved(&mut self, id: &str, attempts: u32, guided: bool) {
+        self.data.solved.entry(id.to_string()).or_insert(Solved { at: now_ms(), attempts, guided });
     }
 
     /// Deterministic stream for puzzle content, unique to this save.
